@@ -1,0 +1,172 @@
+extends Control
+var DATA = {}
+var sel_id = ""
+var canvas = null
+var link_mode = false
+var link_lab: Label
+var insp: VBoxContainer
+func setup(d):
+	DATA = d
+	_build()
+func _build():
+	for c in get_children():
+		c.queue_free()
+	var tb = HBoxContainer.new()
+	tb.position = Vector2(0, 0)
+	var b1 = Button.new()
+	b1.text = "+ локация"
+	b1.pressed.connect(_new_loc)
+	tb.add_child(b1)
+	var b2 = Button.new()
+	b2.text = "связь"
+	b2.pressed.connect(_toggle_link)
+	tb.add_child(b2)
+	var b3 = Button.new()
+	b3.text = "удалить"
+	b3.pressed.connect(_del_loc)
+	tb.add_child(b3)
+	link_lab = Label.new()
+	link_lab.text = ""
+	tb.add_child(link_lab)
+	add_child(tb)
+	canvas = load("res://scripts/map_canvas.gd").new()
+	canvas.position = Vector2(0, 30)
+	canvas.DATA = DATA
+	canvas.sel = sel_id
+	canvas.picked.connect(_pick)
+	canvas.moved.connect(_save)
+	canvas.link_req.connect(_link)
+	add_child(canvas)
+	insp = VBoxContainer.new()
+	insp.position = Vector2(770, 0)
+	add_child(insp)
+	_insp_ui()
+func _pick(id):
+	sel_id = id
+	canvas.sel = id
+	canvas.queue_redraw()
+	_insp_ui()
+func _toggle_link():
+	link_mode = not link_mode
+	canvas.link_mode = link_mode
+	link_lab.text = "связь: ВКЛ — кликни две локации" if link_mode else ""
+func _link(a, b):
+	var la = DATA[a].get("links", [])
+	if la.has(b):
+		la.erase(b)
+		DATA[b].get("links", []).erase(a)
+	else:
+		la.append(b)
+		if not DATA[b].has("links"):
+			DATA[b]["links"] = []
+		DATA[b]["links"].append(a)
+	_save()
+	canvas.queue_redraw()
+func _new_loc():
+	var id = "loc_" + str(DATA.size() + 1)
+	while DATA.has(id):
+		id += "x"
+	DATA[id] = {"name": "новая", "type": "field", "pos": [600, 400], "links": [], "map": {"rocks": [], "objects": [], "units": []}, "loot": [], "dlg": {}}
+	sel_id = id
+	_save()
+	canvas.DATA = DATA
+	canvas.sel = id
+	canvas.queue_redraw()
+	_insp_ui()
+func _del_loc():
+	if sel_id == "":
+		return
+	DATA.erase(sel_id)
+	for id in DATA:
+		DATA[id].get("links", []).erase(sel_id)
+	sel_id = ""
+	_save()
+	canvas.DATA = DATA
+	canvas.sel = ""
+	canvas.queue_redraw()
+	_insp_ui()
+func _insp_ui():
+	for c in insp.get_children():
+		c.queue_free()
+	if sel_id == "" or not DATA.has(sel_id):
+		return
+	var L = DATA[sel_id]
+	var rn = HBoxContainer.new()
+	var ln = Label.new()
+	ln.text = "Имя"
+	rn.add_child(ln)
+	var le = LineEdit.new()
+	le.text = str(L.get("name", ""))
+	le.custom_minimum_size = Vector2(140, 26)
+	le.text_changed.connect(_set_name)
+	rn.add_child(le)
+	insp.add_child(rn)
+	var rt = HBoxContainer.new()
+	var lt = Label.new()
+	lt.text = "Тип"
+	rt.add_child(lt)
+	var ty = OptionButton.new()
+	var i = 0
+	var cur = 0
+	for t in ["field", "town", "camp", "cave"]:
+		ty.add_item(t)
+		if t == str(L.get("type", "field")):
+			cur = i
+		i += 1
+	ty.selected = cur
+	ty.item_selected.connect(_set_type)
+	rt.add_child(ty)
+	insp.add_child(rt)
+	var rc = HBoxContainer.new()
+	var lc2 = Label.new()
+	lc2.text = "Каталог"
+	rc.add_child(lc2)
+	var co = OptionButton.new()
+	co.add_item("(не брать)")
+	var catd = _lj("res://data/loc_catalog.json")
+	var names = []
+	for cid in catd:
+		co.add_item(str(catd[cid].get("name", cid)))
+		names.append(cid)
+	co.item_selected.connect(_apply_cat.bind(names))
+	rc.add_child(co)
+	insp.add_child(rc)
+	var rl = HBoxContainer.new()
+	var ll = Label.new()
+	ll.text = "id: %s | связи: %s" % [sel_id, ", ".join(PackedStringArray(L.get("links", [])))]
+	rl.add_child(ll)
+	insp.add_child(rl)
+func _set_name(v):
+	DATA[sel_id]["name"] = v
+	_save()
+	canvas.queue_redraw()
+func _set_type(i):
+	DATA[sel_id]["type"] = ["field", "town", "camp", "cave"][i]
+	_save()
+	canvas.queue_redraw()
+func _apply_cat(i, names):
+	if i <= 0:
+		return
+	var catd = _lj("res://data/loc_catalog.json")
+	var src = catd.get(names[i - 1], {})
+	var L = DATA[sel_id]
+	L["map"] = src.get("map", {}).duplicate(true)
+	L["loot"] = src.get("loot", []).duplicate(true)
+	L["dlg"] = src.get("dlg", {}).duplicate(true)
+	L["type"] = src.get("type", L.get("type", "field"))
+	_save()
+	_insp_ui()
+	canvas.queue_redraw()
+func _lj(p):
+	var f = FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {}
+	var s = f.get_as_text()
+	f.close()
+	var j = JSON.parse_string(s)
+	return {} if j == null else j
+func _save():
+	var f = FileAccess.open("res://data/locations.json", FileAccess.WRITE)
+	f.store_string(JSON.stringify(DATA))
+	f.close()
+	get_tree().call_group("live", "live_reload")

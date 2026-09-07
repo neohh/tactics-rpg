@@ -1,0 +1,1 @@
+{"q1":{"reward":{"gold":50,"items":{"potion":1}},"stages":{"1":{"loc":"camp","text":"Зачисти лагерь бандитов","type":"clear"},"2":{"text":"Вернись к старосте","type":"talk","who":"elder"},"3":{"done":true,"text":""}},"title":"Зачистить лагерь"}}

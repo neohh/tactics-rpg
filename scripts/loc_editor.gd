@@ -1,0 +1,502 @@
+extends Control
+var DATA = {}
+var sel_id = ""
+var SAVE_PATH = "res://data/locations.json"
+var deferred = false
+signal dirty
+signal save_req
+var grid = null
+var tool = "place"
+var chunk_mode = false
+var what = "obj"
+var obj_kind = "rock"
+var cls = "swordsman"
+var loot_box: VBoxContainer
+var dlg_box: VBoxContainer
+var mode_lab: Label
+var what_lab: Label
+var obj_lab: Label
+var cls_lab: Label
+const OBJ_ORDER = ["rock", "tree", "house", "tent", "crate"]
+const CLS_ORDER = ["swordsman", "assassin", "halberd", "archer"]
+func setup(d, id, path = "res://data/locations.json", defer = false):
+	DATA = d
+	sel_id = id
+	SAVE_PATH = path
+	deferred = defer
+	_build()
+func _loc():
+	if deferred and Game.edit_data != null:
+		return Game.edit_data
+	return DATA.get(sel_id, {})
+func _build():
+	for c in get_children():
+		c.queue_free()
+	var L = _loc()
+	var r1 = HBoxContainer.new()
+	var l1 = Label.new()
+	l1.text = "Название"
+	r1.add_child(l1)
+	var le = LineEdit.new()
+	le.text = str(L.get("name", ""))
+	le.custom_minimum_size = Vector2(150, 26)
+	le.text_changed.connect(_set_name)
+	r1.add_child(le)
+	var ll = Label.new()
+	ll.text = "Связи"
+	r1.add_child(ll)
+	var lke = LineEdit.new()
+	lke.text = ", ".join(PackedStringArray(L.get("links", [])))
+	lke.custom_minimum_size = Vector2(140, 26)
+	lke.text_changed.connect(_set_links)
+	r1.add_child(lke)
+	var lc3 = Label.new()
+	lc3.text = " Каталог"
+	r1.add_child(lc3)
+	var co2 = OptionButton.new()
+	co2.add_item("(не брать)")
+	var catd = _lj2("res://data/locations.json")
+	var names2 = []
+	for cid in catd:
+		co2.add_item(_lib_label2(catd[cid], cid))
+		names2.append(cid)
+	co2.item_selected.connect(_apply_cat.bind(names2))
+	r1.add_child(co2)
+	var lg2 = Label.new()
+	lg2.text = " Кат."
+	r1.add_child(lg2)
+	var go2 = OptionButton.new()
+	go2.add_item("(без группы)")
+	var gi2 = 0
+	var gsel2 = 0
+	for g in _groups2():
+		go2.add_item(g)
+		gi2 += 1
+		if str(_loc().get("group", "")) == g:
+			gsel2 = gi2
+	go2.selected = gsel2
+	go2.item_selected.connect(_set_group2)
+	r1.add_child(go2)
+	r1.position = Vector2(0, 0)
+	add_child(r1)
+	var r2 = HBoxContainer.new()
+	var l2 = Label.new()
+	l2.text = "Тип"
+	r2.add_child(l2)
+	var ty = OptionButton.new()
+	var i = 0
+	var cur = 0
+	for t in _lt_keys():
+		ty.add_item(t)
+		if t == str(L.get("type", "field")):
+			cur = i
+		i += 1
+	ty.selected = cur
+	ty.item_selected.connect(_set_type)
+	r2.add_child(ty)
+	var sx = SpinBox.new()
+	sx.max_value = 1200
+	sx.value = int(L.get("pos", [200, 200])[0])
+	sx.value_changed.connect(_set_px)
+	r2.add_child(sx)
+	var sy = SpinBox.new()
+	sy.max_value = 800
+	sy.value = int(L.get("pos", [200, 200])[1])
+	sy.value_changed.connect(_set_py)
+	r2.add_child(sy)
+	r2.position = Vector2(0, 30)
+	add_child(r2)
+	var r3 = HBoxContainer.new()
+	var lm = Label.new()
+	lm.text = "Инструмент:"
+	r3.add_child(lm)
+	var bp = Button.new()
+	bp.text = "✚ ставить"
+	bp.pressed.connect(_tool.bind("place"))
+	r3.add_child(bp)
+	var be = Button.new()
+	be.text = "✖ стереть"
+	be.pressed.connect(_tool.bind("erase"))
+	r3.add_child(be)
+	mode_lab = Label.new()
+	mode_lab.text = "= ставить"
+	r3.add_child(mode_lab)
+	r3.position = Vector2(0, 60)
+	add_child(r3)
+	var r4 = HBoxContainer.new()
+	var lw = Label.new()
+	lw.text = "Что ставить:"
+	r4.add_child(lw)
+	for bt in ["объект", "свои", "враги"]:
+		var b = Button.new()
+		b.text = bt
+		b.pressed.connect(_what.bind(bt))
+		r4.add_child(b)
+	what_lab = Label.new()
+	what_lab.text = "= объект"
+	r4.add_child(what_lab)
+	r4.position = Vector2(0, 90)
+	add_child(r4)
+	var r4b = HBoxContainer.new()
+	var lo = Label.new()
+	lo.text = "Объект:"
+	r4b.add_child(lo)
+	var bo1 = Button.new()
+	bo1.text = "<"
+	bo1.pressed.connect(_cyc_obj.bind(-1))
+	r4b.add_child(bo1)
+	obj_lab = Label.new()
+	obj_lab.text = obj_kind
+	obj_lab.custom_minimum_size = Vector2(70, 24)
+	r4b.add_child(obj_lab)
+	var bo2 = Button.new()
+	bo2.text = ">"
+	bo2.pressed.connect(_cyc_obj.bind(1))
+	r4b.add_child(bo2)
+	var lc = Label.new()
+	lc.text = "   Класс:"
+	r4b.add_child(lc)
+	var bc1 = Button.new()
+	bc1.text = "<"
+	bc1.pressed.connect(_cyc_cls.bind(-1))
+	r4b.add_child(bc1)
+	cls_lab = Label.new()
+	cls_lab.text = cls
+	cls_lab.custom_minimum_size = Vector2(80, 24)
+	r4b.add_child(cls_lab)
+	var bc2 = Button.new()
+	bc2.text = ">"
+	bc2.pressed.connect(_cyc_cls.bind(1))
+	r4b.add_child(bc2)
+	r4b.position = Vector2(0, 120)
+	add_child(r4b)
+	var r5 = HBoxContainer.new()
+	for bt in ["авто", "очистить", "В БОЙ"]:
+		var b = Button.new()
+		b.text = bt
+		b.pressed.connect(_act.bind(bt))
+		r5.add_child(b)
+	r5.position = Vector2(0, 150)
+	add_child(r5)
+	grid = null
+	var r6 = HBoxContainer.new()
+	var l4 = Label.new()
+	l4.text = "Лут:"
+	r6.add_child(l4)
+	var bl = Button.new()
+	bl.text = "+ лут"
+	bl.pressed.connect(_add_loot)
+	r6.add_child(bl)
+	r6.anchor_top = 1.0
+	r6.offset_top = -210
+	add_child(r6)
+	loot_box = VBoxContainer.new()
+	loot_box.anchor_top = 1.0
+	loot_box.offset_top = -182
+	add_child(loot_box)
+	_loot_ui()
+	var r7 = HBoxContainer.new()
+	var l5 = Label.new()
+	l5.text = "Диалоги:"
+	r7.add_child(l5)
+	r7.anchor_top = 1.0
+	r7.offset_top = -210
+	add_child(r7)
+	dlg_box = VBoxContainer.new()
+	dlg_box.anchor_top = 1.0
+	dlg_box.offset_top = -182
+	add_child(dlg_box)
+	_dlg_ui()
+func _tool(t):
+	tool = t
+	Game.edit_tool = t
+	mode_lab.text = "= ставить" if t == "place" else "= стереть"
+	_upd_grid_mode()
+func _what(w):
+	what = {"объект": "obj", "свои": "mine", "враги": "enemy"}[w]
+	Game.edit_what = what
+	what_lab.text = "= " + w
+	_upd_grid_mode()
+func _upd_grid_mode():
+	if grid != null:
+		grid.mode = "erase" if tool == "erase" else what
+func _cyc_obj(d):
+	obj_kind = OBJ_ORDER[(OBJ_ORDER.find(obj_kind) + d + OBJ_ORDER.size()) % OBJ_ORDER.size()]
+	obj_lab.text = obj_kind
+	Game.edit_obj = obj_kind
+	if grid != null:
+		grid.obj_kind = obj_kind
+func _cyc_cls(d):
+	cls = CLS_ORDER[(CLS_ORDER.find(cls) + d + CLS_ORDER.size()) % CLS_ORDER.size()]
+	cls_lab.text = cls
+	Game.edit_cls = cls
+	if grid != null:
+		grid.cls = cls
+func _set_name(v):
+	_loc()["name"] = v
+	_save()
+func _set_links(v):
+	var arr = []
+	for part in v.split(","):
+		var t2 = part.strip_edges()
+		if t2 != "":
+			arr.append(t2)
+	_loc()["links"] = arr
+	_save()
+func _set_type(i):
+	_loc()["type"] = _lt_keys()[i]
+	_save()
+func _set_px(v):
+	var p = _loc().get("pos", [200, 200])
+	_loc()["pos"] = [int(v), p[1]]
+	_save()
+func _set_py(v):
+	var p = _loc().get("pos", [200, 200])
+	_loc()["pos"] = [p[0], int(v)]
+	_save()
+func _act(bt):
+	if bt == "В БОЙ":
+		if deferred:
+			save_req.emit()
+		else:
+			_save()
+		Game.log_scene("v_boy " + sel_id)
+		Game.battle_snap = null
+		Game.cur_loc = sel_id
+		get_tree().change_scene_to_file("res://world3d.tscn")
+		return
+	if bt == "авто":
+		var m = _loc().get("map", {})
+		if m.is_empty():
+			m = {"rocks": [], "objects": [], "units": []}
+			_loc()["map"] = m
+		m["objects"] = []
+		var used = {}
+		for u in m.get("units", []):
+			used[str(int(u["cell"][0])) + "," + str(int(u["cell"][1]))] = true
+		for r in m.get("rocks", []):
+			used[str(int(r[0])) + "," + str(int(r[1]))] = true
+		var n = 0
+		var guard = 0
+		while n < 12 and guard < 300:
+			guard += 1
+			var cx = randi() % 8
+			var cy = randi() % 6
+			var key = str(cx) + "," + str(cy)
+			if used.has(key):
+				continue
+			used[key] = true
+			m["objects"].append({"cell": [cx, cy], "k": "tree" if randf() < 0.5 else "rock"})
+			n += 1
+		_save()
+		_ping_work()
+		return
+	if bt == "очистить":
+		_loc()["map"] = {"rocks": [], "objects": [], "units": []}
+		_save()
+
+		_ping_work()
+		return
+func _on_grid():
+	_save()
+func _add_loot():
+	var L = _loc()
+	if not L.has("loot"):
+		L["loot"] = []
+	L["loot"].append({"item": "potion", "chance": 30})
+	_save()
+	_build()
+func _del_loot(i):
+	_loc()["loot"].remove_at(i)
+	_save()
+	_build()
+func _loot_ui():
+	for c in loot_box.get_children():
+		c.queue_free()
+	var L = _loc()
+	var items = _items_keys()
+	var i = 0
+	for row in L.get("loot", []):
+		var hb = HBoxContainer.new()
+		var ob = OptionButton.new()
+		var cur = 0
+		var k = 0
+		for it in items:
+			ob.add_item(it)
+			if it == row.get("item", ""):
+				cur = k
+			k += 1
+		ob.selected = cur
+		ob.item_selected.connect(_set_loot_item.bind(i))
+		hb.add_child(ob)
+		var sb = SpinBox.new()
+		sb.max_value = 100
+		sb.value = int(row.get("chance", 30))
+		sb.value_changed.connect(_set_loot_ch.bind(i))
+		hb.add_child(sb)
+		var dl = Button.new()
+		dl.text = "X"
+		dl.pressed.connect(_del_loot.bind(i))
+		hb.add_child(dl)
+		loot_box.add_child(hb)
+		i += 1
+func _set_loot_item(idx, i):
+	var items = _items_keys()
+	_loc()["loot"][i]["item"] = items[idx]
+	_save()
+func _set_loot_ch(v, i):
+	_loc()["loot"][i]["chance"] = int(v)
+	_save()
+func _dlg_ui():
+	for c in dlg_box.get_children():
+		c.queue_free()
+	var L = _loc()
+	var files = _dlg_files()
+	var dlg = L.get("dlg", {})
+	for slot in ["arrive", "pre", "win", "loss"]:
+		var hb = HBoxContainer.new()
+		var lb2 = Label.new()
+		lb2.text = slot
+		lb2.custom_minimum_size = Vector2(50, 24)
+		hb.add_child(lb2)
+		var ob = OptionButton.new()
+		ob.add_item("(нет)")
+		var cur = 0
+		var k = 0
+		for fn in files:
+			k += 1
+			ob.add_item(fn)
+			if fn == dlg.get(slot, ""):
+				cur = k
+		ob.selected = cur
+		ob.item_selected.connect(_set_dlg.bind(slot))
+		hb.add_child(ob)
+		dlg_box.add_child(hb)
+func _set_dlg(i, slot):
+	var d2 = _loc().get("dlg", {})
+	if i == 0:
+		d2.erase(slot)
+	else:
+		d2[slot] = _dlg_files()[i - 1]
+	_loc()["dlg"] = d2
+	_save()
+func _pick_model():
+	var fd2 = FileDialog.new()
+	fd2.access = FileDialog.ACCESS_RESOURCES
+	fd2.root_subfolder = "res://art"
+	fd2.mode = FileDialog.FILE_MODE_OPEN_FILE
+	fd2.add_filter("*.fbx")
+	fd2.add_filter("*.glb")
+	fd2.add_filter("*.tscn")
+	fd2.add_filter("*.tres")
+	fd2.file_selected.connect(func(p):
+		_loc()["model"] = p
+		_save()
+		_build())
+	add_child(fd2)
+	fd2.popup_centered(Vector2(700, 500))
+
+func _items_keys():
+	var f = FileAccess.open("res://data/items.json", FileAccess.READ)
+	if f == null:
+		return []
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	return [] if j == null else j.keys()
+func _dlg_files():
+	var res = []
+	var d = DirAccess.open("res://data/dialogs")
+	if d == null:
+		return res
+	d.list_dir_begin()
+	var fn = d.get_next()
+	while fn != "":
+		if fn.ends_with(".json"):
+			res.append(fn.trim_suffix(".json"))
+		fn = d.get_next()
+	return res
+func _save():
+	if deferred:
+		dirty.emit()
+		return
+	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	f.store_string(JSON.stringify(DATA))
+	f.close()
+	get_tree().call_group("live", "live_reload")
+
+func _lj2(p):
+	var f = FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {}
+	var s = f.get_as_text()
+	f.close()
+	var j = JSON.parse_string(s)
+	return {} if j == null else j
+func _apply_cat(i, names):
+	if i <= 0:
+		return
+	var catd = _lj2("res://data/locations.json")
+	var src = catd.get(names[i - 1], {})
+	var L = _loc()
+	L["map"] = src.get("map", {}).duplicate(true)
+	L["loot"] = src.get("loot", []).duplicate(true)
+	L["dlg"] = src.get("dlg", {}).duplicate(true)
+	L["type"] = src.get("type", L.get("type", "field"))
+	_save()
+	_build()
+	_ping_work()
+
+func _ping_work():
+	get_tree().call_group("work", "load_edit")
+
+func _lib_label2(e, cid):
+	var g = str(e.get("group", ""))
+	return ("[" + g + "] " if g != "" else "") + str(e.get("name", cid))
+
+func _groups2():
+	return _lj2("res://data/groups.json").get("locs", [])
+func _set_group2(i):
+	if sel_id == "":
+		return
+	if i <= 0:
+		_loc().erase("group")
+	else:
+		_loc()["group"] = _groups2()[i - 1]
+	_save()
+	_build()
+
+func _chunk_click():
+	chunk_mode = not chunk_mode
+	if chunk_mode:
+		mode_lab.text = "= чанк"
+		Game.edit_tool = "chunk"
+	else:
+		mode_lab.text = "= ставить" if tool == "place" else "= стереть"
+		Game.edit_tool = tool
+func _add_chunk(cx, cy):
+	var L = _loc()
+	var td = L.get("terrain", {})
+	var ch = td.get("chunks", {})
+	var key = str(cx) + "," + str(cy)
+	if ch.has(key):
+		return false
+	ch[key] = {"h": [], "w": []}
+	var sz = int(td.get("chunk_size", 8))
+	var n = sz * sz
+	ch[key]["h"].resize(n)
+	ch[key]["w"].resize(n)
+	for i in n:
+		ch[key]["h"][i] = 0.0
+		ch[key]["w"][i] = 0
+	td["chunks"] = ch
+	td["chunk_size"] = sz
+	L["terrain"] = td
+	_save()
+	get_tree().call_group("work", "load_edit")
+	return true
+
+func _lt_keys():
+	var k = _lj2("res://data/loc_types.json").keys()
+	if k.size() == 0:
+		return ["field", "town", "camp", "cave"]
+	return k

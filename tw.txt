@@ -1,0 +1,947 @@
+##### FILE: res://scripts/terrain.gd #####
+extends Node3D
+var GW = 8
+var GH = 6
+var SUBDIV = 8
+var RX = 65
+var RZ = 49
+var heights: Array = []
+var weights: Array = []
+var mats_def: Array = []
+var history: Array = []
+var chunk_mask = {}
+var CHUNK = 8
+var OX = 0
+var OY = 0
+var last_paint = null
+const MAX_STEP = 1.0
+const UV_SCALE = 1.0
+var shader_mat: ShaderMaterial = null
+var white_tex: ImageTexture = null
+func _init(gw = 8, gh = 6, sub = 8):
+	GW = gw
+	GH = gh
+	SUBDIV = sub
+	RX = GW * SUBDIV + 1
+	RZ = GH * SUBDIV + 1
+	heights.resize(RX * RZ)
+	heights.fill(0.0)
+	_reset_weights(1)
+func _reset_weights(m):
+	weights = []
+	for k in maxi(1, m):
+		var a = []
+		a.resize(RX * RZ)
+		a.fill(0.0)
+		weights.append(a)
+	for v in RX * RZ:
+		weights[0][v] = 1.0
+func set_materials(defs):
+	mats_def = defs
+	if weights.size() != maxi(1, defs.size()):
+		_reset_weights(defs.size())
+	build()
+func reset_stroke():
+	last_paint = null
+func paint_at(x, z, radius, mi):
+	if mi < 0 or mi >= weights.size():
+		return
+	var pts = []
+	if last_paint != null:
+		var d = Vector2(x - last_paint.x, z - last_paint.y)
+		var L = d.length()
+		var n = int(ceil(L / maxf(0.03, radius * 0.4)))
+		for s in range(1, n + 1):
+			pts.append(Vector2(last_paint.x + d.x * s / n, last_paint.y + d.y * s / n))
+	else:
+		pts.append(Vector2(x, z))
+	last_paint = Vector2(x, z)
+	for p in pts:
+		_stamp(p.x, p.y, radius, mi)
+	build()
+func _stamp(x, z, radius, mi):
+	var ri = int(ceil(radius * SUBDIV))
+	var ci = int(round(x * SUBDIV))
+	var cj = int(round(z * SUBDIV))
+	for j in range(maxi(0, cj - ri), mini(RZ, cj + ri + 1)):
+		for i in range(maxi(0, ci - ri), mini(RX, ci + ri + 1)):
+			var dx = float(i) / float(SUBDIV) - x
+			var dz = float(j) / float(SUBDIV) - z
+			var d = sqrt(dx * dx + dz * dz)
+			if d > radius:
+				continue
+			var f = 1.0 - d / radius
+			f = f * f * (3.0 - 2.0 * f)
+			var v = i + j * RX
+			for k in weights.size():
+				if k == mi:
+					weights[k][v] = lerp(weights[k][v], 1.0, f)
+				else:
+					weights[k][v] *= (1.0 - f)
+			_norm(v)
+func _norm(v):
+	var s = 0.0
+	for k in weights.size():
+		s += weights[k][v]
+	if s < 0.0001:
+		for k in weights.size():
+			weights[k][v] = 1.0 if k == 0 else 0.0
+		return
+	for k in weights.size():
+		weights[k][v] /= s
+func build():
+	for c in get_children():
+		c.free()
+	var st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for j in RZ - 1:
+		for i in RX - 1:
+			if not has_cell(int(i / SUBDIV), int(j / SUBDIV)):
+				continue
+			st.add_vertex(_v(i, j))
+			st.add_vertex(_v(i + 1, j))
+			st.add_vertex(_v(i + 1, j + 1))
+			st.add_vertex(_v(i, j))
+			st.add_vertex(_v(i + 1, j + 1))
+			st.add_vertex(_v(i, j + 1))
+	st.generate_normals()
+	var am = st.commit()
+	if shader_mat == null:
+		shader_mat = ShaderMaterial.new()
+		var sh = Shader.new()
+		sh.code = _sh_code()
+		shader_mat.shader = sh
+		var wi = Image.create(1, 1, false, Image.FORMAT_RGBA8)
+		wi.set_pixel(0, 0, Color(1, 1, 1))
+		white_tex = ImageTexture.create_from_image(wi)
+	am.surface_set_material(0, shader_mat)
+	var m = MeshInstance3D.new()
+	m.mesh = am
+	add_child(m)
+	_update_splat()
+	var st2 = SurfaceTool.new()
+	st2.begin(Mesh.PRIMITIVE_LINES)
+	for x in GW + 1:
+		for j in RZ - 1:
+			st2.add_vertex(_v(x * SUBDIV, j))
+			st2.add_vertex(_v(x * SUBDIV, j + 1))
+	for z in GH + 1:
+		for i in RX - 1:
+			st2.add_vertex(_v(i, z * SUBDIV))
+			st2.add_vertex(_v(i + 1, z * SUBDIV))
+	var am2 = st2.commit()
+	var mi2 = StandardMaterial3D.new()
+	mi2.albedo_color = Color(0.05, 0.05, 0.07)
+	am2.surface_set_material(0, mi2)
+	var m2 = MeshInstance3D.new()
+	m2.mesh = am2
+	m2.position.y = 0.02
+	add_child(m2)
+func _sh_code():
+	return "shader_type spatial;
+uniform sampler2D splat1 : filter_linear;
+uniform sampler2D splat2 : filter_linear;
+uniform sampler2D tex0 : source_color, repeat_enable;
+uniform sampler2D tex1 : source_color, repeat_enable;
+uniform sampler2D tex2 : source_color, repeat_enable;
+uniform sampler2D tex3 : source_color, repeat_enable;
+uniform sampler2D tex4 : source_color, repeat_enable;
+uniform sampler2D tex5 : source_color, repeat_enable;
+uniform sampler2D tex6 : source_color, repeat_enable;
+uniform sampler2D tex7 : source_color, repeat_enable;
+uniform vec4 ca0;
+uniform vec4 ca1;
+uniform vec4 ca2;
+uniform vec4 ca3;
+uniform vec4 ca4;
+uniform vec4 ca5;
+uniform vec4 ca6;
+uniform vec4 ca7;
+uniform float uv_scale;
+uniform vec2 map_size;
+uniform vec2 res;
+varying vec2 wxz;
+varying vec2 suv;
+void vertex() {
+	vec4 wp = MODEL_MATRIX * vec4(VERTEX, 1.0);
+	wxz = wp.xz;
+	suv = (wp.xz / map_size * (res - vec2(1.0)) + vec2(0.5)) / res;
+}
+void fragment() {
+	vec4 s1 = texture(splat1, suv);
+	vec4 s2 = texture(splat2, suv);
+	float w0 = s1.r; float w1 = s1.g; float w2 = s1.b; float w3 = s1.a;
+	float w4 = s2.r; float w5 = s2.g; float w6 = s2.b; float w7 = s2.a;
+	float ws = w0 + w1 + w2 + w3 + w4 + w5 + w6 + w7;
+	w0 /= max(ws, 0.0001); w1 /= max(ws, 0.0001); w2 /= max(ws, 0.0001); w3 /= max(ws, 0.0001);
+	w4 /= max(ws, 0.0001); w5 /= max(ws, 0.0001); w6 /= max(ws, 0.0001); w7 /= max(ws, 0.0001);
+	vec2 uvt = wxz * uv_scale;
+	vec3 c = vec3(0.0);
+	c += mix(ca0.rgb, texture(tex0, uvt).rgb, ca0.a) * w0;
+	c += mix(ca1.rgb, texture(tex1, uvt).rgb, ca1.a) * w1;
+	c += mix(ca2.rgb, texture(tex2, uvt).rgb, ca2.a) * w2;
+	c += mix(ca3.rgb, texture(tex3, uvt).rgb, ca3.a) * w3;
+	c += mix(ca4.rgb, texture(tex4, uvt).rgb, ca4.a) * w4;
+	c += mix(ca5.rgb, texture(tex5, uvt).rgb, ca5.a) * w5;
+	c += mix(ca6.rgb, texture(tex6, uvt).rgb, ca6.a) * w6;
+	c += mix(ca7.rgb, texture(tex7, uvt).rgb, ca7.a) * w7;
+	ALBEDO = c;
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.0;
+}"
+func _update_splat():
+	var img1 = Image.create(RX, RZ, false, Image.FORMAT_RGBAF)
+	var img2 = Image.create(RX, RZ, false, Image.FORMAT_RGBAF)
+	for j in RZ:
+		for i in RX:
+			var v = i + j * RX
+			img1.set_pixel(i, j, Color(_w(0, v), _w(1, v), _w(2, v), _w(3, v)))
+			img2.set_pixel(i, j, Color(_w(4, v), _w(5, v), _w(6, v), _w(7, v)))
+	shader_mat.set_shader_parameter("splat1", ImageTexture.create_from_image(img1))
+	shader_mat.set_shader_parameter("splat2", ImageTexture.create_from_image(img2))
+	for k in 8:
+		var d = mats_def[k] if k < mats_def.size() else {}
+		var col = d.get("col", Color(0.5, 0.5, 0.5))
+		var t = white_tex
+		var en = 0.0
+		var tp = str(d.get("tex", ""))
+		if tp != "" and FileAccess.file_exists(tp):
+			var im = Image.new()
+			if im.load(tp) == OK:
+				t = ImageTexture.create_from_image(im)
+				en = 1.0
+		shader_mat.set_shader_parameter("tex%d" % k, t)
+		shader_mat.set_shader_parameter("ca%d" % k, Color(col.r, col.g, col.b, en))
+	shader_mat.set_shader_parameter("uv_scale", UV_SCALE)
+	shader_mat.set_shader_parameter("map_size", Vector2(GW, GH))
+	shader_mat.set_shader_parameter("res", Vector2(RX, RZ))
+func _w(k, v):
+	return weights[k][v] if k < weights.size() else 0.0
+func _v(i, j):
+	return Vector3(float(i) / float(SUBDIV), heights[i + j * RX], float(j) / float(SUBDIV))
+func cell_h(gx, gy):
+	var i = clampi(gx * SUBDIV + SUBDIV / 2, 0, RX - 1)
+	var j = clampi(gy * SUBDIV + SUBDIV / 2, 0, RZ - 1)
+	return heights[i + j * RX]
+func sample_h(x, z):
+	var fx = clampf(x, 0, GW) * SUBDIV
+	var fz = clampf(z, 0, GH) * SUBDIV
+	var i0 = int(fx)
+	var j0 = int(fz)
+	var i1 = mini(i0 + 1, RX - 1)
+	var j1 = mini(j0 + 1, RZ - 1)
+	var tx = fx - i0
+	var tz = fz - j0
+	var h00 = heights[i0 + j0 * RX]
+	var h10 = heights[i1 + j0 * RX]
+	var h01 = heights[i0 + j1 * RX]
+	var h11 = heights[i1 + j1 * RX]
+	return lerp(lerp(h00, h10, tx), lerp(h01, h11, tx), tz)
+func can_move(fx, fy, tx, ty):
+	return abs(cell_h(fx, fy) - cell_h(tx, ty)) <= MAX_STEP
+func push_undo():
+	var ws = []
+	for k in weights:
+		ws.append(k.duplicate())
+	history.append({"h": heights.duplicate(), "w": ws})
+	if history.size() > 8:
+		history.pop_front()
+func undo():
+	if history.size() > 0:
+		var sn = history.pop_back()
+		heights = sn["h"]
+		if sn["w"].size() == weights.size():
+			weights = sn["w"]
+		build()
+func apply_brush(x, z, radius, strength, mode):
+	var ci = int(round(x * SUBDIV))
+	var cj = int(round(z * SUBDIV))
+	var ri = int(round(radius * SUBDIV))
+	var aff = []
+	for j in range(maxi(0, cj - ri), mini(RZ, cj + ri + 1)):
+		for i in range(maxi(0, ci - ri), mini(RX, ci + ri + 1)):
+			var d = sqrt((i - ci) * (i - ci) + (j - cj) * (j - cj)) / float(SUBDIV)
+			if d > radius:
+				continue
+			aff.append([i, j, 1.0 - d / radius])
+	if mode == "smooth":
+		for a in aff:
+			var i = a[0]
+			var j = a[1]
+			var s = 0.0
+			var n = 0
+			for dd in [[1,0],[-1,0],[0,1],[0,-1]]:
+				var ii = i + dd[0]
+				var jj = j + dd[1]
+				if ii >= 0 and jj >= 0 and ii < RX and jj < RZ:
+					s += heights[ii + jj * RX]
+					n += 1
+			if n > 0:
+				heights[i + j * RX] = lerp(heights[i + j * RX], s / n, 0.5)
+	else:
+		for a in aff:
+			var idx = a[0] + a[1] * RX
+			if mode == "raise":
+				heights[idx] += strength * a[2]
+			elif mode == "lower":
+				heights[idx] -= strength * a[2]
+	build()
+func to_data():
+	return {"gw": GW, "gh": GH, "sub": SUBDIV, "h": heights, "w": weights, "chunks": chunk_mask, "ox": OX, "oy": OY}
+func _resample(old, oRX, oRZ):
+	var osx = float(oRX - 1) / float(GW)
+	var osz = float(oRZ - 1) / float(GH)
+	var out = []
+	out.resize(RX * RZ)
+	for j in RZ:
+		for i in RX:
+			var x = float(i) / float(SUBDIV) * osx
+			var z = float(j) / float(SUBDIV) * osz
+			var i0 = int(x)
+			var j0 = int(z)
+			var i1 = mini(i0 + 1, oRX - 1)
+			var j1 = mini(j0 + 1, oRZ - 1)
+			var tx = x - i0
+			var tz = z - j0
+			out[i + j * RX] = lerp(lerp(old[i0 + j0 * oRX], old[i1 + j0 * oRX], tx), lerp(old[i0 + j1 * oRX], old[i1 + j1 * oRX], tx), tz)
+	return out
+func from_data(d):
+	OX = int(d.get("ox", 0))
+	OY = int(d.get("oy", 0))
+	var osub = int(d.get("sub", 4))
+	var oRX = GW * osub + 1
+	var oRZ = GH * osub + 1
+	var h = d.get("h", [])
+	if h.size() == RX * RZ:
+		heights = h.duplicate()
+	elif h.size() == oRX * oRZ:
+		heights = _resample(h, oRX, oRZ)
+	var w = d.get("w", [])
+	if w.size() == weights.size() and w[0].size() == RX * RZ:
+		weights = []
+		for k in w:
+			weights.append(k.duplicate())
+	elif w.size() > 0 and w[0].size() == oRX * oRZ:
+		weights = []
+		for k in w:
+			weights.append(_resample(k, oRX, oRZ))
+		for v in RX * RZ:
+			_norm(v)
+	else:
+		var m = d.get("mats", [])
+		_reset_weights(mats_def.size())
+		if m.size() == (oRX - 1) * (oRZ - 1):
+			for j in RZ:
+				for i in RX:
+					var qi = mini(int(float(i) / SUBDIV * (oRX - 1)), oRX - 2)
+					var qj = mini(int(float(j) / SUBDIV * (oRZ - 1)), oRZ - 2)
+					var mi = int(m[qi + qj * (oRX - 1)])
+					if mi < weights.size():
+						for k in weights.size():
+							weights[k][i + j * RX] = 1.0 if k == mi else 0.0
+		elif m.size() == GW * GH:
+			for j in RZ:
+				for i in RX:
+					var mi = int(m[clampi(i / SUBDIV, 0, GW - 1) + clampi(j / SUBDIV, 0, GH - 1) * GW])
+					if mi < weights.size():
+						for k in weights.size():
+							weights[k][i + j * RX] = 1.0 if k == mi else 0.0
+	build()
+
+	var cm = d.get("chunks", {})
+	if cm.size() == 0:
+		var x0 = int(floor(float(OX) / float(CHUNK)))
+		var y0 = int(floor(float(OY) / float(CHUNK)))
+		var x1 = int(ceil(float(OX + GW) / float(CHUNK)))
+		var y1 = int(ceil(float(OY + GH) / float(CHUNK)))
+		for cy in range(y0, y1):
+			for cx in range(x0, x1):
+				cm[str(cx) + "," + str(cy)] = 1
+	chunk_mask = cm
+	for v in RX * RZ:
+		var sum = 0.0
+		for k in weights.size():
+			sum += weights[k][v]
+		if sum < 0.5 and weights.size() > 0:
+			weights[0][v] = 1.0
+func has_cell(x, y):
+	var ax = x + OX
+	var ay = y + OY
+	if ax < 0 or ay < 0:
+		return false
+	return chunk_mask.has(str(int(floor(float(ax) / float(CHUNK)))) + "," + str(int(floor(float(ay) / float(CHUNK)))))
+func add_chunk(cx, cy):
+	var key = str(cx) + "," + str(cy)
+	if chunk_mask.has(key):
+		return {"ok": false, "dx": 0, "dy": 0}
+	chunk_mask[key] = 1
+	var minx = min(OX, cx * CHUNK)
+	var miny = min(OY, cy * CHUNK)
+	var maxx = max(OX + GW, (cx + 1) * CHUNK)
+	var maxy = max(OY + GH, (cy + 1) * CHUNK)
+	var dx = OX - minx
+	var dy = OY - miny
+	if maxx - minx != GW or maxy - miny != GH or dx != 0 or dy != 0:
+		_resize(minx, miny, maxx - minx, maxy - miny)
+	else:
+		build()
+	return {"ok": true, "dx": dx, "dy": dy}
+func _resize(nox, noy, ngw, ngh):
+	var sdx = OX - nox
+	var sdy = OY - noy
+	var oRX = RX
+	var oRZ = RZ
+	var oh = heights
+	var ow = weights
+	GW = ngw
+	GH = ngh
+	OX = nox
+	OY = noy
+	RX = GW * SUBDIV + 1
+	RZ = GH * SUBDIV + 1
+	heights = []
+	heights.resize(RX * RZ)
+	heights.fill(0.0)
+	var nw = []
+	for k in ow.size():
+		var a = []
+		a.resize(RX * RZ)
+		a.fill(0.0)
+		nw.append(a)
+	for j in oRZ:
+		for i in oRX:
+			var ni = i + sdx * SUBDIV
+			var nj = j + sdy * SUBDIV
+			if ni >= 0 and nj >= 0 and ni < RX and nj < RZ:
+				heights[ni + nj * RX] = oh[i + j * oRX]
+				for k in ow.size():
+					nw[k][ni + nj * RX] = ow[k][i + j * oRX]
+	for v in RX * RZ:
+		var sum = 0.0
+		for k in nw.size():
+			sum += nw[k][v]
+		if sum < 0.5 and nw.size() > 0:
+			nw[0][v] = 1.0
+	weights = nw
+	build()
+
+##### FILE: res://scripts/work3d.gd #####
+extends Node3D
+var yaw_n: Node3D
+var pitch_n: Node3D
+var cam: Camera3D
+var yaw = 0.6
+var pitch = -0.9
+var dist = 10.0
+var target = Vector3(4, 0, 3)
+var mid_drag = false
+var right_drag = false
+var terr = null
+var content: Node3D
+var CLASSES = {}
+var OBJ3 = {}
+var sculpt = false
+var paint_mode = false
+var chunk_mode = false
+var sculpt_btn = ""
+var brush_radius = 1.5
+var strength = 0.06
+var force_mode = false
+var radius_mode = false
+var paint_mat = 0
+var brush_ind = null
+var ind_alpha = 0.07
+var str_slider: HSlider
+var rad_slider: HSlider
+var str_lab: Label
+var rad_lab: Label
+var mat_opt: OptionButton
+var tool_lab: Label
+func _ready():
+	add_to_group("work")
+	Game.log_scene("work3d_ready")
+	if get_tree().get_nodes_in_group("work").size() > 1:
+		queue_free()
+		return
+	CLASSES = _lj("res://data/classes.json")
+	OBJ3 = _lj("res://data/objects.json")
+	yaw_n = Node3D.new()
+	add_child(yaw_n)
+	pitch_n = Node3D.new()
+	yaw_n.add_child(pitch_n)
+	cam = Camera3D.new()
+	pitch_n.add_child(cam)
+	cam.position = Vector3(0, 0, dist)
+	var dl = DirectionalLight3D.new()
+	dl.rotation_degrees = Vector3(-50, 30, 0)
+	add_child(dl)
+	var env = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.05, 0.06, 0.08)
+	var we = WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+	content = Node3D.new()
+	add_child(content)
+	_ui()
+	load_edit()
+	_apply()
+func _ui():
+	var ui = Control.new()
+	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ui)
+	var col = VBoxContainer.new()
+	col.position = Vector2(10, 10)
+	col.add_theme_constant_override("separation", 6)
+	ui.add_child(col)
+	var pn = _panel(col, "НАВИГАЦИЯ")
+	var bb = Button.new()
+	bb.text = "← в игру"
+	bb.pressed.connect(func(): get_tree().call_group("con", "_edit_back"))
+	pn.add_child(bb)
+	var pt = _panel(col, "ИНСТРУМЕНТЫ")
+	tool_lab = Label.new()
+	tool_lab.autowrap_mode = TextServer.AUTOWRAP_WORD
+	tool_lab.custom_minimum_size = Vector2(260, 0)
+	pt.add_child(tool_lab)
+	var bch = Button.new()
+	bch.text = "ЧАНКИ [C]"
+	bch.pressed.connect(func():
+		chunk_mode = not chunk_mode
+		_upd_tool())
+	pt.add_child(bch)
+	str_slider = HSlider.new()
+	str_slider.min_value = 0.01
+	str_slider.max_value = 0.25
+	str_slider.step = 0.005
+	str_slider.value = strength
+	str_slider.custom_minimum_size = Vector2(180, 20)
+	str_slider.value_changed.connect(func(v): strength = v; _upd_str(); _flash())
+	pt.add_child(str_slider)
+	str_lab = Label.new()
+	pt.add_child(str_lab)
+	rad_slider = HSlider.new()
+	rad_slider.min_value = 0.125
+	rad_slider.max_value = 4.0
+	rad_slider.step = 0.125
+	rad_slider.value = brush_radius
+	rad_slider.custom_minimum_size = Vector2(180, 20)
+	rad_slider.value_changed.connect(func(v): brush_radius = v; _upd_rad(); _make_ind(); _flash())
+	pt.add_child(rad_slider)
+	rad_lab = Label.new()
+	pt.add_child(rad_lab)
+	mat_opt = OptionButton.new()
+	mat_opt.custom_minimum_size = Vector2(140, 26)
+	var m = _lj("res://data/materials.json")
+	for k in m:
+		mat_opt.add_item(str(m[k].get("name", k)))
+	mat_opt.item_selected.connect(func(i): paint_mat = i)
+	pt.add_child(mat_opt)
+	_upd_str()
+	_upd_rad()
+	_upd_tool()
+func _panel(parent, title):
+	var pc = PanelContainer.new()
+	parent.add_child(pc)
+	var vb = VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	pc.add_child(vb)
+	var hb = Button.new()
+	hb.text = "[-] " + title
+	vb.add_child(hb)
+	var body = VBoxContainer.new()
+	body.add_theme_constant_override("separation", 4)
+	vb.add_child(body)
+	hb.pressed.connect(func():
+		body.visible = not body.visible
+		hb.text = ("[-] " if body.visible else "[+] ") + title)
+	return body
+func _upd_tool():
+	if tool_lab != null:
+		tool_lab.text = "инструмент из конструктора: %s | T скульпт | P краска | U отмена" % Game.edit_tool
+func _upd_str():
+	if str_lab != null:
+		str_lab.text = "сила %.3f" % strength
+func _upd_rad():
+	if rad_lab != null:
+		rad_lab.text = "радиус %.2f" % brush_radius
+func _flash():
+	ind_alpha = 0.3
+	if brush_ind != null:
+		brush_ind.mesh.material.albedo_color = Color(1, 1, 1, ind_alpha)
+func _lj(p):
+	var f = FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {}
+	var s = f.get_as_text()
+	f.close()
+	var j = JSON.parse_string(s)
+	return {} if j == null else j
+func _tex(path):
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var im = Image.new()
+	if im.load(path) != OK:
+		return null
+	return ImageTexture.create_from_image(im)
+func _mat_defs():
+	var m = _lj("res://data/materials.json")
+	var defs = []
+	for k in m:
+		defs.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})
+	return defs
+func L():
+	return Game.edit_data if Game.edit_data != null else {}
+func load_edit():
+	sculpt = false
+	paint_mode = false
+	CLASSES = _lj("res://data/classes.json")
+	OBJ3 = _lj("res://data/objects.json")
+	rebuild()
+	_upd_tool()
+func rebuild():
+	for c in content.get_children():
+		c.free()
+	terr = null
+	if brush_ind != null:
+		brush_ind.queue_free()
+		brush_ind = null
+	var td0 = L().get("terrain", {})
+	terr = load("res://scripts/terrain.gd").new(int(td0.get("gw", 8)), int(td0.get("gh", 6)), int(td0.get("sub", 8)))
+	content.add_child(terr)
+	terr.set_materials(_mat_defs())
+	var td = td0
+	if td.size() > 0:
+		terr.from_data(td)
+	else:
+		terr.build()
+	var m = L().get("map", {})
+	for o in m.get("objects", []):
+		_obj3(Vector3(o["cell"][0] + 0.5, 0, o["cell"][1] + 0.5), o.get("k", "rock"))
+	for r in m.get("rocks", []):
+		_obj3(Vector3(r[0] + 0.5, 0, r[1] + 0.5), "rock")
+	for u in m.get("units", []):
+		_unit3(Vector3(u["cell"][0] + 0.5, 0, u["cell"][1] + 0.5), int(u.get("team", 1)), u.get("cls", "swordsman"))
+	if sculpt:
+		_make_ind()
+func _obj3(p, k):
+	p.y = terr.sample_h(p.x, p.z) if terr != null else 0.0
+	var od = OBJ3.get(k, {})
+	var mn = _model_inst(str(od.get("model", ""))) if bool(od.get("render3d", false)) else null
+	if mn != null:
+		var ms = float(od.get("mscale", 1.0))
+		mn.scale = Vector3(ms, ms, ms)
+		mn.position = p + Vector3(0, float(od.get("myoff", 0.0)), 0)
+		content.add_child(mn)
+		return
+	var oimg = str(od.get("img", ""))
+	var ot = _tex(oimg) if oimg != "" else null
+	if ot != null:
+		var h = 1.2 * float(od.get("scale", 1.0)) * float(od.get("mscale", 1.0))
+		var sp = Sprite3D.new()
+		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.pixel_size = h / float(ot.get_height())
+		sp.texture = ot
+		sp.position = p + Vector3(0, h * 0.5 + float(od.get("myoff", 0.0)), 0)
+		content.add_child(sp)
+		return
+	var m = MeshInstance3D.new()
+	var mi = StandardMaterial3D.new()
+	if k == "tree":
+		var cm = CylinderMesh.new()
+		cm.top_radius = 0.05
+		cm.bottom_radius = 0.42
+		cm.height = 1.0
+		mi.albedo_color = Color(0.15, 0.4, 0.2)
+		cm.material = mi
+		m.mesh = cm
+		m.position = p + Vector3(0, 0.5, 0)
+	else:
+		var bm = BoxMesh.new()
+		bm.size = Vector3(0.7, 0.5, 0.7)
+		mi.albedo_color = Color(0.45, 0.45, 0.5)
+		bm.material = mi
+		m.mesh = bm
+		m.position = p + Vector3(0, 0.25, 0)
+	content.add_child(m)
+func _unit3(p, team, cid):
+	var cd = CLASSES.get(cid, {})
+	var sc = float(cd.get("scale", 1.0))
+	var tcol = Color(0.2, 0.5, 0.9) if team == 0 else Color(0.9, 0.25, 0.25)
+	p.y = terr.sample_h(p.x, p.z) if terr != null else 0.0
+	var img = cd.get("img", "")
+	var t = _tex(img) if img != "" else null
+	var mn = _model_inst(str(cd.get("model", ""))) if bool(cd.get("render3d", false)) else null
+	if mn != null:
+		var ms = float(cd.get("mscale", 1.0))
+		mn.scale = Vector3(ms, ms, ms)
+		mn.position = p + Vector3(0, float(cd.get("myoff", 0.0)), 0)
+		content.add_child(mn)
+	elif t != null:
+		var sp = Sprite3D.new()
+		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.pixel_size = 0.004
+		sp.scale = Vector3(sc, sc, sc)
+		sp.position = p + Vector3(0, 0.85 * sc, 0)
+		sp.texture = t
+		content.add_child(sp)
+	else:
+		var m = MeshInstance3D.new()
+		var cm = CapsuleMesh.new()
+		cm.radius = 0.28
+		cm.height = 0.9
+		var mi = StandardMaterial3D.new()
+		mi.albedo_color = tcol
+		cm.material = mi
+		m.mesh = cm
+		m.position = p + Vector3(0, 0.45, 0)
+		content.add_child(m)
+	var lb = Label3D.new()
+	lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lb.text = str(cd.get("name", cid))
+	lb.pixel_size = 0.004
+	lb.position = p + Vector3(0, 1.8 * sc, 0)
+	lb.modulate = Color(1, 1, 1) if team == 0 else Color(1, 0.6, 0.6)
+	content.add_child(lb)
+func _sync():
+	get_tree().call_group("con", "on_work_dirty")
+func _make_ind():
+	if brush_ind != null:
+		brush_ind.queue_free()
+		brush_ind = null
+	if not sculpt:
+		return
+	brush_ind = MeshInstance3D.new()
+	var cm = CylinderMesh.new()
+	cm.top_radius = brush_radius
+	cm.bottom_radius = brush_radius
+	cm.height = 0.02
+	var mi = StandardMaterial3D.new()
+	mi.albedo_color = Color(1, 1, 1, ind_alpha)
+	mi.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	cm.material = mi
+	brush_ind.mesh = cm
+	add_child(brush_ind)
+func _apply():
+	yaw_n.position = target
+	yaw_n.rotation = Vector3(0, yaw, 0)
+	pitch_n.rotation = Vector3(pitch, 0, 0)
+	cam.position = Vector3(0, 0, dist)
+func _input(ev):
+	if ev is InputEventMouseButton:
+		if ev.button_index == MOUSE_BUTTON_RIGHT:
+			right_drag = ev.pressed
+		elif ev.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = ev.pressed
+		elif ev.button_index == MOUSE_BUTTON_WHEEL_UP and ev.pressed:
+			if force_mode:
+				strength = clampf(strength + 0.005, 0.01, 0.25)
+				str_slider.value = strength
+				_upd_str()
+			elif radius_mode:
+				brush_radius = clampf(brush_radius + 0.25, 0.5, 4.0)
+				rad_slider.value = brush_radius
+				_upd_rad()
+				_make_ind()
+			else:
+				dist = clampf(dist - 1.0, 4, 25)
+				_apply()
+		elif ev.button_index == MOUSE_BUTTON_WHEEL_DOWN and ev.pressed:
+			if force_mode:
+				strength = clampf(strength - 0.005, 0.01, 0.25)
+				str_slider.value = strength
+				_upd_str()
+			elif radius_mode:
+				brush_radius = clampf(brush_radius - 0.25, 0.5, 4.0)
+				rad_slider.value = brush_radius
+				_upd_rad()
+				_make_ind()
+			else:
+				dist = clampf(dist + 1.0, 4, 25)
+				_apply()
+		return
+
+func _unhandled_input(ev):
+	if not visible:
+		return
+	if ev is InputEventKey and ev.pressed:
+		if ev.keycode == KEY_T:
+			sculpt = not sculpt
+			_make_ind()
+			_upd_tool()
+			return
+		if ev.keycode == KEY_P:
+			paint_mode = not paint_mode
+			return
+		if ev.keycode == KEY_U and terr != null:
+			terr.undo()
+			L()["terrain"] = terr.to_data()
+			_sync()
+			return
+		if ev.keycode == KEY_F:
+			force_mode = not force_mode
+			return
+		if ev.keycode == KEY_C:
+			chunk_mode = not chunk_mode
+			_upd_tool()
+			return
+			radius_mode = not radius_mode
+			return
+	if ev is InputEventMouseButton:
+		if ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev.pressed and sculpt:
+				sculpt_btn = "smooth" if ev.shift_pressed else ("lower" if ev.ctrl_pressed else "raise")
+				terr.push_undo()
+				_brush_at(ev.position, sculpt_btn)
+			elif not ev.pressed and sculpt_btn != "":
+				sculpt_btn = ""
+				L()["terrain"] = terr.to_data()
+				_sync()
+			elif ev.pressed and paint_mode:
+				terr.reset_stroke()
+				var pp = _ray(ev.position)
+				if pp != null:
+					terr.paint_at(pp.x, pp.z, brush_radius, paint_mat)
+					L()["terrain"] = terr.to_data()
+					_sync()
+			elif ev.pressed and chunk_mode:
+				_chunk_at(ev.position)
+				return
+			elif ev.pressed:
+				_place_click(ev.position)
+	elif ev is InputEventMouseMotion:
+		if right_drag:
+			yaw -= ev.relative.x * 0.005
+			pitch = clampf(pitch - ev.relative.y * 0.005, -1.45, -0.15)
+			_apply()
+		elif mid_drag:
+			var k = dist * 0.0016
+			var right = yaw_n.global_transform.basis.x
+			var fwd = -yaw_n.global_transform.basis.z
+			target -= right * ev.relative.x * k
+			target += fwd * ev.relative.y * k
+			_apply()
+		elif sculpt_btn != "":
+			_brush_at(ev.position, sculpt_btn)
+		elif paint_mode and ev.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			var pm = _ray(ev.position)
+			if pm != null:
+				terr.paint_at(pm.x, pm.z, brush_radius, paint_mat)
+				L()["terrain"] = terr.to_data()
+				_sync()
+		if sculpt and brush_ind != null:
+			_move_ind(ev.position)
+func _place_click(mp):
+	var c = _pick(mp)
+	if c == null:
+		return
+	if terr != null and not terr.has_cell(c.x, c.y):
+		return
+	var Ld = L()
+	var m = Ld.get("map", {})
+	if m.is_empty():
+		m = {"rocks": [], "objects": [], "units": []}
+		Ld["map"] = m
+	_erase(m, c.x, c.y)
+	if Game.edit_tool == "erase":
+		_sync()
+		rebuild()
+		return
+	if Game.edit_tool == "place":
+		if Game.edit_what == "obj":
+			m["objects"].append({"cell": [c.x, c.y], "k": Game.edit_obj})
+		else:
+			m["units"].append({"cls": Game.edit_cls, "team": 0 if Game.edit_what == "mine" else 1, "cell": [c.x, c.y]})
+		_sync()
+		rebuild()
+func _erase(m, x, y):
+	var no = []
+	for o in m.get("objects", []):
+		if int(o["cell"][0]) != x or int(o["cell"][1]) != y:
+			no.append(o)
+	m["objects"] = no
+	var nr = []
+	for r in m.get("rocks", []):
+		if int(r[0]) != x or int(r[1]) != y:
+			nr.append(r)
+	m["rocks"] = nr
+	var nu = []
+	for u in m.get("units", []):
+		if int(u["cell"][0]) != x or int(u["cell"][1]) != y:
+			nu.append(u)
+	m["units"] = nu
+func _brush_at(mp, t):
+	var p = _ray(mp)
+	if p == null:
+		return
+	terr.apply_brush(p.x, p.z, brush_radius, strength, t)
+	_move_ind(mp)
+func _move_ind(mp):
+	if brush_ind == null:
+		return
+	var p = _ray(mp)
+	if p == null:
+		return
+	brush_ind.position = Vector3(p.x, terr.sample_h(p.x, p.z) + 0.05, p.z)
+func _ray(mp):
+	var c3 = get_viewport().get_camera_3d()
+	var from = c3.project_ray_origin(mp)
+	var dir = c3.project_ray_normal(mp)
+	if abs(dir.y) < 0.0001:
+		return null
+	var t = -from.y / dir.y
+	if t < 0:
+		return null
+	return from + dir * t
+func _pick(mp):
+	var p = _ray(mp)
+	if p == null:
+		return null
+	var cx = int(p.x)
+	var cz = int(p.z)
+	if cx < 0 or cz < 0 or cx >= 8 or cz >= 6:
+		return null
+	return Vector2i(cx, cz)
+
+func _model_inst(path):
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var res = load(path)
+	if res is PackedScene:
+		return res.instantiate()
+	return null
+
+func _chunk_at(mp):
+	var p = _ray(mp)
+	if p == null or terr == null:
+		return
+	var ax = int(floor(p.x)) + terr.OX
+	var ay = int(floor(p.z)) + terr.OY
+	var cx = int(floor(float(ax) / 8.0))
+	var cy = int(floor(float(ay) / 8.0))
+	var r = terr.add_chunk(cx, cy)
+	if r.ok:
+		if r.dx != 0 or r.dy != 0:
+			_shift_map(Vector2i(r.dx, r.dy))
+		L()["terrain"] = terr.to_data()
+		_sync()
+
+func _shift_map(d):
+	var m = L().get("map", {})
+	for o in m.get("objects", []):
+		o["cell"][0] += d.x
+		o["cell"][1] += d.y
+	for rr in m.get("rocks", []):
+		rr[0] += d.x
+		rr[1] += d.y
+	for u in m.get("units", []):
+		u["cell"][0] += d.x
+		u["cell"][1] += d.y
+	var el = m.get("elev", {})
+	if el.size() > 0:
+		var ne = {}
+		for k in el:
+			var p2 = k.split(",")
+			ne[str(int(p2[0]) + d.x) + "," + str(int(p2[1]) + d.y)] = el[k]
+		m["elev"] = ne

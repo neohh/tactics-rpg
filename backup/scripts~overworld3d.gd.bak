@@ -1,0 +1,329 @@
+extends Node3D
+var yaw_n: Node3D
+var pitch_n: Node3D
+var cam: Camera3D
+var yaw = 0.0
+var pitch = -0.9
+var dist = 30.0
+var target = Vector3(0, 0, 0)
+var mid_drag = false
+var right_drag = false
+var token: MeshInstance3D
+var traveling = false
+var LOCS = {}
+var CHARS = {}
+var S = 0.12
+var hint: Label
+func _ready():
+	add_to_group("live")
+	LOCS = _lj("res://data/locations.json")
+	CHARS = _lj("res://data/chars.json")
+	_setup_cam()
+	_build_world()
+	var c = LOCS.get(Game.cur_loc, {}).get("pos", [400, 300])
+	target = Vector3(c[0] * S, 0, c[1] * S)
+	_apply()
+	_ui()
+func _ui():
+	var ui = Control.new()
+	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ui)
+	hint = Label.new()
+	hint.position = Vector2(10, 10)
+	ui.add_child(hint)
+	_upd_hint()
+func _upd_hint():
+	if hint == null:
+		return
+	var L = LOCS.get(Game.cur_loc, {})
+	hint.text = "%s | Золото %d | Еда %d | День %d %d:00 | Клик по связи — переход, по своей — войти | H лавка S сон J журнал G/L сейв M меню" % [str(L.get("name", "")), Game.gold, Game.food, Game.day, Game.hour]
+func _setup_cam():
+	yaw_n = Node3D.new()
+	add_child(yaw_n)
+	pitch_n = Node3D.new()
+	yaw_n.add_child(pitch_n)
+	cam = Camera3D.new()
+	pitch_n.add_child(cam)
+	cam.position = Vector3(0, 0, dist)
+func live_reload():
+	LOCS = _lj("res://data/locations.json")
+	for c in get_children():
+		c.queue_free()
+	_setup_cam()
+	_build_world()
+	_apply()
+	_ui()
+func _lj(p):
+	var f = FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {}
+	var s = f.get_as_text()
+	f.close()
+	var j = JSON.parse_string(s)
+	return {} if j == null else j
+func _build_world():
+	var g = MeshInstance3D.new()
+	var pm = PlaneMesh.new()
+	pm.size = Vector2(200, 140)
+	var gm = StandardMaterial3D.new()
+	gm.albedo_color = Color(0.10, 0.14, 0.10)
+	pm.material = gm
+	g.mesh = pm
+	g.position = Vector3(60, -0.05, 40)
+	add_child(g)
+	var dl = DirectionalLight3D.new()
+	dl.rotation_degrees = Vector3(-50, 30, 0)
+	add_child(dl)
+	var env = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.04, 0.05, 0.07)
+	var we = WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+	for id in LOCS:
+		var L = LOCS[id]
+		var p = Vector3(L.get("pos", [200, 200])[0] * S, 0, L.get("pos", [200, 200])[1] * S)
+		var root = Node3D.new()
+		root.position = p
+		add_child(root)
+		_loc_mesh(root, str(L.get("type", "field")))
+		var lb = Label3D.new()
+		lb.text = str(L.get("name", id))
+		lb.pixel_size = 0.01
+		lb.position = Vector3(0, 3.2, 0)
+		lb.modulate = Color(1, 0.9, 0.6) if id == Game.cur_loc else Color(0.8, 0.8, 0.8)
+		root.add_child(lb)
+		var area = Area3D.new()
+		area.input_ray_pickable = true
+		var cs = CollisionShape3D.new()
+		var sh = SphereShape3D.new()
+		sh.radius = 2.5
+		cs.shape = sh
+		cs.position = Vector3(0, 1.2, 0)
+		area.add_child(cs)
+		root.add_child(area)
+		area.input_event.connect(_on_loc_click.bind(id))
+	_make_token()
+	for id in LOCS:
+		for lk in LOCS[id].get("links", []):
+			if str(id) < str(lk) and LOCS.has(lk):
+				var a = LOCS[id].get("pos", [0, 0])
+				var b = LOCS[lk].get("pos", [0, 0])
+				var pa = Vector3(a[0] * S, 0, a[1] * S)
+				var pb = Vector3(b[0] * S, 0, b[1] * S)
+				var mid = (pa + pb) * 0.5
+				var d = pb - pa
+				var len = d.length()
+				var m = MeshInstance3D.new()
+				var bm = BoxMesh.new()
+				bm.size = Vector3(0.5, 0.05, len)
+				var mi = StandardMaterial3D.new()
+				mi.albedo_color = Color(0.35, 0.3, 0.22)
+				bm.material = mi
+				m.mesh = bm
+				m.position = mid + Vector3(0, 0.02, 0)
+				m.rotation.y = atan2(d.x, d.z)
+				add_child(m)
+func _loc_mesh(root, type):
+	if type == "town":
+		var m = MeshInstance3D.new()
+		var bm = BoxMesh.new()
+		bm.size = Vector3(2.4, 1.6, 2.0)
+		var mi = StandardMaterial3D.new()
+		mi.albedo_color = Color(0.75, 0.6, 0.4)
+		bm.material = mi
+		m.mesh = bm
+		m.position = Vector3(0, 0.8, 0)
+		root.add_child(m)
+		var r = MeshInstance3D.new()
+		var pm = PrismMesh.new()
+		pm.size = Vector3(2.8, 1.0, 2.4)
+		var rm = StandardMaterial3D.new()
+		rm.albedo_color = Color(0.6, 0.2, 0.15)
+		pm.material = rm
+		r.mesh = pm
+		r.position = Vector3(0, 2.1, 0)
+		root.add_child(r)
+	elif type == "camp":
+		var t = MeshInstance3D.new()
+		var cm = CylinderMesh.new()
+		cm.top_radius = 0.1
+		cm.bottom_radius = 1.4
+		cm.height = 1.8
+		var tm = StandardMaterial3D.new()
+		tm.albedo_color = Color(0.7, 0.65, 0.55)
+		cm.material = tm
+		t.mesh = cm
+		t.position = Vector3(0, 0.9, 0)
+		root.add_child(t)
+		var f = MeshInstance3D.new()
+		var fm = CylinderMesh.new()
+		fm.top_radius = 0.15
+		fm.bottom_radius = 0.3
+		fm.height = 0.6
+		var ffm = StandardMaterial3D.new()
+		ffm.albedo_color = Color(1.0, 0.5, 0.1)
+		fm.material = ffm
+		f.mesh = fm
+		f.position = Vector3(1.4, 0.3, 0.6)
+		root.add_child(f)
+	else:
+		var t = MeshInstance3D.new()
+		var cm = CylinderMesh.new()
+		cm.top_radius = 0.1
+		cm.bottom_radius = 1.0
+		cm.height = 2.2
+		var tm = StandardMaterial3D.new()
+		tm.albedo_color = Color(0.15, 0.4, 0.2)
+		cm.material = tm
+		t.mesh = cm
+		t.position = Vector3(0, 1.1, 0)
+		root.add_child(t)
+func _make_token():
+	token = MeshInstance3D.new()
+	var tm = CylinderMesh.new()
+	tm.top_radius = 1.4
+	tm.bottom_radius = 1.4
+	tm.height = 0.25
+	var tmi = StandardMaterial3D.new()
+	tmi.albedo_color = Color(1, 0.8, 0.2)
+	tmi.emission_enabled = true
+	tmi.emission = Color(1, 0.7, 0.1)
+	tmi.emission_energy_multiplier = 2.0
+	tm.material = tmi
+	token.mesh = tm
+	token.position = _pos3(Game.cur_loc)
+	add_child(token)
+func _process(_d):
+	if traveling:
+		target = token.position
+		_apply()
+func _on_loc_click(_c, ev, _p2, _n, _si, id):
+	if not (ev is InputEventMouseButton) or not ev.pressed or ev.button_index != MOUSE_BUTTON_LEFT:
+		return
+	_click_loc(id)
+func _pos3(id):
+	var p = LOCS.get(id, {}).get("pos", [200, 200])
+	return Vector3(p[0] * S, 0, p[1] * S)
+func _click_loc(id):
+	var cur = LOCS.get(Game.cur_loc, {})
+	if id == Game.cur_loc:
+		_enter(id)
+		return
+	if not cur.get("links", []).has(id):
+		_upd_hint()
+		return
+	if traveling:
+		return
+	traveling = true
+	var tw = create_tween()
+	tw.tween_property(token, "position", _pos3(id), 1.2)
+	await tw.finished
+	traveling = false
+	if Game.food > 0:
+		Game.food -= 1
+	else:
+		Game.fatigue += 1
+	Game.hour += 2
+	if Game.hour >= 24:
+		Game.hour -= 24
+		Game.day += 1
+	Game.cur_loc = id
+	_upd_hint()
+	if randf() < 0.35 and str(LOCS.get(id, {}).get("type", "")) != "town":
+		_make_enc()
+		get_tree().change_scene_to_file("res://world3d.tscn")
+		return
+	_play_dlg(LOCS.get(id, {}).get("dlg", {}).get("arrive", ""))
+	_enter(id)
+func _enter(id):
+	var L = LOCS.get(id, {})
+	if str(L.get("type", "")) == "town":
+		_upd_hint()
+	else:
+		get_tree().change_scene_to_file("res://world3d.tscn")
+func _play_dlg(dn):
+	if dn == "":
+		return
+	var f = FileAccess.open("res://data/dialogs/%s.json" % dn, FileAccess.READ)
+	if f == null:
+		return
+	var data = JSON.parse_string(f.get_as_text())
+	f.close()
+	if data == null:
+		return
+	var d = load("res://scripts/dialog.gd").new()
+	d.chars = CHARS
+	add_child(d)
+	d.play(data)
+func _apply():
+	yaw_n.position = target
+	yaw_n.rotation = Vector3(0, yaw, 0)
+	pitch_n.rotation = Vector3(pitch, 0, 0)
+	cam.position = Vector3(0, 0, dist)
+func _unhandled_input(ev):
+	if ev is InputEventKey and ev.pressed:
+		var L = LOCS.get(Game.cur_loc, {})
+		if ev.keycode == KEY_M:
+			get_tree().change_scene_to_file("res://menu.tscn")
+			return
+		if ev.keycode == KEY_J:
+			var j = load("res://scripts/journal.gd").new()
+			add_child(j)
+			return
+		if ev.keycode == KEY_G:
+			Game.save_game()
+			return
+		if ev.keycode == KEY_L:
+			if Game.load_game():
+				live_reload()
+			return
+		if ev.keycode == KEY_H and str(L.get("type", "")) == "town":
+			var s = load("res://scripts/shop.gd").new()
+			s.stock = L.get("shop", ["potion", "food"])
+			add_child(s)
+			return
+		if ev.keycode == KEY_S and str(L.get("type", "")) == "town":
+			Game.day += 1
+			Game.hour = 8
+			Game.fatigue = 0
+			_upd_hint()
+			return
+	if ev is InputEventMouseButton:
+		if ev.pressed and ev.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = true
+		elif not ev.pressed and ev.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = false
+		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
+			right_drag = true
+		elif not ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
+			right_drag = false
+		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_UP:
+			dist = clampf(dist - 2.0, 8, 80)
+			_apply()
+		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			dist = clampf(dist + 2.0, 8, 80)
+			_apply()
+	elif ev is InputEventMouseMotion:
+		if right_drag:
+			yaw -= ev.relative.x * 0.005
+			pitch = clampf(pitch - ev.relative.y * 0.005, -1.45, -0.15)
+			_apply()
+		elif mid_drag:
+			var k = dist * 0.0016
+			var right = yaw_n.global_transform.basis.x
+			var fwd = -yaw_n.global_transform.basis.z
+			target -= right * ev.relative.x * k
+			target += fwd * ev.relative.y * k
+			_apply()
+
+func _make_enc():
+	var cls = ["assassin", "swordsman", "archer", "halberd"]
+	var units = []
+	for i in range(2 + randi() % 2):
+		units.append({"cls": cls[randi() % cls.size()], "team": 1, "cell": [6, 1 + i * 2]})
+	var objs = []
+	for i in range(4):
+		objs.append({"cell": [2 + randi() % 4, randi() % 6], "k": "tree" if randf() < 0.5 else "rock"})
+	Game.enc = {"map": {"rocks": [], "objects": objs, "units": units}, "gold": 6 + randi() % 12}

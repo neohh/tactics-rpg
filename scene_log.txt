@@ -1,0 +1,1301 @@
+world3d_ready village | scene=World3D:<Node3D#41322284588> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41322284588> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41322284588> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41322284588> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#97374964349> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#97374964349> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#120544298606> | active=true loc=loc_4 cur=village data=false
+set_cat locs | scene=World3D:<Node3D#120544298606> | active=true loc=loc_4 cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#120544298606> | active=true loc=loc_4 cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#161094831120> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#40449869348> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#40449869348> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40449869348> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40449869348> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#90479528577> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#90479528577> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#106552101531> | active=true loc=loc_4 cur=village data=false
+set_cat chars | scene=Constructor:<Control#43117446692> | active=false loc= cur=village data=false
+set_cat locs | scene=Constructor:<Control#43117446692> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Constructor:<Control#43117446692> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72997669344> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Work3D:<Node3D#72997669344> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Constructor:<Control#149099120878> | active=true loc=loc_4 cur=village data=false
+set_cat chars | scene=Menu:<Control#36658218504> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36658218504> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36658218504> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68853697021> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#68853697021> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#39309018635> | active=false loc= cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#54878275686> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#54878275686> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#39309018635> | active=false loc= cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#54408513645> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#54408513645> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#54408513645> | active=false loc= cur=village data=false
+start_edit village | scene=World3D:<Node3D#54408513645> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#145324248203> | active=true loc=village cur=village data=true
+set_cat dialogs | scene=Work3D:<Node3D#145324248203> | active=true loc=village cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#188223588526> | active=true loc=village cur=village data=false
+set_cat quests | scene=World3D:<Node3D#188223588526> | active=true loc=village cur=village data=false
+set_cat locs | scene=World3D:<Node3D#188223588526> | active=true loc=village cur=village data=false
+set_cat chars | scene=Menu:<Control#39309018635> | active=false loc= cur=village data=false
+set_cat chars | scene=@Control@217:<Control#54022637666> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#39309018635> | active=false loc= cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#54358181988> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#54358181988> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#54358181988> | active=false loc= cur=village data=false
+start_edit village | scene=World3D:<Node3D#54358181988> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#219529874571> | active=true loc=village cur=village data=true
+set_cat map | scene=Work3D:<Node3D#219529874571> | active=true loc=village cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#236877514925> | active=true loc=village cur=village data=false
+exit_edit | scene=World3D:<Node3D#236877514925> | active=true loc=village cur=village data=false
+set_cat map | scene=World3D:<Node3D#236877514925> | active=false loc=village cur=village data=false
+set_cat locs | scene=World3D:<Node3D#236877514925> | active=false loc=village cur=village data=false
+v_boy village | scene=World3D:<Node3D#236877514925> | active=false loc=village cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#294742134102> | active=false loc=village cur=village data=false
+set_cat chars | scene=Constructor:<Control#42949674523> | active=false loc= cur=village data=false
+set_cat locs | scene=Constructor:<Control#42949674523> | active=false loc= cur=village data=false
+set_cat chars | scene=Constructor:<Control#42949674523> | active=false loc= cur=village data=false
+set_cat locs | scene=Constructor:<Control#42949674523> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Constructor:<Control#42949674523> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#87426075677> | active=true loc=loc_4 cur=village data=true
+set_cat classes | scene=Work3D:<Node3D#87426075677> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Constructor:<Control#118178711642> | active=true loc=loc_4 cur=village data=false
+set_cat objects | scene=Constructor:<Control#118178711642> | active=true loc=loc_4 cur=village data=false
+set_cat mats | scene=Constructor:<Control#118178711642> | active=true loc=loc_4 cur=village data=false
+set_cat locs | scene=Constructor:<Control#118178711642> | active=true loc=loc_4 cur=village data=false
+start_edit test | scene=Constructor:<Control#118178711642> | active=true loc=loc_4 cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#150743289228> | active=true loc=test cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#150743289228> | active=true loc=test cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#150743289228> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Constructor:<Control#179834980027> | active=true loc=loc_4 cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#42295363105> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#42295363105> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#42295363105> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#42295363105> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#42295363105> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=World3D:<Node3D#42295363105> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=World3D:<Node3D#42295363105> | active=true loc=loc_4 cur=village data=false
+exit_edit | scene=World3D:<Node3D#42295363105> | active=false loc=loc_4 cur=village data=false
+exit_edit | scene=World3D:<Node3D#42295363105> | active=false loc=loc_4 cur=village data=false
+exit_edit | scene=World3D:<Node3D#42295363105> | active=false loc=loc_4 cur=village data=false
+set_cat chars | scene=Constructor:<Control#41842378283> | active=false loc= cur=village data=false
+set_cat locs | scene=Constructor:<Control#41842378283> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Constructor:<Control#41842378283> | active=false loc= cur=village data=false
+work3d_ready | scene=Constructor:<Control#41842378283> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=Constructor:<Control#41842378283> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+exit_edit | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat objects | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat mats | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat objects | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat mats | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat classes | scene=Constructor:<Control#41842378283> | active=false loc=loc_4 cur=village data=false
+set_cat chars | scene=TestTex:<Node3D#44023416363> | active=false loc= cur=village data=false
+set_cat locs | scene=TestTex:<Node3D#44023416363> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=TestTex:<Node3D#44023416363> | active=false loc= cur=village data=false
+work3d_ready | scene=TestTex:<Node3D#44023416363> | active=true loc=loc_4 cur=village data=true
+set_cat classes | scene=TestTex:<Node3D#44023416363> | active=true loc=loc_4 cur=village data=true
+set_cat items | scene=TestTex:<Node3D#44023416363> | active=true loc=loc_4 cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#39560676897> | active=false loc= cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#40835745316> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#40835745316> | active=false loc= cur=village data=false
+set_cat mats | scene=World3D:<Node3D#40835745316> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40835745316> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40835745316> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#40835745316> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=World3D:<Node3D#40835745316> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=World3D:<Node3D#40835745316> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#40835745316> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#40835745316> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#40835745316> | active=false loc=loc_4 cur=village data=true
+world3d_ready loc_4 | scene=World3D:<Node3D#341584120053> | active=false loc=loc_4 cur=loc_4 data=true
+exit_edit | scene=World3D:<Node3D#341584120053> | active=false loc=loc_4 cur=loc_4 data=true
+start_edit test | scene=World3D:<Node3D#341584120053> | active=false loc=loc_4 cur=loc_4 data=false
+start_edit loc_4 | scene=World3D:<Node3D#341584120053> | active=true loc=test cur=loc_4 data=true
+set_cat objects | scene=World3D:<Node3D#341584120053> | active=true loc=loc_4 cur=loc_4 data=true
+world3d_ready village | scene=World3D:<Node3D#40718304817> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#40718304817> | active=false loc= cur=village data=false
+set_cat mats | scene=World3D:<Node3D#40718304817> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40718304817> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40718304817> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#40718304817> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#40684750383> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#40684750383> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40684750383> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40684750383> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#40684750383> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#40684750383> | active=false loc=loc_4 cur=village data=true
+world3d_ready loc_4 | scene=World3D:<Node3D#438992636192> | active=false loc=loc_4 cur=loc_4 data=true
+world3d_ready village | scene=World3D:<Node3D#41406170663> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41406170663> | active=true loc=village cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41422947867> | active=false loc= cur=village data=false
+set_cat chars | scene=Overworld3D:<Node3D#77963724332> | active=false loc= cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#77963724332> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Overworld3D:<Node3D#77963724332> | active=false loc= cur=village data=false
+work3d_ready | scene=Overworld3D:<Node3D#77963724332> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Overworld3D:<Node3D#77963724332> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#43218110003> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#43218110003> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#43218110003> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#43218110003> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#43218110003> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#43218110003> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41020294701> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41020294701> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41020294701> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41020294701> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41020294701> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41288730152> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41288730152> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41288730152> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41288730152> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41288730152> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=World3D:<Node3D#41288730152> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730152> | active=false loc=loc_4 cur=village data=false
+ensure_work | scene=World3D:<Node3D#41288730152> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41943041583> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41943041583> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41943041583> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41943041583> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41943041583> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#42261808670> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#42261808670> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#42261808670> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#42261808670> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#42261808670> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41808823851> | active=false loc= cur=village data=false
+world3d_ready village | scene=World3D:<Node3D#41758492187> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41758492187> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41758492187> | active=false loc= cur=village data=false
+start_edit camp | scene=World3D:<Node3D#41758492187> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41758492187> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41758492187> | active=true loc=camp cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41993373228> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41993373228> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41993373228> | active=false loc= cur=village data=false
+start_edit camp | scene=World3D:<Node3D#41993373228> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41993373228> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41993373228> | active=true loc=camp cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41120957981> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41120957981> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41120957981> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41120957981> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41120957981> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Constructor:<Control#44979717685> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Menu:<Control#36943431176> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Menu:<Control#36943431176> | active=false loc=loc_4 cur=village data=true
+world3d_ready loc_4 | scene=World3D:<Node3D#217449498739> | active=false loc=loc_4 cur=loc_4 data=true
+world3d_ready village | scene=World3D:<Node3D#41557165607> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41557165607> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41557165607> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41557165607> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41557165607> | active=true loc=loc_4 cur=village data=true
+world3d_ready village | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+set_cat classes | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+set_cat objects | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41909487151> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41909487151> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=World3D:<Node3D#41909487151> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41909487151> | active=false loc=loc_4 cur=village data=false
+ensure_work | scene=World3D:<Node3D#41909487151> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#41288730160> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41288730160> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=true loc=test cur=village data=true
+exit_edit | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=World3D:<Node3D#41288730160> | active=false loc=loc_4 cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=false loc=loc_4 cur=village data=false
+set_cat classes | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+set_cat classes | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=true loc=test cur=village data=true
+start_edit camp | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=true loc=camp cur=village data=true
+start_edit village | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=true loc=village cur=village data=true
+exit_edit | scene=World3D:<Node3D#41288730160> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#41288730160> | active=false loc=loc_4 cur=village data=false
+v_boy loc_4 | scene=World3D:<Node3D#41288730160> | active=false loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Menu:<Control#36943431176> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Menu:<Control#36943431176> | active=false loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#40181433892> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40181433892> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40181433892> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#40181433892> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#40181433892> | active=false loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#39510345255> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#39510345255> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#39510345255> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#39510345255> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#39510345255> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#40315651625> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#40315651625> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#40315651625> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#40315651625> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#40315651625> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#39426459176> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#39426459176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#39426459176> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=World3D:<Node3D#39426459176> | active=true loc=test cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#39426459176> | active=true loc=village cur=village data=true
+start_edit camp | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=World3D:<Node3D#39426459176> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#39426459176> | active=true loc=test cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=test cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=test cur=village data=true
+start_edit village | scene=World3D:<Node3D#39426459176> | active=true loc=test cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#39426459176> | active=true loc=village cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=World3D:<Node3D#39426459176> | active=true loc=camp cur=village data=true
+ensure_work | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=World3D:<Node3D#39426459176> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#265818211928> | active=false loc= cur=camp data=false
+set_cat locs | scene=Menu:<Control#265818211928> | active=false loc= cur=camp data=false
+start_edit loc_4 | scene=Menu:<Control#265818211928> | active=false loc= cur=camp data=false
+work3d_ready | scene=Menu:<Control#265818211928> | active=true loc=loc_4 cur=camp data=true
+exit_edit | scene=Menu:<Control#265818211928> | active=true loc=loc_4 cur=camp data=true
+start_edit village | scene=World3D:<Node3D#463470594171> | active=false loc=loc_4 cur=camp data=false
+start_edit test | scene=World3D:<Node3D#463470594171> | active=true loc=village cur=camp data=true
+start_edit loc_4 | scene=World3D:<Node3D#463470594171> | active=true loc=test cur=camp data=true
+start_edit camp | scene=World3D:<Node3D#463470594171> | active=true loc=loc_4 cur=camp data=true
+start_edit village | scene=World3D:<Node3D#463470594171> | active=true loc=camp cur=camp data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#41422947888> | active=false loc= cur=village data=false
+set_cat locs | scene=World3D:<Node3D#41422947888> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=World3D:<Node3D#41422947888> | active=false loc= cur=village data=false
+work3d_ready | scene=World3D:<Node3D#41422947888> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=World3D:<Node3D#41422947888> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=World3D:<Node3D#515849062156> | active=true loc=loc_4 cur=loc_4 data=true
+set_cat classes | scene=World3D:<Node3D#515849062156> | active=true loc=loc_4 cur=loc_4 data=true
+set_cat locs | scene=World3D:<Node3D#515849062156> | active=true loc=loc_4 cur=loc_4 data=true
+ensure_work | scene=World3D:<Node3D#515849062156> | active=true loc=loc_4 cur=loc_4 data=true
+v_boy loc_4 | scene=World3D:<Node3D#515849062156> | active=true loc=loc_4 cur=loc_4 data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat classes | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Menu:<Control#36960208392> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#67897395698> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Work3D:<Node3D#67897395698> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68232940017> | active=true loc=loc_4 cur=village data=true
+v_boy loc_4 | scene=Work3D:<Node3D#68232940017> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68467821046> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68249717243> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=Work3D:<Node3D#68249717243> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Overworld3D:<Node3D#254728473173> | active=false loc=loc_4 cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#254728473173> | active=false loc=loc_4 cur=village data=false
+start_edit loc_5 | scene=Overworld3D:<Node3D#254728473173> | active=false loc=loc_4 cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#1067987241351> | active=true loc=loc_5 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1067987241351> | active=true loc=loc_5 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1086089857481> | active=true loc=loc_4 cur=village data=true
+start_edit loc_5 | scene=Work3D:<Node3D#1086089857481> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1104041478617> | active=true loc=loc_5 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit camp | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#119873210880> | active=true loc=camp cur=village data=true
+set_cat map | scene=Work3D:<Node3D#119873210880> | active=true loc=camp cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat mats | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#243001199161> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#243001199161> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#243001199161> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#268318018210> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#268318018210> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#294725356046> | active=true loc=test cur=village data=true
+start_edit loc_5 | scene=Work3D:<Node3D#294725356046> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#310479162382> | active=true loc=loc_5 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#310479162382> | active=true loc=loc_5 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#355593096246> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#355593096246> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#370659035710> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#370659035710> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#387335588947> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#387335588947> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#411662552035> | active=true loc=test cur=village data=true
+start_edit village | scene=Work3D:<Node3D#411662552035> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#427584129545> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#427584129545> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#445854517745> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#445854517745> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#464141683111> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#464141683111> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#481187334647> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#481187334647> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#497041803625> | active=true loc=test cur=village data=true
+start_edit loc_5 | scene=Work3D:<Node3D#497041803625> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#512443288505> | active=true loc=loc_5 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#512443288505> | active=true loc=loc_5 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#528582969621> | active=true loc=village cur=village data=true
+start_edit test | scene=Work3D:<Node3D#528582969621> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#546165492674> | active=true loc=test cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#546165492674> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#570811223115> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71823264284> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#71823264284> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#204715592775> | active=true loc=test cur=village data=true
+ensure_work | scene=Work3D:<Node3D#204715592775> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#227599715418> | active=true loc=test cur=village data=true
+start_edit village | scene=Work3D:<Node3D#227599715418> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#248235691009> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#248235691009> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#266975840771> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#266975840771> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#283518176321> | active=true loc=test cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#283518176321> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#302728088627> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#302728088627> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#320360942613> | active=true loc=test cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#320360942613> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#339470191128> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#339470191128> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#358277450776> | active=true loc=test cur=village data=true
+start_edit loc_5 | scene=Work3D:<Node3D#358277450776> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#374450686436> | active=true loc=loc_5 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#374450686436> | active=true loc=loc_5 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#392586857418> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#392586857418> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#407753460169> | active=true loc=loc_4 cur=village data=true
+start_edit loc_5 | scene=Work3D:<Node3D#407753460169> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#440167041984> | active=true loc=loc_5 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#440167041984> | active=true loc=loc_5 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#455887292861> | active=true loc=loc_4 cur=village data=true
+start_edit test | scene=Work3D:<Node3D#455887292861> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#496538487747> | active=true loc=test cur=village data=true
+start_edit village | scene=Work3D:<Node3D#496538487747> | active=true loc=test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#514020346372> | active=true loc=village cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#514020346372> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#533683243956> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#533683243956> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#550410127814> | active=true loc=loc_4 cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#550410127814> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#550410127814> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#550410127814> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#566516255185> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#566516255185> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#566516255185> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#566516255185> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#973380520242> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#973380520242> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1007757036477> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1007757036477> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1024098044921> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#1024098044921> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1039080098608> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1039080098608> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1056427740115> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#1056427740115> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1072617753477> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1072617753477> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1094377802777> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#1094377802777> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1110081276800> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1110081276800> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1126992710520> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#1126992710520> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1142981397341> | active=true loc=camp cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#1142981397341> | active=true loc=camp cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#1142981397341> | active=true loc=camp cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#1142981397341> | active=true loc=camp cur=village data=true
+ensure_work | scene=Work3D:<Node3D#1142981397341> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2054336547855> | active=true loc=camp cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#2054336547855> | active=true loc=camp cur=village data=true
+ensure_work | scene=Work3D:<Node3D#2054336547855> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+set_cat classes | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+ensure_work | scene=Work3D:<Node3D#2093343574506> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2521280022802> | active=true loc=camp cur=village data=true
+exit_edit | scene=Work3D:<Node3D#2521280022802> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3370928573561> | active=false loc=camp cur=village data=false
+exit_edit | scene=Work3D:<Node3D#3370928573561> | active=false loc=camp cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#3395926624904> | active=false loc=camp cur=village data=false
+start_edit loc_4 | scene=Work3D:<Node3D#3395926624904> | active=false loc=camp cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#3418340985955> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#3418340985955> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3435017537666> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#3435017537666> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3457314457687> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#3457314457687> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#4145348086765> | active=true loc=village cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+set_cat dialogs | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#69541562901> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#898470250702> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#898470250702> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#939524099136> | active=true loc=village cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#939524099136> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#956485863892> | active=true loc=camp cur=village data=true
+start_edit village | scene=Work3D:<Node3D#956485863892> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#982658320906> | active=true loc=village cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#982658320906> | active=true loc=village cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#999217432995> | active=true loc=loc_4 cur=village data=true
+start_edit camp | scene=Work3D:<Node3D#999217432995> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1022118333550> | active=true loc=camp cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1022118333550> | active=true loc=camp cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1042485873023> | active=true loc=loc_4 cur=village data=true
+start_edit village | scene=Work3D:<Node3D#1042485873023> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1064665352645> | active=true loc=village cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68249717240> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#69071800812> | active=true loc=locs_4 cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#69071800812> | active=true loc=locs_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#69071800812> | active=true loc=locs_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#69071800812> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#868220930627> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat catalog | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat quests | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat objects | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36809213448> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71001180718> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70413978111> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#70413978111> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#101753818181> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#74205628972> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73920416297> | active=true loc=loc_4 cur=village data=true
+exit_edit | scene=Work3D:<Node3D#73920416297> | active=true loc=loc_4 cur=village data=true
+start_edit loc_4 | scene=Menu:<Control#178325032103> | active=false loc=loc_4 cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#194951252358> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#69826775559> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#69826775559> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#93113551926> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat mats | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73517763114> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70615304700> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72343357996> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73802975791> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70967626239> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72309803559> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70648859188> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73215773179> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70732745214> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70632081928> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71705823784> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat classes | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71538051625> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71034735155> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71219284531> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#68803365379> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72158808618> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71353502259> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70934071862> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70866962995> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#70866962995> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#718098402415> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71772932654> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71303170600> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72494352948> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71705823788> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70514641458> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71907150377> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70816631343> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70615304750> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#70615304750> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#70615304750> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1598868687716> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#1598868687716> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1821552675363> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#1821552675363> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#1843480497247> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#1843480497247> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2602800515614> | active=true loc=locs_4 cur=village data=true
+start_edit stairs_test | scene=Work3D:<Node3D#2602800515614> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2626640940087> | active=true loc=stairs_test cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#2626640940087> | active=true loc=stairs_test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#2642830952997> | active=true loc=locs_4 cur=village data=true
+start_edit stairs_test | scene=Work3D:<Node3D#2642830952997> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3023304658069> | active=true loc=stairs_test cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#3023304658069> | active=true loc=stairs_test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3042363574704> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#3042363574704> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3064677271865> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#3064677271865> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3097426398378> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#3097426398378> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3137523944527> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#3137523944527> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#3171330034061> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36859545096> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36859545096> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36859545096> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72880228904> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71907150386> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71068289588> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71370279473> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71017957928> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71152175661> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71051512362> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71420611116> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73685535274> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36943431176> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73249327665> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat classes | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#76353112625> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit locs_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70430755371> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit stairs_test | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73702312450> | active=true loc=stairs_test cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#73702312450> | active=true loc=stairs_test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#96653544500> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70934071863> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#74188851764> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73500985896> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72746011180> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#37312529930> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#37312529930> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#37312529930> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72192363055> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72142031409> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72293026346> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72460798516> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70212651567> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72930560559> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70162319914> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70883740212> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71085066806> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#75614915118> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#74406955564> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73970747958> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71722601008> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70313314862> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72192363050> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71085066799> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70195874355> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73752644143> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72611793458> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#73484208687> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#69608671794> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70548195891> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71873595949> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70883740210> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#70229428786> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#71437388335> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#74574727727> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#74574727727> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#112138915051> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#112138915051> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#158142040552> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#158142040552> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#183274310183> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#183274310183> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#203356637648> | active=true loc=loc_4 cur=village data=true
+set_cat catalog | scene=Work3D:<Node3D#203356637648> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#203356637648> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#242179115854> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#242179115854> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#242179115854> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#264996129376> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#264996129376> | active=true loc=loc_4 cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#264996129376> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#264996129376> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#264996129376> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#316720286578> | active=true loc=loc_4 cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#316720286578> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#316720286578> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#316720286578> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#367236483922> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#367236483922> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#423037503993> | active=true loc=locs_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72427244080> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#72427244080> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#98968800475> | active=true loc=locs_4 cur=village data=true
+start_edit stairs_test | scene=Work3D:<Node3D#98968800475> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#147404622292> | active=true loc=stairs_test cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#147404622292> | active=true loc=stairs_test cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#163946957990> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#163946957990> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#209211886068> | active=true loc=loc_4 cur=village data=true
+start_edit locs_4 | scene=Work3D:<Node3D#209211886068> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#278468233748> | active=true loc=locs_4 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#278468233748> | active=true loc=locs_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#309908737220> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#309908737220> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#309908737220> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#371296570593> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#371296570593> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Overworld3D:<Node3D#73417098875> | active=false loc= cur=camp data=false
+set_cat mats | scene=Overworld3D:<Node3D#73417098875> | active=false loc= cur=camp data=false
+set_cat locs | scene=Overworld3D:<Node3D#73417098875> | active=false loc= cur=camp data=false
+start_edit loc_4 | scene=Overworld3D:<Node3D#73417098875> | active=false loc= cur=camp data=false
+work3d_ready | scene=Work3D:<Node3D#200722614907> | active=true loc=loc_4 cur=camp data=true
+start_edit locs_4 | scene=Work3D:<Node3D#200722614907> | active=true loc=loc_4 cur=camp data=true
+work3d_ready | scene=Work3D:<Node3D#226442087648> | active=true loc=locs_4 cur=camp data=true
+set_cat dialogs | scene=Work3D:<Node3D#226442087648> | active=true loc=locs_4 cur=camp data=true
+set_cat locs | scene=Work3D:<Node3D#226442087648> | active=true loc=locs_4 cur=camp data=true
+ensure_work | scene=Work3D:<Node3D#226442087648> | active=true loc=locs_4 cur=camp data=true
+work3d_ready | scene=Work3D:<Node3D#259140881191> | active=true loc=locs_4 cur=camp data=true
+start_edit stairs_test | scene=Work3D:<Node3D#259140881191> | active=true loc=locs_4 cur=camp data=true
+work3d_ready | scene=Work3D:<Node3D#298080799250> | active=true loc=stairs_test cur=camp data=true
+start_edit locs_4 | scene=Work3D:<Node3D#298080799250> | active=true loc=stairs_test cur=camp data=true
+work3d_ready | scene=Work3D:<Node3D#315529104546> | active=true loc=locs_4 cur=camp data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat mats | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#139250895417> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#74004302386> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Overworld3D:<Node3D#41540388391> | active=false loc= cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#41540388391> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Overworld3D:<Node3D#41540388391> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#152320346735> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#152320346735> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#152320346735> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#152320346735> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#303885715667> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+set_cat catalog | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+set_cat catalog | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+start_edit catalog_1 | scene=Overworld3D:<Node3D#43268441652> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#230653168225> | active=true loc=catalog_1 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#230653168225> | active=true loc=catalog_1 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#230653168225> | active=true loc=catalog_1 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+set_cat dialogs | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+set_cat quests | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#253637954304> | active=true loc=catalog_1 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat mats | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat objects | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat classes | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat items | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat chars | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#299104209098> | active=true loc=catalog_1 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#350325049521> | active=true loc=catalog_1 cur=village data=true
+start_edit loc_4 | scene=Work3D:<Node3D#350325049521> | active=true loc=catalog_1 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#380071054045> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#380071054045> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#380071054045> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#450149485382> | active=true loc=loc_4 cur=village data=true
+set_cat catalog | scene=Work3D:<Node3D#450149485382> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#450149485382> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#482697284202> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#482697284202> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#482697284202> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#504121789223> | active=true loc=loc_4 cur=village data=true
+set_cat locs | scene=Work3D:<Node3D#504121789223> | active=true loc=loc_4 cur=village data=true
+ensure_work | scene=Work3D:<Node3D#504121789223> | active=true loc=loc_4 cur=village data=true
+work3d_ready | scene=Work3D:<Node3D#527056243083> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#527056243083> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Overworld3D:<Node3D#42832234029> | active=false loc= cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#42832234029> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Overworld3D:<Node3D#42832234029> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#187367950947> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#187367950947> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat dialogs | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat dialogs | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat catalog | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat quests | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat objects | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat objects | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat classes | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat items | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat chars | scene=World3D:<Node3D#260868933223> | active=false loc= cur=camp data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+set_cat locs | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+start_edit village | scene=Overworld3D:<Node3D#43268441637> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#209446767173> | active=true loc=village cur=village data=true
+exit_edit | scene=Work3D:<Node3D#209446767173> | active=true loc=village cur=village data=true
+set_cat map | scene=Overworld3D:<Node3D#274357816389> | active=false loc=village cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit loc_4 | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+work3d_ready | scene=Work3D:<Node3D#72494352934> | active=true loc=loc_4 cur=village data=true
+set_cat map | scene=Work3D:<Node3D#72494352934> | active=true loc=loc_4 cur=village data=true
+set_cat chars | scene=Overworld3D:<Node3D#225418675925> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#225418675925> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#225418675925> | active=false loc= cur=village data=false
+set_cat chars | scene=Overworld3D:<Node3D#100394862287> | active=false loc= cur=camp data=false
+set_cat map | scene=Overworld3D:<Node3D#100394862287> | active=false loc= cur=camp data=false
+set_cat chars | scene=Overworld3D:<Node3D#41943041565> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#41943041565> | active=false loc= cur=village data=false
+set_cat chars | scene=Overworld3D:<Node3D#42362471978> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#42362471978> | active=false loc= cur=village data=false
+set_cat chars | scene=Overworld3D:<Node3D#293718722326> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#293718722326> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#1032251771297> | active=false loc= cur=camp data=false
+set_cat map | scene=Overworld3D:<Node3D#1032251771297> | active=false loc= cur=camp data=false
+set_cat map | scene=Overworld3D:<Node3D#1032251771297> | active=false loc= cur=camp data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat objects | scene=Overworld3D:<Node3D#71840041188> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#71840041188> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#628055083790> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#628055083790> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Overworld3D:<Node3D#269609863935> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat items | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat items | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat map | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36909876744> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat locs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+start_edit bandit_road | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=World3D:<Node3D#67796731695> | active=false loc= cur=bandit_ambush data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false

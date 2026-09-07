@@ -1,0 +1,3 @@
+{"village":{"name":"Деревня","type":"town","pos":[120,300],"links":["camp","test"],"dlg":{"arrive":"village_arrive"}},
+"camp":{"name":"Лагерь бандитов","type":"camp","pos":[420,160],"links":["village"],"map":{"rocks":[[4,2],[5,3]],"objects":[{"cell":[4,1],"k":"tree"},{"cell":[5,0],"k":"tree"},{"cell":[3,4],"k":"tree"},{"cell":[3,3],"k":"tent"}],"units":[{"cls":"assassin","team":1,"cell":[6,1]},{"cls":"swordsman","team":1,"cell":[6,2]},{"cls":"archer","team":1,"cell":[6,3]}]},"dlg":{"pre":"sample","win":"win_sample"}},
+"test":{"name":"Тестовая поляна","type":"field","pos":[420,430],"links":["village"],"dlg":{"pre":"sample","win":"win_sample"}}}

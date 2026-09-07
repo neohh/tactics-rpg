@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dfpbc15lafayn"]
+
+[ext_resource type="Script" uid="uid://dmcji0m3y8bwh" path="res://scripts/overworld3d.gd" id="1ow"]
+
+[node name="Overworld3D" type="Node3D" unique_id=1832876484]
+script = ExtResource("1ow")

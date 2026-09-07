@@ -1,0 +1,12 @@
+{
+	"party_max": 6,
+	"act_base": 2,
+	"act_big": 3,
+	"act_big_at": 5,
+	"defeat_mode": "town",
+	"ground_ttl_days": 1,
+	"respawn_days": 3,
+	"xp_base": 10,
+	"xp_mul": 1.5,
+	"autosave": true
+}

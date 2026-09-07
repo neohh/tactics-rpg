@@ -1,0 +1,7 @@
+{
+	"p_tough1": {"name": "Стойкость I", "desc": "+1 HP", "req": [], "cls": "", "mods": {"hp": 1}},
+	"p_tough2": {"name": "Стойкость II", "desc": "+1 HP", "req": ["p_tough1"], "cls": "", "mods": {"hp": 1}},
+	"p_prec1": {"name": "Точность I", "desc": "+10% к попаданию", "req": [], "cls": "", "mods": {"hit_bonus": 0.1}},
+	"p_sw1": {"name": "Широкий замах", "desc": "Даёт навык: клевок", "req": [], "cls": "swordsman", "grants": ["cleave"]},
+	"p_ar1": {"name": "Дальний выстрел", "desc": "+1 к радиусу атаки", "req": [], "cls": "archer", "mods": {"ar": 1}}
+}

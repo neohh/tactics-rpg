@@ -1,0 +1,469 @@
+extends Node3D
+var yaw_n: Node3D
+var pitch_n: Node3D
+var cam: Camera3D
+var yaw = 0.6
+var pitch = -0.9
+var dist = 10.0
+var target = Vector3(4, 0, 3)
+var mid_drag = false
+var right_drag = false
+var terr = null
+var content: Node3D
+var CLASSES = {}
+var OBJ3 = {}
+var sculpt = false
+var paint_mode = false
+var sculpt_btn = ""
+var brush_radius = 1.5
+var strength = 0.06
+var force_mode = false
+var radius_mode = false
+var paint_mat = 0
+var brush_ind = null
+var ind_alpha = 0.07
+var str_slider: HSlider
+var rad_slider: HSlider
+var str_lab: Label
+var rad_lab: Label
+var mat_opt: OptionButton
+var tool_lab: Label
+func _ready():
+	add_to_group("work")
+	Game.log_scene("work3d_ready")
+	if get_tree().get_nodes_in_group("work").size() > 1:
+		queue_free()
+		return
+	CLASSES = _lj("res://data/classes.json")
+	OBJ3 = _lj("res://data/objects.json")
+	yaw_n = Node3D.new()
+	add_child(yaw_n)
+	pitch_n = Node3D.new()
+	yaw_n.add_child(pitch_n)
+	cam = Camera3D.new()
+	pitch_n.add_child(cam)
+	cam.position = Vector3(0, 0, dist)
+	var dl = DirectionalLight3D.new()
+	dl.rotation_degrees = Vector3(-50, 30, 0)
+	add_child(dl)
+	var env = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.05, 0.06, 0.08)
+	var we = WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+	content = Node3D.new()
+	add_child(content)
+	_ui()
+	load_edit()
+	_apply()
+func _ui():
+	var ui = Control.new()
+	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ui)
+	var col = VBoxContainer.new()
+	col.position = Vector2(10, 10)
+	col.add_theme_constant_override("separation", 6)
+	ui.add_child(col)
+	var pn = _panel(col, "НАВИГАЦИЯ")
+	var bb = Button.new()
+	bb.text = "← в игру"
+	bb.pressed.connect(func(): get_tree().call_group("con", "_edit_back"))
+	pn.add_child(bb)
+	var pt = _panel(col, "ИНСТРУМЕНТЫ")
+	tool_lab = Label.new()
+	tool_lab.autowrap_mode = TextServer.AUTOWRAP_WORD
+	tool_lab.custom_minimum_size = Vector2(260, 0)
+	pt.add_child(tool_lab)
+	str_slider = HSlider.new()
+	str_slider.min_value = 0.01
+	str_slider.max_value = 0.25
+	str_slider.step = 0.005
+	str_slider.value = strength
+	str_slider.custom_minimum_size = Vector2(180, 20)
+	str_slider.value_changed.connect(func(v): strength = v; _upd_str(); _flash())
+	pt.add_child(str_slider)
+	str_lab = Label.new()
+	pt.add_child(str_lab)
+	rad_slider = HSlider.new()
+	rad_slider.min_value = 0.125
+	rad_slider.max_value = 4.0
+	rad_slider.step = 0.125
+	rad_slider.value = brush_radius
+	rad_slider.custom_minimum_size = Vector2(180, 20)
+	rad_slider.value_changed.connect(func(v): brush_radius = v; _upd_rad(); _make_ind(); _flash())
+	pt.add_child(rad_slider)
+	rad_lab = Label.new()
+	pt.add_child(rad_lab)
+	mat_opt = OptionButton.new()
+	mat_opt.custom_minimum_size = Vector2(140, 26)
+	var m = _lj("res://data/materials.json")
+	for k in m:
+		mat_opt.add_item(str(m[k].get("name", k)))
+	mat_opt.item_selected.connect(func(i): paint_mat = i)
+	pt.add_child(mat_opt)
+	_upd_str()
+	_upd_rad()
+	_upd_tool()
+func _panel(parent, title):
+	var pc = PanelContainer.new()
+	parent.add_child(pc)
+	var vb = VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	pc.add_child(vb)
+	var hb = Button.new()
+	hb.text = "[-] " + title
+	vb.add_child(hb)
+	var body = VBoxContainer.new()
+	body.add_theme_constant_override("separation", 4)
+	vb.add_child(body)
+	hb.pressed.connect(func():
+		body.visible = not body.visible
+		hb.text = ("[-] " if body.visible else "[+] ") + title)
+	return body
+func _upd_tool():
+	if tool_lab != null:
+		tool_lab.text = "инструмент из конструктора: %s | T скульпт | P краска | U отмена" % Game.edit_tool
+func _upd_str():
+	if str_lab != null:
+		str_lab.text = "сила %.3f" % strength
+func _upd_rad():
+	if rad_lab != null:
+		rad_lab.text = "радиус %.2f" % brush_radius
+func _flash():
+	ind_alpha = 0.3
+	if brush_ind != null:
+		brush_ind.mesh.material.albedo_color = Color(1, 1, 1, ind_alpha)
+func _lj(p):
+	var f = FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {}
+	var s = f.get_as_text()
+	f.close()
+	var j = JSON.parse_string(s)
+	return {} if j == null else j
+func _tex(path):
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var im = Image.new()
+	if im.load(path) != OK:
+		return null
+	return ImageTexture.create_from_image(im)
+func _mat_defs():
+	var m = _lj("res://data/materials.json")
+	var defs = []
+	for k in m:
+		defs.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})
+	return defs
+func L():
+	return Game.edit_data if Game.edit_data != null else {}
+func load_edit():
+	sculpt = false
+	paint_mode = false
+	CLASSES = _lj("res://data/classes.json")
+	OBJ3 = _lj("res://data/objects.json")
+	rebuild()
+	_upd_tool()
+func rebuild():
+	for c in content.get_children():
+		c.free()
+	terr = null
+	if brush_ind != null:
+		brush_ind.queue_free()
+		brush_ind = null
+	terr = load("res://scripts/terrain.gd").new()
+	content.add_child(terr)
+	terr.set_materials(_mat_defs())
+	var td = L().get("terrain", {})
+	if td.size() > 0:
+		terr.from_data(td)
+	else:
+		terr.build()
+	var m = L().get("map", {})
+	for o in m.get("objects", []):
+		_obj3(Vector3(o["cell"][0] + 0.5, 0, o["cell"][1] + 0.5), o.get("k", "rock"))
+	for r in m.get("rocks", []):
+		_obj3(Vector3(r[0] + 0.5, 0, r[1] + 0.5), "rock")
+	for u in m.get("units", []):
+		_unit3(Vector3(u["cell"][0] + 0.5, 0, u["cell"][1] + 0.5), int(u.get("team", 1)), u.get("cls", "swordsman"))
+	if sculpt:
+		_make_ind()
+func _obj3(p, k):
+	p.y = terr.sample_h(p.x, p.z) if terr != null else 0.0
+	var od = OBJ3.get(k, {})
+	var mn = _model_inst(str(od.get("model", ""))) if bool(od.get("render3d", false)) else null
+	if mn != null:
+		var ms = float(od.get("mscale", 1.0))
+		mn.scale = Vector3(ms, ms, ms)
+		mn.position = p + Vector3(0, float(od.get("myoff", 0.0)), 0)
+		content.add_child(mn)
+		return
+	var oimg = str(od.get("img", ""))
+	var ot = _tex(oimg) if oimg != "" else null
+	if ot != null:
+		var h = 1.2 * float(od.get("scale", 1.0))
+		var sp = Sprite3D.new()
+		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.pixel_size = h / float(ot.get_height())
+		sp.texture = ot
+		sp.position = p + Vector3(0, h * 0.5, 0)
+		content.add_child(sp)
+		return
+	var m = MeshInstance3D.new()
+	var mi = StandardMaterial3D.new()
+	if k == "tree":
+		var cm = CylinderMesh.new()
+		cm.top_radius = 0.05
+		cm.bottom_radius = 0.42
+		cm.height = 1.0
+		mi.albedo_color = Color(0.15, 0.4, 0.2)
+		cm.material = mi
+		m.mesh = cm
+		m.position = p + Vector3(0, 0.5, 0)
+	else:
+		var bm = BoxMesh.new()
+		bm.size = Vector3(0.7, 0.5, 0.7)
+		mi.albedo_color = Color(0.45, 0.45, 0.5)
+		bm.material = mi
+		m.mesh = bm
+		m.position = p + Vector3(0, 0.25, 0)
+	content.add_child(m)
+func _unit3(p, team, cid):
+	var cd = CLASSES.get(cid, {})
+	var sc = float(cd.get("scale", 1.0))
+	var tcol = Color(0.2, 0.5, 0.9) if team == 0 else Color(0.9, 0.25, 0.25)
+	p.y = terr.sample_h(p.x, p.z) if terr != null else 0.0
+	var img = cd.get("img", "")
+	var t = _tex(img) if img != "" else null
+	var mn = _model_inst(str(cd.get("model", ""))) if bool(cd.get("render3d", false)) else null
+	if mn != null:
+		var ms = float(cd.get("mscale", 1.0))
+		mn.scale = Vector3(ms, ms, ms)
+		mn.position = p + Vector3(0, float(cd.get("myoff", 0.0)), 0)
+		content.add_child(mn)
+	elif t != null:
+		var sp = Sprite3D.new()
+		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.pixel_size = 0.004
+		sp.scale = Vector3(sc, sc, sc)
+		sp.position = p + Vector3(0, 0.85 * sc, 0)
+		sp.texture = t
+		content.add_child(sp)
+	else:
+		var m = MeshInstance3D.new()
+		var cm = CapsuleMesh.new()
+		cm.radius = 0.28
+		cm.height = 0.9
+		var mi = StandardMaterial3D.new()
+		mi.albedo_color = tcol
+		cm.material = mi
+		m.mesh = cm
+		m.position = p + Vector3(0, 0.45, 0)
+		content.add_child(m)
+	var lb = Label3D.new()
+	lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lb.text = str(cd.get("name", cid))
+	lb.pixel_size = 0.004
+	lb.position = p + Vector3(0, 1.8 * sc, 0)
+	lb.modulate = Color(1, 1, 1) if team == 0 else Color(1, 0.6, 0.6)
+	content.add_child(lb)
+func _sync():
+	get_tree().call_group("con", "on_work_dirty")
+func _make_ind():
+	if brush_ind != null:
+		brush_ind.queue_free()
+		brush_ind = null
+	if not sculpt:
+		return
+	brush_ind = MeshInstance3D.new()
+	var cm = CylinderMesh.new()
+	cm.top_radius = brush_radius
+	cm.bottom_radius = brush_radius
+	cm.height = 0.02
+	var mi = StandardMaterial3D.new()
+	mi.albedo_color = Color(1, 1, 1, ind_alpha)
+	mi.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	cm.material = mi
+	brush_ind.mesh = cm
+	add_child(brush_ind)
+func _apply():
+	yaw_n.position = target
+	yaw_n.rotation = Vector3(0, yaw, 0)
+	pitch_n.rotation = Vector3(pitch, 0, 0)
+	cam.position = Vector3(0, 0, dist)
+func _input(ev):
+	if ev is InputEventMouseButton:
+		if ev.button_index == MOUSE_BUTTON_RIGHT:
+			right_drag = ev.pressed
+		elif ev.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = ev.pressed
+		elif ev.button_index == MOUSE_BUTTON_WHEEL_UP and ev.pressed:
+			if force_mode:
+				strength = clampf(strength + 0.005, 0.01, 0.25)
+				str_slider.value = strength
+				_upd_str()
+			elif radius_mode:
+				brush_radius = clampf(brush_radius + 0.25, 0.5, 4.0)
+				rad_slider.value = brush_radius
+				_upd_rad()
+				_make_ind()
+			else:
+				dist = clampf(dist - 1.0, 4, 25)
+				_apply()
+		elif ev.button_index == MOUSE_BUTTON_WHEEL_DOWN and ev.pressed:
+			if force_mode:
+				strength = clampf(strength - 0.005, 0.01, 0.25)
+				str_slider.value = strength
+				_upd_str()
+			elif radius_mode:
+				brush_radius = clampf(brush_radius - 0.25, 0.5, 4.0)
+				rad_slider.value = brush_radius
+				_upd_rad()
+				_make_ind()
+			else:
+				dist = clampf(dist + 1.0, 4, 25)
+				_apply()
+		return
+
+func _unhandled_input(ev):
+	if not visible:
+		return
+	if ev is InputEventKey and ev.pressed:
+		if ev.keycode == KEY_T:
+			sculpt = not sculpt
+			_make_ind()
+			_upd_tool()
+			return
+		if ev.keycode == KEY_P:
+			paint_mode = not paint_mode
+			return
+		if ev.keycode == KEY_U and terr != null:
+			terr.undo()
+			L()["terrain"] = terr.to_data()
+			_sync()
+			return
+		if ev.keycode == KEY_F:
+			force_mode = not force_mode
+			return
+		if ev.keycode == KEY_B:
+			radius_mode = not radius_mode
+			return
+	if ev is InputEventMouseButton:
+		if ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev.pressed and sculpt:
+				sculpt_btn = "smooth" if ev.shift_pressed else ("lower" if ev.ctrl_pressed else "raise")
+				terr.push_undo()
+				_brush_at(ev.position, sculpt_btn)
+			elif not ev.pressed and sculpt_btn != "":
+				sculpt_btn = ""
+				L()["terrain"] = terr.to_data()
+				_sync()
+			elif ev.pressed and paint_mode:
+				terr.reset_stroke()
+				var pp = _ray(ev.position)
+				if pp != null:
+					terr.paint_at(pp.x, pp.z, brush_radius, paint_mat)
+					L()["terrain"] = terr.to_data()
+					_sync()
+			elif ev.pressed:
+				_place_click(ev.position)
+	elif ev is InputEventMouseMotion:
+		if right_drag:
+			yaw -= ev.relative.x * 0.005
+			pitch = clampf(pitch - ev.relative.y * 0.005, -1.45, -0.15)
+			_apply()
+		elif mid_drag:
+			var k = dist * 0.0016
+			var right = yaw_n.global_transform.basis.x
+			var fwd = -yaw_n.global_transform.basis.z
+			target -= right * ev.relative.x * k
+			target += fwd * ev.relative.y * k
+			_apply()
+		elif sculpt_btn != "":
+			_brush_at(ev.position, sculpt_btn)
+		elif paint_mode and ev.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			var pm = _ray(ev.position)
+			if pm != null:
+				terr.paint_at(pm.x, pm.z, brush_radius, paint_mat)
+				L()["terrain"] = terr.to_data()
+				_sync()
+		if sculpt and brush_ind != null:
+			_move_ind(ev.position)
+func _place_click(mp):
+	var c = _pick(mp)
+	if c == null:
+		return
+	var Ld = L()
+	var m = Ld.get("map", {})
+	if m.is_empty():
+		m = {"rocks": [], "objects": [], "units": []}
+		Ld["map"] = m
+	_erase(m, c.x, c.y)
+	if Game.edit_tool == "erase":
+		_sync()
+		rebuild()
+		return
+	if Game.edit_tool == "place":
+		if Game.edit_what == "obj":
+			m["objects"].append({"cell": [c.x, c.y], "k": Game.edit_obj})
+		else:
+			m["units"].append({"cls": Game.edit_cls, "team": 0 if Game.edit_what == "mine" else 1, "cell": [c.x, c.y]})
+		_sync()
+		rebuild()
+func _erase(m, x, y):
+	var no = []
+	for o in m.get("objects", []):
+		if int(o["cell"][0]) != x or int(o["cell"][1]) != y:
+			no.append(o)
+	m["objects"] = no
+	var nr = []
+	for r in m.get("rocks", []):
+		if int(r[0]) != x or int(r[1]) != y:
+			nr.append(r)
+	m["rocks"] = nr
+	var nu = []
+	for u in m.get("units", []):
+		if int(u["cell"][0]) != x or int(u["cell"][1]) != y:
+			nu.append(u)
+	m["units"] = nu
+func _brush_at(mp, t):
+	var p = _ray(mp)
+	if p == null:
+		return
+	terr.apply_brush(p.x, p.z, brush_radius, strength, t)
+	_move_ind(mp)
+func _move_ind(mp):
+	if brush_ind == null:
+		return
+	var p = _ray(mp)
+	if p == null:
+		return
+	brush_ind.position = Vector3(p.x, terr.sample_h(p.x, p.z) + 0.05, p.z)
+func _ray(mp):
+	var c3 = get_viewport().get_camera_3d()
+	var from = c3.project_ray_origin(mp)
+	var dir = c3.project_ray_normal(mp)
+	if abs(dir.y) < 0.0001:
+		return null
+	var t = -from.y / dir.y
+	if t < 0:
+		return null
+	return from + dir * t
+func _pick(mp):
+	var p = _ray(mp)
+	if p == null:
+		return null
+	var cx = int(p.x)
+	var cz = int(p.z)
+	if cx < 0 or cz < 0 or cx >= 8 or cz >= 6:
+		return null
+	return Vector2i(cx, cz)
+
+func _model_inst(path):
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var res = load(path)
+	if res is PackedScene:
+		return res.instantiate()
+	return null

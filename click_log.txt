@@ -1,0 +1,756 @@
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+CLICK mouse=(351.0, 246.0) cell=(0, 3) deploy=true min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+CLICK mouse=(431.0, 310.0) cell=(8, 11) deploy=true min_x=8
+CLICK mouse=(474.0, 346.0) cell=(9, 12) deploy=true min_x=8
+CLICK mouse=(470.0, 337.0) cell=(9, 12) deploy=true min_x=8
+CLICK mouse=(459.0, 436.0) cell=(9, 14) deploy=true min_x=8
+CLICK mouse=(459.0, 436.0) cell=(9, 14) deploy=true min_x=8
+CLICK mouse=(552.0, 437.0) cell=(11, 14) deploy=true min_x=8
+CLICK mouse=(552.0, 437.0) cell=(11, 14) deploy=true min_x=8
+CLICK mouse=(565.0, 436.0) cell=(11, 14) deploy=true min_x=8
+CLICK mouse=(565.0, 436.0) cell=(11, 14) deploy=true min_x=8
+CLICK mouse=(504.0, 436.0) cell=(10, 14) deploy=true min_x=8
+CLICK mouse=(504.0, 436.0) cell=(10, 14) deploy=true min_x=8
+CLICK mouse=(497.0, 480.0) cell=(10, 15) deploy=true min_x=8
+CLICK mouse=(497.0, 480.0) cell=(10, 15) deploy=true min_x=8
+CLICK mouse=(431.0, 387.0) cell=(10, 14) deploy=false min_x=8
+CLICK mouse=(674.0, 205.0) cell=(14, 9) deploy=false min_x=8
+CLICK mouse=(398.0, 286.0) cell=(9, 11) deploy=false min_x=8
+CLICK mouse=(447.0, 386.0) cell=(10, 14) deploy=false min_x=8
+CLICK mouse=(574.0, 301.0) cell=(12, 12) deploy=false min_x=8
+CLICK mouse=(574.0, 301.0) cell=(12, 12) deploy=false min_x=8
+CLICK mouse=(360.0, 380.0) cell=(8, 13) deploy=false min_x=8
+CLICK mouse=(572.0, 403.0) cell=(12, 14) deploy=false min_x=8
+CLICK mouse=(572.0, 403.0) cell=(12, 14) deploy=false min_x=8
+CLICK mouse=(558.0, 264.0) cell=(12, 10) deploy=false min_x=8
+CLICK mouse=(582.0, 388.0) cell=(12, 14) deploy=false min_x=8
+CLICK mouse=(615.0, 355.0) cell=(13, 13) deploy=false min_x=8
+CLICK mouse=(615.0, 355.0) cell=(13, 13) deploy=false min_x=8
+CLICK mouse=(637.0, 213.0) cell=(13, 9) deploy=false min_x=8
+CLICK mouse=(351.0, 126.0) cell=(13, 3) deploy=false min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+CLICK mouse=(176.0, 221.0) cell=<null> deploy=true min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+CLICK mouse=(432.0, 257.0) cell=(2, 2) deploy=true min_x=0
+CLICK mouse=(409.0, 273.0) cell=(2, 3) deploy=true min_x=0
+CLICK mouse=(423.0, 287.0) cell=(2, 3) deploy=true min_x=0
+CLICK mouse=(423.0, 287.0) cell=(2, 3) deploy=true min_x=0
+CLICK mouse=(356.0, 251.0) cell=(0, 3) deploy=true min_x=0
+CLICK mouse=(356.0, 251.0) cell=(0, 3) deploy=true min_x=0
+CLICK mouse=(326.0, 280.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(326.0, 280.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(350.0, 284.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(350.0, 284.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(333.0, 279.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(332.0, 279.0) cell=(1, 3) deploy=true min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+CLICK mouse=(574.0, 320.0) cell=(5, 2) deploy=true min_x=0
+CLICK mouse=(445.0, 276.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(445.0, 276.0) cell=(1, 3) deploy=true min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+CLICK mouse=(380.0, 260.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(409.0, 236.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(407.0, 233.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(462.0, 350.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(492.0, 340.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(560.0, 317.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(323.0, 382.0) cell=(1, 3) deploy=false min_x=0
+CLICK mouse=(498.0, 376.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(498.0, 376.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(553.0, 327.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(498.0, 385.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(363.0, 382.0) cell=(2, 2) deploy=false min_x=0
+CLICK mouse=(363.0, 382.0) cell=(2, 2) deploy=false min_x=0
+CLICK mouse=(359.0, 376.0) cell=(2, 2) deploy=false min_x=0
+CLICK mouse=(428.0, 360.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(487.0, 350.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(559.0, 341.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(570.0, 351.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(570.0, 351.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(544.0, 328.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(627.0, 268.0) cell=(7, 1) deploy=false min_x=0
+CLICK mouse=(212.0, 391.0) cell=(2, 1) deploy=false min_x=0
+CLICK mouse=(574.0, 245.0) cell=(6, 1) deploy=false min_x=0
+CLICK mouse=(574.0, 241.0) cell=(6, 0) deploy=false min_x=0
+CLICK mouse=(248.0, 394.0) cell=(2, 2) deploy=false min_x=0
+CLICK mouse=(665.0, 368.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(660.0, 370.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(609.0, 259.0) cell=(6, 1) deploy=false min_x=0
+BUILD loc=village GW=40 GH=40 OX=0 OY=0 chunks=["1,1"] deploy_min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+CLICK mouse=(402.0, 358.0) cell=(8, 11) deploy=true min_x=8
+CLICK mouse=(451.0, 380.0) cell=(9, 12) deploy=true min_x=8
+CLICK mouse=(460.0, 427.0) cell=(9, 13) deploy=true min_x=8
+CLICK mouse=(461.0, 449.0) cell=(9, 13) deploy=true min_x=8
+CLICK mouse=(442.0, 504.0) cell=(9, 14) deploy=true min_x=8
+CLICK mouse=(549.0, 504.0) cell=(10, 14) deploy=true min_x=8
+CLICK mouse=(549.0, 504.0) cell=(10, 14) deploy=true min_x=8
+CLICK mouse=(546.0, 483.0) cell=(10, 14) deploy=false min_x=8
+CLICK mouse=(503.0, 438.0) cell=(12, 13) deploy=false min_x=8
+CLICK mouse=(503.0, 438.0) cell=(12, 13) deploy=false min_x=8
+CLICK mouse=(606.0, 318.0) cell=(14, 10) deploy=false min_x=8
+CLICK mouse=(493.0, 416.0) cell=(12, 12) deploy=false min_x=8
+CLICK mouse=(269.0, 369.0) cell=(8, 11) deploy=false min_x=8
+CLICK mouse=(737.0, 452.0) cell=(10, 14) deploy=false min_x=8
+CLICK mouse=(609.0, 228.0) cell=(15, 12) deploy=false min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=camp GW=8 GH=6 OX=0 OY=0 chunks=["0,0"] deploy_min_x=0
+BUILD loc=loc_4 GW=40 GH=40 OX=0 OY=0 chunks=["1,1", "2,1"] deploy_min_x=8
+BUILD loc=bandit_road GW=8 GH=6 OX=0 OY=0 chunks=[] deploy_min_x=0
+CLICK mouse=(329.0, 310.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(322.0, 276.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(322.0, 276.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(350.0, 428.0) cell=(0, 5) deploy=true min_x=0
+CLICK mouse=(361.0, 428.0) cell=(0, 5) deploy=true min_x=0
+CLICK mouse=(532.0, 422.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(574.0, 397.0) cell=(4, 5) deploy=true min_x=0
+CLICK mouse=(576.0, 385.0) cell=(4, 5) deploy=true min_x=0
+CLICK mouse=(572.0, 354.0) cell=(4, 4) deploy=true min_x=0
+BUILD loc=bandit_road GW=8 GH=6 OX=0 OY=0 chunks=[] deploy_min_x=0
+CLICK mouse=(254.0, 257.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(255.0, 258.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(526.0, 407.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(527.0, 408.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(707.0, 376.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(692.0, 342.0) cell=<null> deploy=true min_x=0
+CLICK mouse=(685.0, 319.0) cell=(7, 1) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=8 GH=6 OX=0 OY=0 chunks=[] deploy_min_x=0
+CLICK mouse=(461.0, 294.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(682.0, 294.0) cell=(4, 1) deploy=true min_x=0
+CLICK mouse=(748.0, 373.0) cell=(6, 2) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=40 GH=40 OX=0 OY=0 chunks=["0,0", "0,1", "0,2", "0,3", "0,4", "1,0", "1,1", "1,2", "1,3", "1,4", "2,0", "2,1", "2,2", "2,3", "2,4", "3,0", "3,1", "3,2", "3,3", "3,4", "4,0", "4,1", "4,2", "4,3", "4,4"] deploy_min_x=0
+CLICK mouse=(309.0, 346.0) cell=(2, 1) deploy=true min_x=0
+CLICK mouse=(273.0, 439.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(273.0, 439.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(352.0, 496.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(352.0, 497.0) cell=(1, 3) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=40 GH=40 OX=0 OY=0 chunks=["0,0", "0,1", "0,2", "0,3", "0,4", "1,0", "1,1", "1,2", "1,3", "1,4", "2,0", "2,1", "2,2", "2,3", "2,4", "3,0", "3,1", "3,2", "3,3", "3,4", "4,0", "4,1", "4,2", "4,3", "4,4"] deploy_min_x=0
+CLICK mouse=(412.0, 376.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(463.0, 455.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(463.0, 455.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(1107.0, 215.0) cell=(15, 7) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=40 GH=40 OX=0 OY=0 chunks=["0,0", "0,1", "0,2", "0,3", "0,4", "1,0", "1,1", "1,2", "1,3", "1,4", "2,0", "2,1", "2,2", "2,3", "2,4", "3,0", "3,1", "3,2", "3,3", "3,4", "4,0", "4,1", "4,2", "4,3", "4,4"] deploy_min_x=0
+CLICK mouse=(311.0, 395.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(315.0, 493.0) cell=(0, 2) deploy=true min_x=0
+CLICK mouse=(394.0, 529.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(380.0, 479.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(380.0, 479.0) cell=(1, 3) deploy=true min_x=0
+BUILD loc=bandit_road GW=8 GH=6 OX=0 OY=0 chunks=[] deploy_min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(417.0, 384.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(455.0, 432.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(431.0, 393.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(473.0, 440.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(482.0, 452.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(1136.0, 219.0) cell=<null> deploy=false min_x=0
+CLICK mouse=(525.0, 368.0) cell=(2, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(402.0, 293.0) cell=(0, 4) deploy=true min_x=0
+CLICK mouse=(392.0, 316.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(414.0, 356.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(481.0, 346.0) cell=(2, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(405.0, 267.0) cell=(0, 4) deploy=true min_x=0
+CLICK mouse=(467.0, 227.0) cell=(0, 1) deploy=true min_x=0
+CLICK mouse=(267.0, 430.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(242.0, 415.0) cell=(1, 2) deploy=false min_x=0
+CLICK mouse=(466.0, 337.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(433.0, 354.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(526.0, 300.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(186.0, 313.0) cell=(0, 0) deploy=false min_x=0
+CLICK mouse=(462.0, 289.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(462.0, 289.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(463.0, 225.0) cell=(4, 0) deploy=false min_x=0
+CLICK mouse=(532.0, 283.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(413.0, 313.0) cell=(3, 1) deploy=false min_x=0
+CLICK mouse=(514.0, 282.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(421.0, 326.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(534.0, 269.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(336.0, 386.0) cell=(2, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(404.0, 279.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(454.0, 233.0) cell=(0, 2) deploy=true min_x=0
+CLICK mouse=(494.0, 222.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(484.0, 233.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(379.0, 370.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(388.0, 365.0) cell=(2, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(371.0, 256.0) cell=(0, 4) deploy=true min_x=0
+CLICK mouse=(445.0, 226.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(440.0, 238.0) cell=(2, 1) deploy=true min_x=0
+CLICK mouse=(438.0, 244.0) cell=(2, 1) deploy=true min_x=0
+CLICK mouse=(617.0, 285.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(474.0, 390.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(474.0, 390.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(478.0, 397.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(600.0, 546.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(600.0, 546.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(403.0, 386.0) cell=(2, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(392.0, 310.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(505.0, 231.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(498.0, 232.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(439.0, 312.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(567.0, 279.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(567.0, 279.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(662.0, 236.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(663.0, 253.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(572.0, 252.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(680.0, 240.0) cell=(6, 1) deploy=false min_x=0
+CLICK mouse=(701.0, 316.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(637.0, 342.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(554.0, 289.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(624.0, 253.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(216.0, 361.0) cell=(0, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(419.0, 315.0) cell=(2, 5) deploy=true min_x=0
+CLICK mouse=(377.0, 324.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(375.0, 325.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(376.0, 308.0) cell=(1, 5) deploy=false min_x=0
+CLICK mouse=(585.0, 397.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(585.0, 397.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(613.0, 294.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(383.0, 517.0) cell=(1, 5) deploy=false min_x=0
+CLICK mouse=(535.0, 364.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(535.0, 364.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(593.0, 261.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(547.0, 234.0) cell=(7, 3) deploy=false min_x=0
+CLICK mouse=(585.0, 384.0) cell=(5, 5) deploy=false min_x=0
+CLICK mouse=(385.0, 286.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(385.0, 286.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(453.0, 249.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(404.0, 303.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(471.0, 258.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(622.0, 273.0) cell=(7, 3) deploy=false min_x=0
+CLICK mouse=(299.0, 406.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(696.0, 221.0) cell=(8, 2) deploy=false min_x=0
+CLICK mouse=(830.0, 231.0) cell=(10, 2) deploy=false min_x=0
+CLICK mouse=(883.0, 71.0) cell=<null> deploy=false min_x=0
+CLICK mouse=(897.0, 72.0) cell=<null> deploy=false min_x=0
+CLICK mouse=(603.0, 303.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(591.0, 244.0) cell=(7, 1) deploy=false min_x=0
+CLICK mouse=(589.0, 235.0) cell=(7, 1) deploy=false min_x=0
+CLICK mouse=(584.0, 220.0) cell=(7, 0) deploy=false min_x=0
+CLICK mouse=(441.0, 242.0) cell=(4, 0) deploy=false min_x=0
+CLICK mouse=(600.0, 215.0) cell=(7, 0) deploy=false min_x=0
+CLICK mouse=(447.0, 247.0) cell=(4, 0) deploy=false min_x=0
+CLICK mouse=(524.0, 285.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(308.0, 395.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(497.0, 233.0) cell=(5, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(352.0, 313.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(324.0, 349.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(314.0, 355.0) cell=(1, 7) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(410.0, 304.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(406.0, 333.0) cell=(2, 5) deploy=true min_x=0
+CLICK mouse=(394.0, 341.0) cell=(2, 6) deploy=true min_x=0
+CLICK mouse=(357.0, 340.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(345.0, 356.0) cell=(1, 7) deploy=true min_x=0
+CLICK mouse=(414.0, 367.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(415.0, 372.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(298.0, 329.0) cell=(1, 6) deploy=false min_x=0
+CLICK mouse=(474.0, 337.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(474.0, 337.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(460.0, 318.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(507.0, 346.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(350.0, 390.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(466.0, 436.0) cell=(5, 6) deploy=false min_x=0
+CLICK mouse=(465.0, 436.0) cell=(5, 6) deploy=false min_x=0
+CLICK mouse=(512.0, 348.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(473.0, 329.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(536.0, 301.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(410.0, 431.0) cell=(4, 6) deploy=false min_x=0
+CLICK mouse=(493.0, 403.0) cell=(5, 5) deploy=false min_x=0
+CLICK mouse=(493.0, 403.0) cell=(5, 5) deploy=false min_x=0
+CLICK mouse=(547.0, 314.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(422.0, 261.0) cell=(1, 3) deploy=false min_x=0
+CLICK mouse=(427.0, 260.0) cell=(1, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(418.0, 338.0) cell=(2, 5) deploy=true min_x=0
+CLICK mouse=(398.0, 347.0) cell=(2, 6) deploy=true min_x=0
+CLICK mouse=(492.0, 359.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(502.0, 338.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(427.0, 324.0) cell=(2, 5) deploy=false min_x=0
+CLICK mouse=(563.0, 363.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(563.0, 363.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(589.0, 324.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(451.0, 395.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(529.0, 336.0) cell=(6, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(378.0, 307.0) cell=(0, 5) deploy=true min_x=0
+CLICK mouse=(404.0, 310.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(404.0, 310.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(400.0, 308.0) cell=(1, 5) deploy=false min_x=0
+CLICK mouse=(484.0, 332.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(488.0, 331.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(380.0, 294.0) cell=(0, 5) deploy=false min_x=0
+CLICK mouse=(504.0, 264.0) cell=(2, 2) deploy=false min_x=0
+CLICK mouse=(504.0, 264.0) cell=(2, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(402.0, 295.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(402.0, 295.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(416.0, 349.0) cell=(2, 6) deploy=true min_x=0
+CLICK mouse=(416.0, 349.0) cell=(2, 6) deploy=true min_x=0
+CLICK mouse=(530.0, 316.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(575.0, 289.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(373.0, 355.0) cell=(2, 6) deploy=false min_x=0
+CLICK mouse=(499.0, 328.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(499.0, 328.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(522.0, 291.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(572.0, 271.0) cell=(4, 1) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(422.0, 294.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(406.0, 321.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(396.0, 311.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(374.0, 325.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(374.0, 325.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(419.0, 342.0) cell=(3, 5) deploy=false min_x=0
+CLICK mouse=(419.0, 342.0) cell=(3, 5) deploy=false min_x=0
+CLICK mouse=(391.0, 263.0) cell=(0, 4) deploy=false min_x=0
+CLICK mouse=(548.0, 375.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(548.0, 375.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(593.0, 324.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(422.0, 330.0) cell=(3, 5) deploy=false min_x=0
+CLICK mouse=(532.0, 313.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(359.0, 296.0) cell=(1, 5) deploy=false min_x=0
+CLICK mouse=(493.0, 300.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(485.0, 291.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(489.0, 281.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(553.0, 348.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(553.0, 348.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(617.0, 302.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(617.0, 380.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(707.0, 307.0) cell=(8, 2) deploy=false min_x=0
+CLICK mouse=(533.0, 307.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(605.0, 326.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(605.0, 326.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(668.0, 326.0) cell=(7, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(361.0, 317.0) cell=(0, 6) deploy=true min_x=0
+CLICK mouse=(406.0, 311.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(448.0, 295.0) cell=(2, 4) deploy=true min_x=0
+CLICK mouse=(441.0, 282.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(497.0, 369.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(472.0, 351.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(543.0, 340.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(543.0, 340.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(607.0, 321.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(393.0, 194.0) cell=(1, 0) deploy=false min_x=0
+CLICK mouse=(321.0, 319.0) cell=(1, 2) deploy=false min_x=0
+CLICK mouse=(523.0, 348.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(460.0, 288.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(542.0, 246.0) cell=(5, 1) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(351.0, 288.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(326.0, 352.0) cell=(2, 6) deploy=true min_x=0
+CLICK mouse=(306.0, 343.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(256.0, 365.0) cell=(1, 7) deploy=true min_x=0
+CLICK mouse=(380.0, 387.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(380.0, 387.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(345.0, 361.0) cell=(2, 6) deploy=false min_x=0
+CLICK mouse=(427.0, 355.0) cell=(3, 5) deploy=false min_x=0
+CLICK mouse=(331.0, 291.0) cell=(0, 5) deploy=false min_x=0
+CLICK mouse=(441.0, 311.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(441.0, 311.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(390.0, 269.0) cell=(1, 4) deploy=false min_x=0
+CLICK mouse=(381.0, 474.0) cell=(2, 6) deploy=false min_x=0
+CLICK mouse=(376.0, 371.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(401.0, 334.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(397.0, 330.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(391.0, 320.0) cell=(2, 3) deploy=false min_x=0
+CLICK mouse=(496.0, 274.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(496.0, 274.0) cell=(4, 1) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(426.0, 289.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(409.0, 317.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(404.0, 317.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(551.0, 319.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(582.0, 332.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(500.0, 298.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(607.0, 321.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(497.0, 298.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(559.0, 207.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(500.0, 329.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(578.0, 228.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(442.0, 308.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(493.0, 407.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(460.0, 338.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(487.0, 416.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(276.0, 100.0) cell=(0, 5) deploy=false min_x=0
+CLICK mouse=(379.0, 280.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(233.0, 92.0) cell=(0, 6) deploy=false min_x=0
+CLICK mouse=(346.0, 164.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(350.0, 171.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(244.0, 305.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(532.0, 383.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(549.0, 277.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(579.0, 344.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(677.0, 389.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(558.0, 356.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(435.0, 394.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(682.0, 390.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(600.0, 479.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(518.0, 522.0) cell=(3, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(413.0, 309.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(466.0, 244.0) cell=(1, 2) deploy=true min_x=0
+CLICK mouse=(449.0, 298.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(404.0, 299.0) cell=(1, 5) deploy=false min_x=0
+CLICK mouse=(533.0, 345.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(533.0, 345.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(575.0, 342.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(477.0, 240.0) cell=(1, 1) deploy=false min_x=0
+CLICK mouse=(537.0, 281.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(537.0, 284.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(571.0, 293.0) cell=(5, 2) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=0 action={ "attack": 3 }
+EP: i=1 action={ "attack": 2 }
+END_TURN: enemy phase done
+CLICK mouse=(534.0, 330.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(571.0, 331.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(544.0, 278.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(561.0, 292.0) cell=(4, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(377.0, 295.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(492.0, 218.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(481.0, 220.0) cell=(1, 1) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(396.0, 329.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(418.0, 333.0) cell=(2, 5) deploy=false min_x=0
+CLICK mouse=(334.0, 308.0) cell=(0, 6) deploy=false min_x=0
+CLICK mouse=(503.0, 374.0) cell=(5, 5) deploy=false min_x=0
+CLICK mouse=(503.0, 374.0) cell=(5, 5) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=0 action={ "move_to": (5, 4), "attack": 2 }
+EP: i=1 action={ "move_to": (6, 4), "attack": 2 }
+END_TURN: enemy phase done
+CLICK mouse=(504.0, 348.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(525.0, 325.0) cell=(4, 3) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=0 action={ "attack": 2 }
+EP: i=1 action={ "attack": 2 }
+END_TURN: enemy phase done
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(431.0, 303.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(434.0, 357.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(434.0, 383.0) cell=(1, 7) deploy=true min_x=0
+CLICK mouse=(433.0, 465.0) cell=(1, 8) deploy=true min_x=0
+CLICK mouse=(434.0, 473.0) cell=(1, 9) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(348.0, 312.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(348.0, 312.0) cell=(1, 1) deploy=true min_x=0
+CLICK mouse=(373.0, 313.0) cell=(2, 1) deploy=true min_x=0
+CLICK mouse=(373.0, 313.0) cell=(2, 1) deploy=true min_x=0
+CLICK mouse=(386.0, 344.0) cell=(2, 2) deploy=true min_x=0
+CLICK mouse=(386.0, 344.0) cell=(2, 2) deploy=true min_x=0
+CLICK mouse=(401.0, 441.0) cell=(2, 4) deploy=true min_x=0
+CLICK mouse=(401.0, 441.0) cell=(2, 4) deploy=true min_x=0
+CLICK mouse=(288.0, 485.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(288.0, 485.0) cell=(1, 4) deploy=true min_x=0
+CLICK mouse=(273.0, 377.0) cell=(0, 2) deploy=true min_x=0
+CLICK mouse=(273.0, 377.0) cell=(0, 2) deploy=true min_x=0
+CLICK mouse=(386.0, 324.0) cell=(2, 1) deploy=false min_x=0
+CLICK mouse=(504.0, 283.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(395.0, 273.0) cell=(2, 0) deploy=false min_x=0
+CLICK mouse=(569.0, 328.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(569.0, 328.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(655.0, 361.0) cell=(6, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(293.0, 306.0) cell=(1, 3) deploy=true min_x=0
+CLICK mouse=(305.0, 363.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(306.0, 364.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(359.0, 374.0) cell=(3, 5) deploy=true min_x=0
+CLICK mouse=(359.0, 374.0) cell=(3, 5) deploy=true min_x=0
+CLICK mouse=(359.0, 374.0) cell=(3, 5) deploy=true min_x=0
+CLICK mouse=(279.0, 425.0) cell=(1, 6) deploy=true min_x=0
+CLICK mouse=(254.0, 498.0) cell=(1, 7) deploy=true min_x=0
+CLICK mouse=(254.0, 498.0) cell=(1, 7) deploy=true min_x=0
+CLICK mouse=(554.0, 301.0) cell=(3, 3) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(615.0, 322.0) cell=(4, 3) deploy=false min_x=0
+END_TURN: start enemy phase
+END_TURN: enemy phase done
+CLICK mouse=(660.0, 419.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(640.0, 284.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(707.0, 434.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(717.0, 467.0) cell=(6, 5) deploy=false min_x=0
+CLICK mouse=(558.0, 318.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(458.0, 286.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(362.0, 388.0) cell=(3, 6) deploy=false min_x=0
+CLICK mouse=(351.0, 406.0) cell=(4, 6) deploy=false min_x=0
+CLICK mouse=(546.0, 329.0) cell=(4, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(656.0, 334.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(755.0, 369.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(661.0, 336.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(587.0, 344.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(562.0, 209.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(562.0, 209.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(602.0, 229.0) cell=(5, 2) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+END_TURN: enemy phase done
+CLICK mouse=(450.0, 280.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(747.0, 272.0) cell=(7, 2) deploy=false min_x=0
+CLICK mouse=(428.0, 381.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(544.0, 332.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(544.0, 332.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(603.0, 170.0) cell=(5, 0) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+END_TURN: enemy phase done
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 1 }
+EP: i=7 action={ "attack": 1 }
+END_TURN: enemy phase done
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 1 }
+EP: i=7 action={ "attack": 1 }
+END_TURN: enemy phase done
+CLICK mouse=(485.0, 320.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(519.0, 289.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(519.0, 289.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(533.0, 300.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(507.0, 330.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(535.0, 349.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(528.0, 357.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(528.0, 357.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(556.0, 313.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(556.0, 313.0) cell=(4, 4) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 1 }
+EP: i=7 action={ "move_to": (5, 3), "attack": 2 }
+END_TURN: enemy phase done
+CLICK mouse=(455.0, 201.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(323.0, 316.0) cell=(2, 4) deploy=false min_x=0
+CLICK mouse=(465.0, 237.0) cell=(3, 3) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 2 }
+EP: i=7 action={ "move_to": (4, 3), "attack": 3 }
+END_TURN: enemy phase done
+END_TURN: start enemy phase
+EP: i=6 action={ "move_to": (4, 2), "attack": 3 }
+EP: i=7 action={ "attack": 5 }
+END_TURN: enemy phase done
+CLICK mouse=(92.0, 41.0) cell=<null> deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 4 }
+EP: i=7 action={ "attack": 4 }
+END_TURN: enemy phase done
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(686.0, 363.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(754.0, 411.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(617.0, 302.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(734.0, 259.0) cell=(5, 0) deploy=false min_x=0
+END_TURN: start enemy phase
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+END_TURN: enemy phase done
+CLICK mouse=(601.0, 306.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(725.0, 257.0) cell=(5, 0) deploy=false min_x=0
+CLICK mouse=(674.0, 346.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(768.0, 377.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(803.0, 473.0) cell=(7, 4) deploy=false min_x=0
+CLICK mouse=(742.0, 438.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(919.0, 73.0) cell=<null> deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(355.0, 335.0) cell=(1, 5) deploy=true min_x=0
+CLICK mouse=(428.0, 346.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(508.0, 321.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(575.0, 242.0) cell=(5, 0) deploy=false min_x=0
+CLICK mouse=(495.0, 288.0) cell=(4, 2) deploy=false min_x=0
+EP: i=0 action={ "attack": 2 }
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(572.0, 447.0) cell=(7, 5) deploy=false min_x=0
+CLICK mouse=(611.0, 253.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(573.0, 329.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(595.0, 239.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(480.0, 320.0) cell=(5, 3) deploy=false min_x=0
+EP: i=6 action={ "move_to": (6, 3), "attack": 1 }
+CLICK mouse=(664.0, 304.0) cell=(7, 3) deploy=false min_x=0
+CLICK mouse=(599.0, 242.0) cell=(5, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(608.0, 294.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(540.0, 314.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(449.0, 245.0) cell=(4, 0) deploy=false min_x=0
+CLICK mouse=(526.0, 237.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(543.0, 300.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(674.0, 373.0) cell=(7, 4) deploy=false min_x=0
+EP: i=6 action={ "attack": 1 }
+EP: i=7 action={ "attack": 0 }
+CLICK mouse=(676.0, 408.0) cell=(6, 5) deploy=false min_x=0
+CLICK mouse=(483.0, 347.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(483.0, 347.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(548.0, 307.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(503.0, 249.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(454.0, 225.0) cell=(4, 0) deploy=false min_x=0
+EP: i=6 action={ "attack": 1 }
+CLICK mouse=(587.0, 294.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(664.0, 274.0) cell=(7, 3) deploy=false min_x=0
+CLICK mouse=(446.0, 246.0) cell=(4, 1) deploy=false min_x=0
+CLICK mouse=(259.0, 474.0) cell=(1, 4) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(679.0, 287.0) cell=(8, 3) deploy=false min_x=0
+CLICK mouse=(579.0, 295.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(480.0, 366.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(434.0, 383.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(564.0, 252.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(564.0, 252.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(587.0, 243.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(603.0, 249.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(603.0, 249.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(528.0, 225.0) cell=(5, 2) deploy=false min_x=0
+EP: i=6 action={ "attack": 5 }
+EP: i=7 action={ "attack": 2 }
+CLICK mouse=(488.0, 351.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(616.0, 326.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(462.0, 278.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(698.0, 286.0) cell=(8, 3) deploy=false min_x=0
+CLICK mouse=(571.0, 268.0) cell=(7, 2) deploy=false min_x=0
+EP: i=7 action={ "attack": 5 }
+CLICK mouse=(531.0, 214.0) cell=(7, 1) deploy=false min_x=0
+CLICK mouse=(578.0, 279.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(642.0, 347.0) cell=(7, 4) deploy=false min_x=0
+CLICK mouse=(558.0, 273.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(651.0, 529.0) cell=(6, 7) deploy=false min_x=0
+CLICK mouse=(707.0, 449.0) cell=(7, 6) deploy=false min_x=0
+CLICK mouse=(782.0, 446.0) cell=(8, 6) deploy=false min_x=0
+CLICK mouse=(550.0, 369.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(468.0, 455.0) cell=(4, 5) deploy=false min_x=0
+CLICK mouse=(108.0, 82.0) cell=<null> deploy=false min_x=0
+CLICK mouse=(538.0, 359.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(609.0, 338.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(862.0, 431.0) cell=(10, 6) deploy=false min_x=0
+CLICK mouse=(634.0, 498.0) cell=(6, 6) deploy=false min_x=0
+CLICK mouse=(644.0, 328.0) cell=(7, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(603.0, 340.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(681.0, 336.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(758.0, 417.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(593.0, 316.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(507.0, 313.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(657.0, 225.0) cell=(3, 0) deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+CLICK mouse=(581.0, 353.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(665.0, 403.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(629.0, 407.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(752.0, 416.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(533.0, 300.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(659.0, 227.0) cell=(3, 0) deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+CLICK mouse=(526.0, 293.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(675.0, 210.0) cell=(3, 0) deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+CLICK mouse=(540.0, 291.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(685.0, 212.0) cell=(4, 0) deploy=false min_x=0
+CLICK mouse=(190.0, 409.0) cell=(0, 6) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(589.0, 351.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(659.0, 373.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(482.0, 370.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(602.0, 426.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(602.0, 426.0) cell=(6, 4) deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 1 }
+CLICK mouse=(438.0, 322.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(687.0, 337.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(687.0, 337.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(678.0, 366.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(678.0, 369.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(598.0, 394.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(576.0, 250.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(637.0, 221.0) cell=(3, 0) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(311.0, 176.0) cell=<null> deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(615.0, 335.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(761.0, 378.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(431.0, 325.0) cell=(3, 2) deploy=false min_x=0
+CLICK mouse=(557.0, 301.0) cell=(4, 2) deploy=false min_x=0
+EP: i=7 action={ "attack": 0 }
+CLICK mouse=(519.0, 246.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(644.0, 246.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(734.0, 239.0) cell=(7, 3) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(705.0, 366.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(729.0, 315.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(577.0, 280.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(623.0, 211.0) cell=(6, 1) deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+CLICK mouse=(672.0, 279.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(782.0, 220.0) cell=(7, 3) deploy=false min_x=0
+CLICK mouse=(585.0, 278.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(605.0, 187.0) cell=(5, 1) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(479.0, 401.0) cell=(5, 6) deploy=true min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(557.0, 350.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(824.0, 239.0) cell=<null> deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(568.0, 355.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(682.0, 289.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(622.0, 389.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(719.0, 338.0) cell=(6, 2) deploy=false min_x=0
+EP: i=6 action={ "move_to": (5, 3), "attack": 0 }
+EP: i=7 action={ "attack": 0 }
+CLICK mouse=(586.0, 314.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(462.0, 370.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(534.0, 329.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(368.0, 317.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(490.0, 276.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(144.0, 27.0) cell=<null> deploy=false min_x=0
+EP: i=6 action={ "attack": 0 }
+CLICK mouse=(395.0, 300.0) cell=(3, 4) deploy=false min_x=0
+CLICK mouse=(486.0, 269.0) cell=(4, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(667.0, 412.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(784.0, 377.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(566.0, 367.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(773.0, 376.0) cell=(6, 2) deploy=false min_x=0
+EP: i=6 action={ "attack": 1 }
+CLICK mouse=(622.0, 282.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(741.0, 280.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(647.0, 392.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(717.0, 279.0) cell=(5, 1) deploy=false min_x=0
+CLICK mouse=(612.0, 401.0) cell=(5, 3) deploy=false min_x=0
+CLICK mouse=(593.0, 310.0) cell=(3, 3) deploy=false min_x=0
+CLICK mouse=(680.0, 364.0) cell=(4, 2) deploy=false min_x=0
+CLICK mouse=(510.0, 356.0) cell=(4, 4) deploy=false min_x=0
+CLICK mouse=(705.0, 379.0) cell=(5, 2) deploy=false min_x=0
+EP: i=6 action={ "attack": 1 }
+CLICK mouse=(591.0, 331.0) cell=(4, 3) deploy=false min_x=0
+CLICK mouse=(687.0, 372.0) cell=(5, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(601.0, 401.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(760.0, 415.0) cell=(6, 2) deploy=false min_x=0
+CLICK mouse=(685.0, 469.0) cell=(6, 4) deploy=false min_x=0
+CLICK mouse=(771.0, 383.0) cell=(6, 2) deploy=false min_x=0
+EP: i=6 action={ "move_to": (5, 3), "attack": 0 }
+CLICK mouse=(599.0, 397.0) cell=(5, 4) deploy=false min_x=0
+CLICK mouse=(685.0, 326.0) cell=(5, 2) deploy=false min_x=0
+CLICK mouse=(691.0, 461.0) cell=(6, 3) deploy=false min_x=0
+CLICK mouse=(681.0, 325.0) cell=(5, 2) deploy=false min_x=0

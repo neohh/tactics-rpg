@@ -22,10 +22,13 @@ var content_vbox: VBoxContainer
 
 func _ready():
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	Game.ensure_party()
 	CLASSES = _lj("res://data/classes.json")
 	CHARS = _lj("res://data/chars.json")
 	ITEMS = _lj("res://data/items.json")
 	PERKS = _lj("res://data/perks.json")
+	if selected_hero >= Game.party.size():
+		selected_hero = 0
 	_build()
 
 func _build():
@@ -466,25 +469,39 @@ func _show_journal_tab():
 # ==================== TAB: НАСТРОЙКИ ====================
 
 func _show_settings_tab():
-	_add_label("Настройки / Системное меню", 24)
+	_add_label("Сохранения", 24)
 	_add_separator()
 
-	var btn_save = Button.new()
-	btn_save.text = "💾 Сохранить игру"
-	btn_save.custom_minimum_size = Vector2(200, 40)
-	btn_save.pressed.connect(func():
-		Game.save_game()
-		_add_label("Сохранено!"))
-	content_vbox.add_child(btn_save)
+	# Save slots
+	for i in 6:
+		var info = Game.get_save_info(i)
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 8)
+		content_vbox.add_child(hbox)
 
-	var btn_load = Button.new()
-	btn_load.text = "📂 Загрузить игру"
-	btn_load.custom_minimum_size = Vector2(200, 40)
-	btn_load.pressed.connect(func():
-		if Game.load_game():
-			_refresh()
-			_add_label("Загружено!"))
-	content_vbox.add_child(btn_load)
+		var slot_label = Label.new()
+		if info.size() > 0:
+			slot_label.text = "Слот %d: День %d, %d:00 | %s | Золото %d | Отряд: %d" % [
+				i, int(info.get("day", 0)), int(info.get("hour", 0)),
+				str(info.get("loc", "?")), int(info.get("gold", 0)), int(info.get("party_size", 0))]
+		else:
+			slot_label.text = "Слот %d: (пусто)" % i
+		slot_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hbox.add_child(slot_label)
+
+		var save_btn = Button.new()
+		save_btn.text = "Сохранить"
+		save_btn.pressed.connect(_on_save.bind(i))
+		hbox.add_child(save_btn)
+
+		var load_btn = Button.new()
+		load_btn.text = "Загрузить"
+		load_btn.disabled = (info.size() == 0)
+		load_btn.pressed.connect(_on_load.bind(i))
+		hbox.add_child(load_btn)
+
+	_add_separator()
+	_add_label("Системное меню", 20)
 
 	var btn_map = Button.new()
 	btn_map.text = "🗺️ На глобальную карту"
@@ -533,6 +550,19 @@ func _add_stat_label(parent: Control, text: String):
 	lbl.add_theme_font_size_override("font_size", 14)
 	lbl.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
 	parent.add_child(lbl)
+
+func _on_save(slot: int):
+	Game.save_game(slot)
+	_refresh()
+
+func _on_load(slot: int):
+	if Game.load_game(slot):
+		# Reload current scene to apply loaded state
+		var scene = get_tree().current_scene
+		if scene != null:
+			get_tree().change_scene_to_file(scene.scene_file_path)
+		else:
+			get_tree().change_scene_to_file("res://overworld3d.tscn")
 
 func _close():
 	queue_free()

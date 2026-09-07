@@ -1,1 +1,29 @@
-{"q1":{"reward":{"gold":50,"items":{"potion":1}},"stages":{"1":{"loc":"camp","text":"Зачисти лагерь бандитов","type":"clear"},"2":{"text":"Вернись к старосте","type":"talk","who":"elder"},"3":{"done":true,"text":""}},"title":"Зачистить лагерь"}}
+{
+	"q_intro": {
+		"title": "Разговор со старостой",
+		"stages": {
+			"1": {"type": "goto", "loc": "village", "dlg": "elder_village", "text": "Поговори со старостой деревни"},
+			"2": {"type": "talk", "who": "elder", "dlg": "elder_village", "text": "Выслушай старосту", "done": false},
+			"3": {"done": true, "text": ""}
+		},
+		"reward": {"gold": 20, "items": {"potion": 1}}
+	},
+	"q_bandits": {
+		"title": "Разбойничий перевал",
+		"stages": {
+			"1": {"type": "goto", "loc": "bandit_road", "text": "Доберись до разбойничьего перевала"},
+			"2": {"type": "clear", "loc": "bandit_road", "text": "Зачисти перевал от бандитов"},
+			"3": {"done": true, "text": ""}
+		},
+		"reward": {"gold": 50, "items": {"potion": 2}}
+	},
+	"q_camp": {
+		"title": "Лагерь разбойников",
+		"stages": {
+			"1": {"type": "goto", "loc": "camp", "text": "Найди лагерь разбойников"},
+			"2": {"type": "clear", "loc": "camp", "text": "Зачисти лагерь"},
+			"3": {"done": true, "text": ""}
+		},
+		"reward": {"gold": 100, "items": {"potion": 3}}
+	}
+}

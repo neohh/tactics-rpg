@@ -754,3 +754,5 @@ CLICK mouse=(599.0, 397.0) cell=(5, 4) deploy=false min_x=0
 CLICK mouse=(685.0, 326.0) cell=(5, 2) deploy=false min_x=0
 CLICK mouse=(691.0, 461.0) cell=(6, 3) deploy=false min_x=0
 CLICK mouse=(681.0, 325.0) cell=(5, 2) deploy=false min_x=0
+BUILD loc=bandit_ambush GW=16 GH=12 OX=0 OY=0 chunks=["0,0", "0,1", "1,0", "1,1"] deploy_min_x=0
+CLICK mouse=(729.0, 431.0) cell=(5, 5) deploy=false min_x=0

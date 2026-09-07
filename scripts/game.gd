@@ -111,14 +111,41 @@ func journal_text():
 "
 	return s
 
-func save_game():
-	var d = {"v": 2, "inventory": inventory, "gold": gold, "food": food, "day": day, "hour": hour, "fatigue": fatigue, "quests": quests, "flags": flags, "cur_loc": cur_loc, "party": party, "party_pool": party_pool, "loc_state": loc_state}
-	var f = FileAccess.open("user://save.json", FileAccess.WRITE)
+func save_game(slot: int = 0):
+	var d = {"v": 2, "slot": slot, "day": day, "hour": hour, "cur_loc": cur_loc, "gold": gold, "food": food, "fatigue": fatigue, "inventory": inventory, "quests": quests, "flags": flags, "party": party, "party_pool": party_pool, "loc_state": loc_state}
+	var path = "user://save_%d.json" % slot
+	var f = FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		print("Ошибка сохранения.")
+		return
 	f.store_string(JSON.stringify(d))
 	f.close()
-	print("Сохранено.")
-func load_game():
-	var f = FileAccess.open("user://save.json", FileAccess.READ)
+	print("Сохранено в слот %d." % slot)
+func load_game(slot: int = -1) -> bool:
+	# slot=-1 means load most recent
+	var path = ""
+	if slot >= 0:
+		path = "user://save_%d.json" % slot
+	else:
+		var best = -1
+		var best_time = 0
+		for i in 10:
+			var p = "user://save_%d.json" % i
+			if FileAccess.file_exists(p):
+				var f2 = FileAccess.open(p, FileAccess.READ)
+				if f2 != null:
+					var mod = FileAccess.get_modified_time(p)
+					f2.close()
+					if best < 0 or mod > best_time:
+						best = i
+						best_time = mod
+						best = i
+		if best < 0:
+			# Fallback to old save
+			path = "user://save.json"
+		else:
+			path = "user://save_%d.json" % best
+	var f = FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		print("Нет сохранения.")
 		return false
@@ -138,8 +165,25 @@ func load_game():
 	party = j.get("party", [])
 	party_pool = j.get("party_pool", [])
 	loc_state = j.get("loc_state", {})
-	print("Загружено.")
+	print("Загружено из %s." % path)
 	return true
+func get_save_info(slot: int) -> Dictionary:
+	var path = "user://save_%d.json" % slot
+	if not FileAccess.file_exists(path):
+		return {}
+	var f = FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	if j == null:
+		return {}
+	var loc_name = cur_loc
+	var locs = _lj("res://data/locations.json")
+	if locs.has(str(j.get("cur_loc", ""))):
+		loc_name = str(locs[str(j["cur_loc"])].get("name", j["cur_loc"]))
+	var party_count = j.get("party", []).size()
+	return {"slot": slot, "day": j.get("day", 1), "hour": j.get("hour", 8), "gold": j.get("gold", 0), "loc": loc_name, "party_size": party_count}
 
 func live_reload():
 	QUESTS = _lj("res://data/quests.json")
@@ -233,3 +277,7 @@ func ensure_party():
 	PartyTools.fill_party()
 	for m in party:
 		PartyTools.ensure_hp(m)
+	# Auto-start first quest if no quests active
+	if quests.size() == 0 and QUESTS.has("q_intro"):
+		quests["q_intro"] = 1
+		_notify("Новое задание: Разговор со старостой")

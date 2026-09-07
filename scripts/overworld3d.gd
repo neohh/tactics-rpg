@@ -1618,6 +1618,10 @@ func _unhandled_input(ev):
 		if ev.keycode == KEY_T:
 			_talk()
 			return
+		if ev.keycode == KEY_I:
+			var hub = load("res://scripts/game_hub.gd").new()
+			add_child(hub)
+			return
 		if ev.keycode == KEY_P:
 			var pu = load("res://scripts/party_ui.gd").new()
 			add_child(pu)

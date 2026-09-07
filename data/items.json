@@ -1,1 +1,17 @@
-{"food":{"food":2.0,"img":"","name":"Припасы","price":10.0},"potion":{"heal":1.0,"img":"res://art/hp_zelie.png","name":"Зелье лечения","price":25.0,"sell":10.0}}
+{
+	"food": {"food": 2, "img": "", "name": "Припасы", "price": 10, "type": "consumable"},
+	"potion": {"heal": 1, "img": "res://art/hp_zelie.png", "name": "Зелье лечения", "price": 25, "sell": 10, "type": "consumable"},
+	"iron_sword": {"name": "Железный меч", "img": "", "price": 50, "sell": 25, "slot": "weapon", "mods": {"dmg_bonus": 1, "cf": 0.05}, "type": "weapon"},
+	"steel_sword": {"name": "Стальной меч", "img": "", "price": 120, "sell": 60, "slot": "weapon", "mods": {"dmg_bonus": 2, "cf": 0.08}, "type": "weapon"},
+	"war_hammer": {"name": "Боевой молот", "img": "", "price": 100, "sell": 50, "slot": "weapon", "mods": {"dmg_bonus": 3}, "type": "weapon"},
+	"hunting_bow": {"name": "Охотничий лук", "img": "", "price": 60, "sell": 30, "slot": "weapon", "mods": {"ar": 2, "dmg_bonus": 1}, "type": "weapon"},
+	"long_bow": {"name": "Длинный лук", "img": "", "price": 140, "sell": 70, "slot": "weapon", "mods": {"ar": 3, "dmg_bonus": 1, "cf": 0.05}, "type": "weapon"},
+	"leather_armor": {"name": "Кожаная броня", "img": "", "price": 40, "sell": 20, "slot": "armor", "mods": {"hp": 1, "armor": 1}, "type": "armor"},
+	"chainmail": {"name": "Кольчуга", "img": "", "price": 100, "sell": 50, "slot": "armor", "mods": {"hp": 2, "armor": 2}, "type": "armor"},
+	"plate_armor": {"name": "Латы", "img": "", "price": 200, "sell": 100, "slot": "armor", "mods": {"hp": 3, "armor": 3, "move": -1}, "type": "armor"},
+	"magic_robe": {"name": "Магическая мантия", "img": "", "price": 80, "sell": 40, "slot": "armor", "mods": {"hp": 1, "hit_bonus": 0.05}, "type": "armor"},
+	"ring_power": {"name": "Кольцо силы", "img": "", "price": 80, "sell": 40, "slot": "trinket", "mods": {"dmg_bonus": 1}, "type": "trinket"},
+	"ring_fortitude": {"name": "Кольцо стойкости", "img": "", "price": 80, "sell": 40, "slot": "trinket", "mods": {"hp": 2}, "type": "trinket"},
+	"amulet_speed": {"name": "Амулет скорости", "img": "", "price": 90, "sell": 45, "slot": "trinket", "mods": {"move": 1}, "type": "trinket"},
+	"amulet_precision": {"name": "Амулет точности", "img": "", "price": 90, "sell": 45, "slot": "trinket", "mods": {"hit_bonus": 0.1, "cf": 0.05}, "type": "trinket"}
+}

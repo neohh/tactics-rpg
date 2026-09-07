@@ -13,11 +13,20 @@ static func new_member(char_id: String, cls: String, level: int = 1) -> Dictiona
 static func fill_party():
 	if Game.party.size() > 0:
 		return
-	var defs = [["hero", "swordsman"], ["kael", "swordsman"], ["bria", "archer"], ["dorn", "halberd"], ["vesna", "mage"], ["grik", "assassin"]]
+	var defs = [
+		["hero", "swordsman", "iron_sword", "leather_armor"],
+		["kael", "swordsman", "iron_sword", ""],
+		["bria", "archer", "hunting_bow", "leather_armor"],
+		["dorn", "halberd", "war_hammer", "chainmail"],
+		["vesna", "mage", "", "magic_robe"],
+		["grik", "assassin", "iron_sword", "leather_armor"]
+	]
 	for d in defs:
 		if Game.party.size() >= max_size():
 			break
 		var m = new_member(d[0], d[1], 1)
+		m["equip"]["weapon"] = d[2]
+		m["equip"]["armor"] = d[3]
 		ensure_hp(m)
 		Game.party.append(m)
 

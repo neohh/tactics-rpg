@@ -488,6 +488,10 @@ func _unhandled_input(ev):
 			var pu = load("res://scripts/party_ui.gd").new()
 			add_child(pu)
 			return
+		if ev.keycode == KEY_I:
+			var hub = load("res://scripts/game_hub.gd").new()
+			add_child(hub)
+			return
 		if ev.keycode == KEY_E:
 			_try_pick()
 			return

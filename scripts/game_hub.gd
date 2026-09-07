@@ -32,10 +32,14 @@ func _ready():
 	_build()
 
 func _build():
-	# Background overlay
+	# Block all input — consume everything
+	mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Full opaque background
 	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.85)
+	bg.color = Color(0.02, 0.02, 0.04, 1.0)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	bg.gui_input.connect(_on_bg_click)
 	add_child(bg)
 
@@ -44,9 +48,9 @@ func _build():
 	main.set_anchors_preset(Control.PRESET_FULL_RECT)
 	main.offset_left = 40
 	main.offset_right = -40
-	main.offset_top = 40
-	main.offset_bottom = -40
-	main.add_theme_constant_override("separation", 8)
+	main.offset_top = 30
+	main.offset_bottom = -20
+	main.add_theme_constant_override("separation", 6)
 	add_child(main)
 
 	# Top bar: title + tab bar + close button
@@ -476,12 +480,12 @@ func _show_settings_tab():
 	for i in 6:
 		var info = Game.get_save_info(i)
 		var hbox = HBoxContainer.new()
-		hbox.add_theme_constant_override("separation", 8)
+		hbox.add_theme_constant_override("separation", 10)
 		content_vbox.add_child(hbox)
 
 		var slot_label = Label.new()
 		if info.size() > 0:
-			slot_label.text = "Слот %d: День %d, %d:00 | %s | Золото %d | Отряд: %d" % [
+			slot_label.text = "Слот %d: День %d, %d:00 | %s | %d зол. | Отряд %d" % [
 				i, int(info.get("day", 0)), int(info.get("hour", 0)),
 				str(info.get("loc", "?")), int(info.get("gold", 0)), int(info.get("party_size", 0))]
 		else:
@@ -491,11 +495,13 @@ func _show_settings_tab():
 
 		var save_btn = Button.new()
 		save_btn.text = "Сохранить"
+		save_btn.custom_minimum_size = Vector2(110, 32)
 		save_btn.pressed.connect(_on_save.bind(i))
 		hbox.add_child(save_btn)
 
 		var load_btn = Button.new()
 		load_btn.text = "Загрузить"
+		load_btn.custom_minimum_size = Vector2(110, 32)
 		load_btn.disabled = (info.size() == 0)
 		load_btn.pressed.connect(_on_load.bind(i))
 		hbox.add_child(load_btn)
@@ -505,14 +511,14 @@ func _show_settings_tab():
 
 	var btn_map = Button.new()
 	btn_map.text = "🗺️ На глобальную карту"
-	btn_map.custom_minimum_size = Vector2(200, 40)
+	btn_map.custom_minimum_size = Vector2(200, 36)
 	btn_map.pressed.connect(func():
 		get_tree().change_scene_to_file("res://overworld3d.tscn"))
 	content_vbox.add_child(btn_map)
 
 	var btn_menu = Button.new()
 	btn_menu.text = "🏠 В главное меню"
-	btn_menu.custom_minimum_size = Vector2(200, 40)
+	btn_menu.custom_minimum_size = Vector2(200, 36)
 	btn_menu.pressed.connect(func():
 		get_tree().change_scene_to_file("res://menu.tscn"))
 	content_vbox.add_child(btn_menu)
@@ -572,7 +578,15 @@ func _on_bg_click(ev):
 		_close()
 
 func _unhandled_input(ev):
+	# Consume ALL input to prevent game behind from receiving it
+	if ev is InputEventMouseButton:
+		get_viewport().set_input_as_handled()
+		return
+	if ev is InputEventMouseMotion:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventKey and ev.pressed:
+		get_viewport().set_input_as_handled()
 		if ev.keycode == KEY_ESCAPE:
 			_close()
 		elif ev.keycode == KEY_Q:

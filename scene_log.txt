@@ -1299,3 +1299,6 @@ set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=villa
 set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
 set_cat chars | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
 set_cat dialogs | scene=Menu:<Control#36960208392> | active=false loc= cur=village data=false
+set_cat chars | scene=Menu:<Control#39912998413> | active=false loc= cur=village data=false
+set_cat mats | scene=Menu:<Control#39912998413> | active=false loc= cur=village data=false
+set_cat objects | scene=Menu:<Control#39912998413> | active=false loc= cur=village data=false

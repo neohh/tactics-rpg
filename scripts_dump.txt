@@ -1,4 +1,4 @@
-=== SCRIPT DUMP FULL | 2026-09-07T22:31:18 ===
+=== SCRIPT DUMP FULL | 2026-09-29T22:55:00 ===
 
 ##### FILE: res://addons/loc_bridge/loc_bridge.gd #####
 # lines=45 | mtime=1787839627
@@ -3560,7 +3560,7 @@ static func snap_to_cells(points: Array, is_free: Callable) -> Array:
 	return res
 
 ##### FILE: res://scripts/game.gd #####
-# lines=236 | mtime=1787839627 | var party_pool, func ensure_party, func autosave
+# lines=284 | mtime=1788802698 | var party_pool, func ensure_party, func autosave
 extends Node
 var inventory = {}
 var gold = 0
@@ -3674,14 +3674,41 @@ func journal_text():
 "
 	return s
 
-func save_game():
-	var d = {"v": 2, "inventory": inventory, "gold": gold, "food": food, "day": day, "hour": hour, "fatigue": fatigue, "quests": quests, "flags": flags, "cur_loc": cur_loc, "party": party, "party_pool": party_pool, "loc_state": loc_state}
-	var f = FileAccess.open("user://save.json", FileAccess.WRITE)
+func save_game(slot: int = 0):
+	var d = {"v": 2, "slot": slot, "day": day, "hour": hour, "cur_loc": cur_loc, "gold": gold, "food": food, "fatigue": fatigue, "inventory": inventory, "quests": quests, "flags": flags, "party": party, "party_pool": party_pool, "loc_state": loc_state}
+	var path = "user://save_%d.json" % slot
+	var f = FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		print("Ошибка сохранения.")
+		return
 	f.store_string(JSON.stringify(d))
 	f.close()
-	print("Сохранено.")
-func load_game():
-	var f = FileAccess.open("user://save.json", FileAccess.READ)
+	print("Сохранено в слот %d." % slot)
+func load_game(slot: int = -1) -> bool:
+	# slot=-1 means load most recent
+	var path = ""
+	if slot >= 0:
+		path = "user://save_%d.json" % slot
+	else:
+		var best = -1
+		var best_time = 0
+		for i in 10:
+			var p = "user://save_%d.json" % i
+			if FileAccess.file_exists(p):
+				var f2 = FileAccess.open(p, FileAccess.READ)
+				if f2 != null:
+					var mod = FileAccess.get_modified_time(p)
+					f2.close()
+					if best < 0 or mod > best_time:
+						best = i
+						best_time = mod
+						best = i
+		if best < 0:
+			# Fallback to old save
+			path = "user://save.json"
+		else:
+			path = "user://save_%d.json" % best
+	var f = FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		print("Нет сохранения.")
 		return false
@@ -3701,8 +3728,25 @@ func load_game():
 	party = j.get("party", [])
 	party_pool = j.get("party_pool", [])
 	loc_state = j.get("loc_state", {})
-	print("Загружено.")
+	print("Загружено из %s." % path)
 	return true
+func get_save_info(slot: int) -> Dictionary:
+	var path = "user://save_%d.json" % slot
+	if not FileAccess.file_exists(path):
+		return {}
+	var f = FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	if j == null:
+		return {}
+	var loc_name = cur_loc
+	var locs = _lj("res://data/locations.json")
+	if locs.has(str(j.get("cur_loc", ""))):
+		loc_name = str(locs[str(j["cur_loc"])].get("name", j["cur_loc"]))
+	var party_count = j.get("party", []).size()
+	return {"slot": slot, "day": j.get("day", 1), "hour": j.get("hour", 8), "gold": j.get("gold", 0), "loc": loc_name, "party_size": party_count}
 
 func live_reload():
 	QUESTS = _lj("res://data/quests.json")
@@ -3796,9 +3840,13 @@ func ensure_party():
 	PartyTools.fill_party()
 	for m in party:
 		PartyTools.ensure_hp(m)
+	# Auto-start first quest if no quests active
+	if quests.size() == 0 and QUESTS.has("q_intro"):
+		quests["q_intro"] = 1
+		_notify("Новое задание: Разговор со старостой")
 
 ##### FILE: res://scripts/game_hub.gd #####
-# lines=564 | mtime=1788801402
+# lines=608 | mtime=1788802994
 extends Control
 
 # GameHub — Единый Хаб Интерфейсов
@@ -3823,17 +3871,24 @@ var content_vbox: VBoxContainer
 
 func _ready():
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	Game.ensure_party()
 	CLASSES = _lj("res://data/classes.json")
 	CHARS = _lj("res://data/chars.json")
 	ITEMS = _lj("res://data/items.json")
 	PERKS = _lj("res://data/perks.json")
+	if selected_hero >= Game.party.size():
+		selected_hero = 0
 	_build()
 
 func _build():
-	# Background overlay
+	# Block all input — consume everything
+	mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Full opaque background
 	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.85)
+	bg.color = Color(0.02, 0.02, 0.04, 1.0)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	bg.gui_input.connect(_on_bg_click)
 	add_child(bg)
 
@@ -3842,9 +3897,9 @@ func _build():
 	main.set_anchors_preset(Control.PRESET_FULL_RECT)
 	main.offset_left = 40
 	main.offset_right = -40
-	main.offset_top = 40
-	main.offset_bottom = -40
-	main.add_theme_constant_override("separation", 8)
+	main.offset_top = 30
+	main.offset_bottom = -20
+	main.add_theme_constant_override("separation", 6)
 	add_child(main)
 
 	# Top bar: title + tab bar + close button
@@ -4267,36 +4322,52 @@ func _show_journal_tab():
 # ==================== TAB: НАСТРОЙКИ ====================
 
 func _show_settings_tab():
-	_add_label("Настройки / Системное меню", 24)
+	_add_label("Сохранения", 24)
 	_add_separator()
 
-	var btn_save = Button.new()
-	btn_save.text = "💾 Сохранить игру"
-	btn_save.custom_minimum_size = Vector2(200, 40)
-	btn_save.pressed.connect(func():
-		Game.save_game()
-		_add_label("Сохранено!"))
-	content_vbox.add_child(btn_save)
+	# Save slots
+	for i in 6:
+		var info = Game.get_save_info(i)
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 10)
+		content_vbox.add_child(hbox)
 
-	var btn_load = Button.new()
-	btn_load.text = "📂 Загрузить игру"
-	btn_load.custom_minimum_size = Vector2(200, 40)
-	btn_load.pressed.connect(func():
-		if Game.load_game():
-			_refresh()
-			_add_label("Загружено!"))
-	content_vbox.add_child(btn_load)
+		var slot_label = Label.new()
+		if info.size() > 0:
+			slot_label.text = "Слот %d: День %d, %d:00 | %s | %d зол. | Отряд %d" % [
+				i, int(info.get("day", 0)), int(info.get("hour", 0)),
+				str(info.get("loc", "?")), int(info.get("gold", 0)), int(info.get("party_size", 0))]
+		else:
+			slot_label.text = "Слот %d: (пусто)" % i
+		slot_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hbox.add_child(slot_label)
+
+		var save_btn = Button.new()
+		save_btn.text = "Сохранить"
+		save_btn.custom_minimum_size = Vector2(110, 32)
+		save_btn.pressed.connect(_on_save.bind(i))
+		hbox.add_child(save_btn)
+
+		var load_btn = Button.new()
+		load_btn.text = "Загрузить"
+		load_btn.custom_minimum_size = Vector2(110, 32)
+		load_btn.disabled = (info.size() == 0)
+		load_btn.pressed.connect(_on_load.bind(i))
+		hbox.add_child(load_btn)
+
+	_add_separator()
+	_add_label("Системное меню", 20)
 
 	var btn_map = Button.new()
 	btn_map.text = "🗺️ На глобальную карту"
-	btn_map.custom_minimum_size = Vector2(200, 40)
+	btn_map.custom_minimum_size = Vector2(200, 36)
 	btn_map.pressed.connect(func():
 		get_tree().change_scene_to_file("res://overworld3d.tscn"))
 	content_vbox.add_child(btn_map)
 
 	var btn_menu = Button.new()
 	btn_menu.text = "🏠 В главное меню"
-	btn_menu.custom_minimum_size = Vector2(200, 40)
+	btn_menu.custom_minimum_size = Vector2(200, 36)
 	btn_menu.pressed.connect(func():
 		get_tree().change_scene_to_file("res://menu.tscn"))
 	content_vbox.add_child(btn_menu)
@@ -4335,6 +4406,19 @@ func _add_stat_label(parent: Control, text: String):
 	lbl.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
 	parent.add_child(lbl)
 
+func _on_save(slot: int):
+	Game.save_game(slot)
+	_refresh()
+
+func _on_load(slot: int):
+	if Game.load_game(slot):
+		# Reload current scene to apply loaded state
+		var scene = get_tree().current_scene
+		if scene != null:
+			get_tree().change_scene_to_file(scene.scene_file_path)
+		else:
+			get_tree().change_scene_to_file("res://overworld3d.tscn")
+
 func _close():
 	queue_free()
 
@@ -4343,7 +4427,15 @@ func _on_bg_click(ev):
 		_close()
 
 func _unhandled_input(ev):
+	# Consume ALL input to prevent game behind from receiving it
+	if ev is InputEventMouseButton:
+		get_viewport().set_input_as_handled()
+		return
+	if ev is InputEventMouseMotion:
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventKey and ev.pressed:
+		get_viewport().set_input_as_handled()
 		if ev.keycode == KEY_ESCAPE:
 			_close()
 		elif ev.keycode == KEY_Q:

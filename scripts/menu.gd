@@ -22,5 +22,6 @@ func _go(name):
 		Game.cur_loc = "stairs_test"
 		get_tree().change_scene_to_file("res://world3d.tscn")
 		return
+	Game.clear_transient_state()
 	var sc = "res://overworld3d.tscn" if name == "ИГРАТЬ" else "res://world3d.tscn"
 	get_tree().change_scene_to_file(sc)

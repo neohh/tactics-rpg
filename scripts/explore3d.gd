@@ -476,6 +476,7 @@ func _play_dlg(dn):
 func _unhandled_input(ev):
 	if ev is InputEventKey and ev.pressed:
 		if ev.keycode == KEY_M:
+			Game.clear_transient_state()
 			get_tree().change_scene_to_file("res://overworld3d.tscn")
 			return
 		if ev.keycode == KEY_R:

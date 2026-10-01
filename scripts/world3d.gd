@@ -1929,15 +1929,14 @@ func _leave_battle():
 		get_tree().change_scene_to_file("res://explore3d.tscn")
 		return
 	if Game.explore_return != null and game_over3 and not won3:
-		Game.explore_return = null
-		Game.explore_ground = null
+		Game.clear_transient_state()
 		if str(ConfigTools.get_val("defeat_mode", "town")) == "town":
 			for m in Game.party:
 				m["hp"] = 1
 			Game.gold = int(Game.gold * 0.8)
 		get_tree().change_scene_to_file("res://overworld3d.tscn")
 		return
-	Game.explore_return = null
+	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
 func _drop_loot_on_deaths():
 	var L = LOCS.get(loc_id, {})
@@ -1968,7 +1967,6 @@ func _on_to_map():
 				if str(m.get("char", "")) != "" and str(m.get("char", "")) == str(u.get("char", "")):
 					m["hp"] = u.hp
 					m["maxhp"] = u.maxhp
-	Game.explore_return = null
-	Game.explore_ground = null
+	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
 # DEDUP_DONE

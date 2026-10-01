@@ -476,8 +476,8 @@ func _show_settings_tab():
 	_add_label("Сохранения", 24)
 	_add_separator()
 
-	# Save slots
-	for i in 6:
+	# Save slots (0..9)
+	for i in 10:
 		var info = Game.get_save_info(i)
 		var hbox = HBoxContainer.new()
 		hbox.add_theme_constant_override("separation", 10)
@@ -513,6 +513,7 @@ func _show_settings_tab():
 	btn_map.text = "🗺️ На глобальную карту"
 	btn_map.custom_minimum_size = Vector2(200, 36)
 	btn_map.pressed.connect(func():
+		Game.clear_transient_state()
 		get_tree().change_scene_to_file("res://overworld3d.tscn"))
 	content_vbox.add_child(btn_map)
 
@@ -520,6 +521,7 @@ func _show_settings_tab():
 	btn_menu.text = "🏠 В главное меню"
 	btn_menu.custom_minimum_size = Vector2(200, 36)
 	btn_menu.pressed.connect(func():
+		Game.clear_transient_state()
 		get_tree().change_scene_to_file("res://menu.tscn"))
 	content_vbox.add_child(btn_menu)
 

@@ -1590,6 +1590,7 @@ func _unhandled_input(ev):
 		return
 	if ev is InputEventKey and ev.pressed:
 		if ev.keycode == KEY_M:
+			Game.clear_transient_state()
 			get_tree().change_scene_to_file("res://menu.tscn")
 			return
 		if ev.keycode == KEY_T:

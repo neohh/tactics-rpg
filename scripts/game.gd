@@ -1,28 +1,93 @@
 extends Node
-var inventory = {}
-var gold = 0
-var food = 3
-var day = 1
-var hour = 8
-var fatigue = 0
-var quests = {}
-var flags = {}
-var party = []
-var party_pool = []
-var loc_state = {}
+# Persistent Save Data
+var day: int = 1
+var hour: int = 8
+var gold: int = 0
+var food: int = 3
+var fatigue: int = 0
+var inventory: Dictionary = {}
+var quests: Dictionary = {}
+var flags: Dictionary = {}
+var cur_loc: String = "village"
+var party: Array = []
+var party_pool: Array = []
+var loc_state: Dictionary = {}
+
+# Transient Transition State (reset by clear_transient_state)
+var explore_start = null
 var explore_return = null
 var explore_ground = null
-var cur_loc = "village"
-var edit_loc = ""
-var edit_active = false
-var return_scene = "res://menu.tscn"
+var enc = null
 var battle_snap = null
-var edit_data = null
-var edit_tool = "place"
-var edit_what = "obj"
-var edit_obj = "rock"
-var edit_cls = "swordsman"
-var edit_world = false
+
+# Editor State (encapsulated in separate structure)
+class EditorState:
+	var loc: String = ""
+	var active: bool = false
+	var data = null
+	var tool: String = "place"
+	var what: String = "obj"
+	var obj: String = "rock"
+	var cls: String = "swordsman"
+	var world: bool = false
+	var return_scene: String = "res://menu.tscn"
+
+	func reset():
+		loc = ""
+		active = false
+		data = null
+		tool = "place"
+		what = "obj"
+		obj = "rock"
+		cls = "swordsman"
+		world = false
+		return_scene = "res://menu.tscn"
+
+var editor: EditorState = EditorState.new()
+
+# Backward compatibility accessors for editor state
+var edit_loc: String:
+	get: return editor.loc
+	set(v): editor.loc = v
+
+var edit_active: bool:
+	get: return editor.active
+	set(v): editor.active = v
+
+var edit_data:
+	get: return editor.data
+	set(v): editor.data = v
+
+var edit_tool: String:
+	get: return editor.tool
+	set(v): editor.tool = v
+
+var edit_what: String:
+	get: return editor.what
+	set(v): editor.what = v
+
+var edit_obj: String:
+	get: return editor.obj
+	set(v): editor.obj = v
+
+var edit_cls: String:
+	get: return editor.cls
+	set(v): editor.cls = v
+
+var edit_world: bool:
+	get: return editor.world
+	set(v): editor.world = v
+
+var return_scene: String:
+	get: return editor.return_scene
+	set(v): editor.return_scene = v
+
+func clear_transient_state():
+	explore_start = null
+	explore_return = null
+	explore_ground = null
+	enc = null
+	battle_snap = null
 func add_item(id, n = 1):
 	inventory[id] = inventory.get(id, 0) + n
 func remove_item(id, n = 1):
@@ -99,19 +164,38 @@ func journal_text():
 		s += "(пусто)\n"
 	return s
 
-func save_game(slot: int = 0):
-	var d = {"v": 2, "slot": slot, "day": day, "hour": hour, "cur_loc": cur_loc, "gold": gold, "food": food, "fatigue": fatigue, "inventory": inventory, "quests": quests, "flags": flags, "party": party, "party_pool": party_pool, "loc_state": loc_state}
+func save_game(slot: int = 0) -> bool:
+	if slot < 0 or slot > 9:
+		print("Неверный номер слота для сохранения: %d (допустимо 0..9)" % slot)
+		return false
+	var d = {
+		"v": 2,
+		"slot": slot,
+		"day": day,
+		"hour": hour,
+		"cur_loc": cur_loc,
+		"gold": gold,
+		"food": food,
+		"fatigue": fatigue,
+		"inventory": inventory,
+		"quests": quests,
+		"flags": flags,
+		"party": party,
+		"party_pool": party_pool,
+		"loc_state": loc_state
+	}
 	var path = "user://save_%d.json" % slot
 	if not DataLoader.save_json(path, d):
 		print("Ошибка сохранения.")
-		return
+		return false
 	print("Сохранено в слот %d." % slot)
+	return true
 func load_game(slot: int = -1) -> bool:
-	# slot=-1 means load most recent
+	# slot=-1 means load most recent slot (0..9)
 	var path = ""
-	if slot >= 0:
+	if slot >= 0 and slot < 10:
 		path = "user://save_%d.json" % slot
-	else:
+	elif slot < 0:
 		var best = -1
 		var best_time = 0
 		for i in 10:
@@ -124,12 +208,14 @@ func load_game(slot: int = -1) -> bool:
 					if best < 0 or mod > best_time:
 						best = i
 						best_time = mod
-						best = i
-		if best < 0:
-			# Fallback to old save
-			path = "user://save.json"
-		else:
+		if best >= 0:
 			path = "user://save_%d.json" % best
+		else:
+			print("Нет сохранений в слотах 0..9.")
+			return false
+	else:
+		print("Неверный номер слота: %d" % slot)
+		return false
 	if not FileAccess.file_exists(path):
 		print("Нет сохранения.")
 		return false
@@ -151,6 +237,8 @@ func load_game(slot: int = -1) -> bool:
 	print("Загружено из %s." % path)
 	return true
 func get_save_info(slot: int) -> Dictionary:
+	if slot < 0 or slot > 9:
+		return {}
 	var path = "user://save_%d.json" % slot
 	if not FileAccess.file_exists(path):
 		return {}
@@ -167,8 +255,6 @@ func get_save_info(slot: int) -> Dictionary:
 func live_reload():
 	QUESTS = DataLoader.load_json("res://data/quests.json")
 	CHARS_RAW = DataLoader.load_json("res://data/chars.json")
-
-var enc = null
 
 func log_scene(tag):
 	var old = ""
@@ -217,8 +303,6 @@ func arrive_dlg(loc, L2):
 		if sd.get("type", "") == "goto" and sd.get("loc", "") == loc and str(sd.get("dlg", "")) != "":
 			return sd.get("dlg")
 	return L2.get(loc, {}).get("dlg", {}).get("arrive", "")
-
-var explore_start = null
 
 func resolve_char(id):
 	var raw = CHARS_RAW.get(id, {})

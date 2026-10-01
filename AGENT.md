@@ -123,19 +123,16 @@ Menu → Overworld (global map) → click location → Explore3D (free walk) →
 ```
 
 ## Save System
-- Auto-save to `user://save.json` (if `autosave: true` in config)
-- Saves: inventory, gold, food, day, hour, fatigue, quests, flags, party, loc_state
+- Save files: slot-based `user://save_0.json` ... `user://save_9.json`
+- Auto-save default slot is 0 (if `autosave: true` in config)
+- `load_game(slot)`: loads slot (0..9) or slot=-1 loads most recently modified save slot
+- Saves persistent player progress only: `day`, `hour`, `cur_loc`, `gold`, `food`, `fatigue`, `inventory`, `quests`, `flags`, `party`, `party_pool`, `loc_state`
 - `Game.loc_state` per-location state: cleared_day, ground items
 
-## Key Variables
-| Variable | Location | Purpose |
-|----------|----------|---------|
-| `Game.explore_return` | Game | `{loc, party_pos: [[char, x, y]...]}` — return positions after combat |
-| `Game.explore_start` | Game | Combat snap data from explore3d |
-| `Game.enc` | Game | Random encounter data (units, objects) |
-| `Game.explore_ground` | Game | Loot to place on ground when returning from combat |
-| `Game.cur_loc` | Game | Current location ID |
-| `Game.flags` | Game | Quest/story flags |
+## State Organization (Game singleton)
+- **Persistent Save State:** `day`, `hour`, `cur_loc`, `gold`, `food`, `fatigue`, `inventory`, `quests`, `flags`, `party`, `party_pool`, `loc_state`
+- **Transient State (cleared by `Game.clear_transient_state()`):** `explore_start`, `explore_return`, `explore_ground`, `enc`, `battle_snap`
+- **Editor State:** encapsulated in `Game.editor` (`Game.EditorState`), with backward compatibility accessors (`Game.edit_loc`, `Game.edit_active`, `Game.edit_data`, `Game.edit_tool`, `Game.edit_what`, `Game.edit_obj`, `Game.edit_cls`, `Game.edit_world`, `Game.return_scene`)
 
 ## Controls
 

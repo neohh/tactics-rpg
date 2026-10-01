@@ -38,8 +38,10 @@ func refresh():
 		b.pressed.connect(_buy.bind(id))
 		box.add_child(b)
 	if Game.has_item("potion"):
+		var p_it = ITEMS.get("potion", {})
+		var sell_pr = int(p_it.get("sell", int(p_it.get("price", 0)) / 2))
 		var s = Button.new()
-		s.text = "Продать зелье — 10 зол."
+		s.text = "Продать зелье — %d зол." % sell_pr
 		s.pressed.connect(_sell_potion)
 		box.add_child(s)
 	var x = Button.new()
@@ -58,8 +60,10 @@ func _buy(id):
 		Game.add_item(id)
 	refresh()
 func _sell_potion():
+	var it = ITEMS.get("potion", {})
+	var sell_pr = int(it.get("sell", int(it.get("price", 0)) / 2))
 	if Game.remove_item("potion"):
-		Game.gold += 10
+		Game.gold += sell_pr
 	refresh()
 func _close():
 	visible = false

@@ -62,19 +62,11 @@ func _back():
 func _name_of(id):
 	return str(DATA.get(id, {}).get("name", id))
 func _write():
-	var f = FileAccess.open("res://data/locations.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json("res://data/locations.json", DATA)
 	get_tree().call_group("live", "live_reload")
 	dirty = false
 func _exit():
 	var ret = Game.return_scene if (Game.return_scene != null and Game.return_scene != "") else "res://constructor.tscn"
 	get_tree().change_scene_to_file(ret)
 func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
+	return DataLoader.load_json(p)

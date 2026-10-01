@@ -47,16 +47,8 @@ var QUESTS = {}
 var notice = ""
 func _ready():
 	add_to_group("live")
-	QUESTS = _lj("res://data/quests.json")
-	CHARS_RAW = _lj("res://data/chars.json")
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
+	QUESTS = DataLoader.load_json("res://data/quests.json")
+	CHARS_RAW = DataLoader.load_json("res://data/chars.json")
 func clear_hook(loc):
 	for q in QUESTS:
 		var st = int(quests.get(q, 0))
@@ -110,12 +102,9 @@ func journal_text():
 func save_game(slot: int = 0):
 	var d = {"v": 2, "slot": slot, "day": day, "hour": hour, "cur_loc": cur_loc, "gold": gold, "food": food, "fatigue": fatigue, "inventory": inventory, "quests": quests, "flags": flags, "party": party, "party_pool": party_pool, "loc_state": loc_state}
 	var path = "user://save_%d.json" % slot
-	var f = FileAccess.open(path, FileAccess.WRITE)
-	if f == null:
+	if not DataLoader.save_json(path, d):
 		print("Ошибка сохранения.")
 		return
-	f.store_string(JSON.stringify(d))
-	f.close()
 	print("Сохранено в слот %d." % slot)
 func load_game(slot: int = -1) -> bool:
 	# slot=-1 means load most recent
@@ -141,13 +130,11 @@ func load_game(slot: int = -1) -> bool:
 			path = "user://save.json"
 		else:
 			path = "user://save_%d.json" % best
-	var f = FileAccess.open(path, FileAccess.READ)
-	if f == null:
+	if not FileAccess.file_exists(path):
 		print("Нет сохранения.")
 		return false
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	if j == null:
+	var j = DataLoader.load_json(path, {})
+	if j.is_empty():
 		return false
 	inventory = j.get("inventory", {})
 	gold = int(j.get("gold", 0))
@@ -167,23 +154,19 @@ func get_save_info(slot: int) -> Dictionary:
 	var path = "user://save_%d.json" % slot
 	if not FileAccess.file_exists(path):
 		return {}
-	var f = FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	if j == null:
+	var j = DataLoader.load_json(path, {})
+	if j.is_empty():
 		return {}
 	var loc_name = cur_loc
-	var locs = _lj("res://data/locations.json")
+	var locs = DataLoader.load_json("res://data/locations.json")
 	if locs.has(str(j.get("cur_loc", ""))):
 		loc_name = str(locs[str(j["cur_loc"])].get("name", j["cur_loc"]))
 	var party_count = j.get("party", []).size()
 	return {"slot": slot, "day": j.get("day", 1), "hour": j.get("hour", 8), "gold": j.get("gold", 0), "loc": loc_name, "party_size": party_count}
 
 func live_reload():
-	QUESTS = _lj("res://data/quests.json")
-	CHARS_RAW = _lj("res://data/chars.json")
+	QUESTS = DataLoader.load_json("res://data/quests.json")
+	CHARS_RAW = DataLoader.load_json("res://data/chars.json")
 
 var enc = null
 

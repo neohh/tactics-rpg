@@ -16,21 +16,14 @@ func setup(dlg_id):
 
 
 func _load():
-	var f = FileAccess.open("res://data/dialogs/%s.json" % id, FileAccess.READ)
-	if f == null:
-		data = {"lines": []}
-	else:
-		data = JSON.parse_string(f.get_as_text())
-		f.close()
-	if data == null:
+	data = DataLoader.load_json("res://data/dialogs/%s.json" % id, {"lines": []})
+	if data == null or not (data is Dictionary):
 		data = {"lines": []}
 	if not data.has("lines"):
 		data["lines"] = []
 
 func _save():
-	var f = FileAccess.open("res://data/dialogs/%s.json" % id, FileAccess.WRITE)
-	f.store_string(JSON.stringify(data))
-	f.close()
+	DataLoader.save_json("res://data/dialogs/%s.json" % id, data)
 	_upd_preview()
 
 func _get_prev():
@@ -388,12 +381,7 @@ func _set_fx_int(v, key):
 	_save()
 
 func _chars():
-	var f = FileAccess.open("res://data/chars.json", FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
+	return DataLoader.load_json("res://data/chars.json", {})
 
 func _rename():
 	var nn = ren.text.strip_edges().replace(" ", "_")
@@ -416,12 +404,8 @@ func _rename():
 
 func _update_refs(old, new):
 	for p in ["res://data/locations.json", "res://data/quests.json", "res://data/chars.json"]:
-		var f = FileAccess.open(p, FileAccess.READ)
-		if f == null:
-			continue
-		var j = JSON.parse_string(f.get_as_text())
-		f.close()
-		if j == null:
+		var j = DataLoader.load_json(p, {})
+		if j.is_empty():
 			continue
 		var changed = false
 		if p.ends_with("locations.json"):
@@ -443,9 +427,7 @@ func _update_refs(old, new):
 					j[c]["dlg"] = new
 					changed = true
 		if changed:
-			var w2 = FileAccess.open(p, FileAccess.WRITE)
-			w2.store_string(JSON.stringify(j))
-			w2.close()
+			DataLoader.save_json(p, j)
 
 func _build_rename():
 	if ren != null and is_instance_valid(ren):

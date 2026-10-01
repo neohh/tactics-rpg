@@ -255,17 +255,9 @@ func _apply_cat(i, names):
 		cat_stat.text = "Висит: %s | объектов %d, бойцов %d." % [str(src.get("name", names[i - 1])), src.get("map", {}).get("objects", []).size() + src.get("map", {}).get("rocks", []).size(), src.get("map", {}).get("units", []).size()]
 	canvas.queue_redraw()
 func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
+	return DataLoader.load_json(p)
 func _save():
-	var f = FileAccess.open("res://data/locations.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json("res://data/locations.json", DATA)
 	get_tree().call_group("live", "live_reload")
 
 func _new_from_cat(ob):
@@ -345,9 +337,7 @@ func _type_keys():
 		return ["field", "town", "camp", "cave"]
 	return k
 func _save_types(types):
-	var f = FileAccess.open("res://data/loc_types.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(types))
-	f.close()
+	DataLoader.save_json("res://data/loc_types.json", types)
 	get_tree().call_group("live", "live_reload")
 func _add_type():
 	var types = _lj("res://data/loc_types.json")
@@ -464,9 +454,7 @@ func _types_ui():
 		tman.add_child(rs)
 
 func _write_silent():
-	var f = FileAccess.open("res://data/locations.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json("res://data/locations.json", DATA)
 
 func _open_3d():
 	Game.edit_world = true

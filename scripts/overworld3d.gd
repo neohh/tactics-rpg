@@ -82,15 +82,15 @@ func _ready():
 	add_to_group("live")
 	add_to_group("con")
 	edit_mode = Game.edit_world
-	LOCS = _lj("res://data/locations.json")
-	CHARS = _lj("res://data/chars.json")
-	LOC_TYPES = _lj("res://data/loc_types.json")
-	OBJ3 = _lj("res://data/objects.json")
+	LOCS = DataLoader.load_json("res://data/locations.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
+	LOC_TYPES = DataLoader.load_json("res://data/loc_types.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
 	print("OBJ3 keys: ", OBJ3.keys())
 	_setup_cam()
 	_load_terrain()
-	DECOR = _lj_arr(DECOR_PATH)
-	LIGHTS = _lj_arr(LIGHT_PATH)
+	DECOR = DataLoader.load_json(DECOR_PATH, [])
+	LIGHTS = DataLoader.load_json(LIGHT_PATH, [])
 	if edit_mode:
 		_make_chunk_debug()
 		_make_brush_ind()
@@ -152,7 +152,7 @@ func _ui():
 		evb.add_child(br)
 		mbtns = {"select": b1, "point": b2, "decor": b3, "sculpt": bs, "paint": bp, "chunk": b4, "light": bl}
 		mat_opt = OptionButton.new()
-		var m = _lj("res://data/materials.json")
+		var m = DataLoader.load_json("res://data/materials.json")
 		for k in m:
 			mat_opt.add_item(str(m[k].get("name", k)))
 		mat_opt.item_selected.connect(func(i): paint_mat = i)
@@ -394,7 +394,7 @@ func _load_terrain():
 	terr = load("res://scripts/terrain.gd").new(W_GW, W_GH, W_SUB)
 	terr.set_materials(_mat_defs())
 	terr.position = Vector3(OFFX, 0, OFFY)
-	var d = _lj(W_PATH) if FileAccess.file_exists(W_PATH) else {}
+	var d = DataLoader.load_json(W_PATH, {}) if FileAccess.file_exists(W_PATH) else {}
 	var bad = int(d.get("ox", 0)) != 0 or int(d.get("oy", 0)) != 0 or int(d.get("gw", 0)) != W_GW
 	if bad:
 		d = {}
@@ -408,29 +408,18 @@ func _load_terrain():
 		terr.splat()
 
 func _lj_arr(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return []
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return j if j is Array else []
+	return DataLoader.load_json(p, [])
 
 func _save_terrain():
 	if terr == null:
 		return
-	var f = FileAccess.open(W_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify(terr.to_data()))
-	f.close()
+	DataLoader.save_json(W_PATH, terr.to_data())
 
 func _save_decor():
-	var f = FileAccess.open(DECOR_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify(DECOR))
-	f.close()
+	DataLoader.save_json(DECOR_PATH, DECOR)
 
 func _save_locs():
-	var f = FileAccess.open("res://data/locations.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(LOCS))
-	f.close()
+	DataLoader.save_json("res://data/locations.json", LOCS)
 
 func _h_w(x, z):
 	if terr == null:
@@ -466,13 +455,13 @@ func _setup_cam():
 	cam.position = Vector3(0, 0, dist)
 
 func live_reload():
-	LOCS = _lj("res://data/locations.json")
-	LOC_TYPES = _lj("res://data/loc_types.json")
+	LOCS = DataLoader.load_json("res://data/locations.json")
+	LOC_TYPES = DataLoader.load_json("res://data/loc_types.json")
 	if edit_mode:
-		DECOR = _lj_arr(DECOR_PATH)
+		DECOR = DataLoader.load_json(DECOR_PATH, [])
 		if terr != null and terr.get_parent() == self:
 			remove_child(terr)
-	LIGHTS = _lj_arr(LIGHT_PATH)
+	LIGHTS = DataLoader.load_json(LIGHT_PATH, [])
 	chunk_debug_ind = null
 	brush_ind = null
 	light_gizmo_root = null
@@ -487,17 +476,9 @@ func live_reload():
 	if edit_mode:
 		_make_chunk_debug()
 		_make_brush_ind()
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
 
 func _mat_defs():
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	var d = []
 	for k in m:
 		d.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})
@@ -1004,8 +985,8 @@ func _process(_d):
 		_ms_timer += _d
 		if _ms_timer >= 0.2:
 			_ms_timer = 0.0
-			var d = _lj("res://data/locations.json")
-			var t = _lj("res://data/loc_types.json")
+			var d = DataLoader.load_json("res://data/locations.json")
+			var t = DataLoader.load_json("res://data/loc_types.json")
 			var file_ms = _eff_ms2(d.get(w_sel, {}), t)
 			var mem_ms = _eff_ms2(LOCS.get(w_sel, {}), LOC_TYPES)
 			if abs(file_ms - mem_ms) > 0.0001:
@@ -1112,12 +1093,8 @@ func _enter(id):
 func _play_dlg(dn):
 	if dn == "":
 		return
-	var f = FileAccess.open("res://data/dialogs/%s.json" % dn, FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	f.close()
-	if data == null:
+	var data = DataLoader.load_json("res://data/dialogs/%s.json" % dn, {})
+	if data.is_empty():
 		return
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS
@@ -1462,7 +1439,7 @@ func _rebuild_links():
 
 func _refresh_map():
 	if terr != null:
-		var d = _lj(W_PATH) if FileAccess.file_exists(W_PATH) else {}
+		var d = DataLoader.load_json(W_PATH, {}) if FileAccess.file_exists(W_PATH) else {}
 		if int(d.get("gw", 0)) == W_GW:
 			terr.from_data(d)
 	_rebuild_links()
@@ -1737,8 +1714,8 @@ func _talk():
 	add_child(ui)
 
 func _on_world_changed():
-	LOCS = _lj("res://data/locations.json")
-	LOC_TYPES = _lj("res://data/loc_types.json")
+	LOCS = DataLoader.load_json("res://data/locations.json")
+	LOC_TYPES = DataLoader.load_json("res://data/loc_types.json")
 	_prev_ms = -1.0
 	print("WORLD_CHANGED: LOCS reloaded")
 
@@ -1899,9 +1876,7 @@ func _snap_decor_in_radius(cx, cz, r):
 				decor_nodes[i].position.y = ny
 
 func _save_lights():
-	var f = FileAccess.open(LIGHT_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify(LIGHTS))
-	f.close()
+	DataLoader.save_json(LIGHT_PATH, LIGHTS)
 
 func _light_color_changed(i):
 	if light_sel < 0 or light_sel >= LIGHTS.size():
@@ -2075,7 +2050,7 @@ func _pick_light_ray(mp):
 	return bi
 
 func _load_sun():
-	var d = _lj(SUN_PATH)
+	var d = DataLoader.load_json(SUN_PATH, {})
 	sun_energy = float(d.get("energy", 1.0))
 	sun_rot = float(d.get("rot", 30.0))
 	sun_elev = float(d.get("elev", 50.0))
@@ -2084,9 +2059,7 @@ func _load_sun():
 	amb_col = int(d.get("ambcol", 1))
 	fill_energy = float(d.get("fill", 0.3))
 func _save_sun():
-	var f = FileAccess.open(SUN_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify({"energy": sun_energy, "rot": sun_rot, "elev": sun_elev, "suncol": sun_col, "amb": amb_energy, "ambcol": amb_col, "fill": fill_energy}))
-	f.close()
+	DataLoader.save_json(SUN_PATH, {"energy": sun_energy, "rot": sun_rot, "elev": sun_elev, "suncol": sun_col, "amb": amb_energy, "ambcol": amb_col, "fill": fill_energy})
 func _apply_sun():
 	var sun_cols = ["fff2dd", "ffffff", "dfe8ff"]
 	var amb_cols = ["ffd9a0", "ffffff", "a0c0ff", "80ff80"]

@@ -419,19 +419,11 @@ func _save():
 	if deferred:
 		dirty.emit()
 		return
-	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json(SAVE_PATH, DATA)
 	get_tree().call_group("live", "live_reload")
 
 func _lj2(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
+	return DataLoader.load_json(p)
 func _apply_cat(i, names):
 	if i <= 0:
 		return

@@ -174,9 +174,7 @@ func _add_stage():
 	_save()
 	_build()
 func _save():
-	var f = FileAccess.open("res://data/quests.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json("res://data/quests.json", DATA)
 	get_tree().call_group("live", "live_reload")
 
 func _st_icon(st):
@@ -200,12 +198,7 @@ func _st_where(st):
 	var lo = _rj("res://data/locations.json")
 	return str(lo.get(st.get("loc", ""), {}).get("name", st.get("loc", "")))
 func _rj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
+	return DataLoader.load_json(p)
 func _dlg_files():
 	var res = []
 	var d = DirAccess.open("res://data/dialogs")

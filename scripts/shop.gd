@@ -4,7 +4,7 @@ var ITEMS = {}
 var root: Control
 var box: VBoxContainer
 func _ready():
-	ITEMS = _lj("res://data/items.json")
+	ITEMS = DataLoader.load_json("res://data/items.json")
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -17,14 +17,6 @@ func _ready():
 	box.position = Vector2(60, 60)
 	root.add_child(box)
 	refresh()
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
 func refresh():
 	for c in box.get_children():
 		c.queue_free()

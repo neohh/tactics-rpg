@@ -133,14 +133,6 @@ func _ready():
 	preview.position = Vector2(8, 220)
 	add_child(preview)
 	_set_cat("chars")
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
 func _set_cat(c):
 	Game.log_scene("set_cat " + c)
 	cat = c
@@ -149,7 +141,7 @@ func _set_cat(c):
 		sel_id = Game.edit_loc
 	else:
 		sel_id = ""
-	DATA = {} if cat == "dialogs" else _lj(CAT_FILES[cat])
+	DATA = {} if cat == "dialogs" else DataLoader.load_json(CAT_FILES[cat])
 	var in_loc_edit = edit_mode and (c == "locs" or c == "catalog")
 	bn.visible = not in_loc_edit
 	bdel.visible = not in_loc_edit
@@ -162,7 +154,7 @@ func _set_cat(c):
 	_refresh_list()
 	_build_inspector()
 func _refresh_folders():
-	GROUPS = _lj("res://data/groups.json")
+	GROUPS = DataLoader.load_json("res://data/groups.json")
 	folder_opt.clear()
 	folder_opt.add_item("все")
 	for g in GROUPS.get(cat, []):
@@ -286,14 +278,10 @@ func _del_folder():
 		_save_groups()
 		_refresh_folders()
 func _save_groups():
-	var f = FileAccess.open("res://data/groups.json", FileAccess.WRITE)
-	f.store_string(JSON.stringify(GROUPS))
-	f.close()
+	DataLoader.save_json("res://data/groups.json", GROUPS)
 	get_tree().call_group("live", "live_reload")
 func _save():
-	var f = FileAccess.open(CAT_FILES[cat], FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json(CAT_FILES[cat], DATA)
 	_refresh_list()
 	if not edit_mode:
 		get_tree().call_group("live", "live_reload")
@@ -505,9 +493,7 @@ func _enter_edit():
 func _write_cat_file():
 	if Game.edit_data != null and (cat == "locs" or cat == "catalog") and sel_id != "":
 		DATA[sel_id] = Game.edit_data.duplicate(true)
-	var f = FileAccess.open(CAT_FILES[cat], FileAccess.WRITE)
-	f.store_string(JSON.stringify(DATA))
-	f.close()
+	DataLoader.save_json(CAT_FILES[cat], DATA)
 	if not edit_mode:
 		get_tree().call_group("live", "live_reload")
 	get_tree().call_group("work", "load_edit")
@@ -614,7 +600,7 @@ func world_pick(id):
 func world_changed():
 	if cat != "map":
 		return
-	DATA = _lj(CAT_FILES[cat])
+	DATA = DataLoader.load_json(CAT_FILES[cat])
 	if editor_node != null and editor_node.has_method("sync_data"):
 		editor_node.sync_data(DATA, sel_id)
 
@@ -699,7 +685,7 @@ func _char_extra_rows(e):
 	so.item_selected.connect(_on_status.bind(sts))
 	rs.add_child(so)
 	insp_box.add_child(rs)
-	var cls = _lj("res://data/classes.json").keys()
+	var cls = DataLoader.load_json("res://data/classes.json").keys()
 	var rc = HBoxContainer.new()
 	var lc = Label.new()
 	lc.text = "Класс боя"

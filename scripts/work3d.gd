@@ -68,9 +68,9 @@ func _ready():
 	if get_tree().get_nodes_in_group("work").size() > 1:
 		queue_free()
 		return
-	CLASSES = _lj("res://data/classes.json")
-	OBJ3 = _lj("res://data/objects.json")
-	CHARS = _lj("res://data/chars.json")      # ← ДОБАВЬ
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
 	yaw_n = Node3D.new()
 	add_child(yaw_n)
 	pitch_n = Node3D.new()
@@ -191,7 +191,7 @@ func _ui():
 	pk.add_child(rad_lab)
 	mat_opt = OptionButton.new()
 	mat_opt.custom_minimum_size = Vector2(140, 26)
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	for k in m:
 		mat_opt.add_item(str(m[k].get("name", k)))
 	mat_opt.item_selected.connect(func(i): paint_mat = i)
@@ -263,14 +263,6 @@ func _flash():
 	ind_alpha = 0.3
 	if brush_ind != null:
 		brush_ind.mesh.material.albedo_color = Color(1, 1, 1, ind_alpha)
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -279,7 +271,7 @@ func _tex(path):
 		return null
 	return ImageTexture.create_from_image(im)
 func _mat_defs():
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	var defs = []
 	for k in m:
 		defs.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})
@@ -289,9 +281,9 @@ func L():
 func load_edit():
 	sculpt = false
 	paint_mode = false
-	CLASSES = _lj("res://data/classes.json")
-	OBJ3 = _lj("res://data/objects.json")
-	CHARS = _lj("res://data/chars.json")      # ← ДОБАВЬ
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
 	_rb_pending = true
 	_upd_tool()
 func _process(_d):

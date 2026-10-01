@@ -4,7 +4,7 @@ var box: VBoxContainer
 var CHARS = {}
 
 func _ready():
-	CHARS = _lj("res://data/chars.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -20,14 +20,6 @@ func _ready():
 	box.position = Vector2(60, 40)
 	root.add_child(box)
 	refresh()
-
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
 
 func refresh():
 	for c in box.get_children():
@@ -59,7 +51,7 @@ func refresh():
 	box.add_child(x)
 
 func _cls(cls):
-	var j = _lj("res://data/classes.json")
+	var j = DataLoader.load_json("res://data/classes.json")
 	return j.get(cls, {})
 
 func _in_party(cid):

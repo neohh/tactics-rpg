@@ -23,10 +23,10 @@ var content_vbox: VBoxContainer
 func _ready():
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	Game.ensure_party()
-	CLASSES = _lj("res://data/classes.json")
-	CHARS = _lj("res://data/chars.json")
-	ITEMS = _lj("res://data/items.json")
-	PERKS = _lj("res://data/perks.json")
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
+	ITEMS = DataLoader.load_json("res://data/items.json")
+	PERKS = DataLoader.load_json("res://data/perks.json")
 	if selected_hero >= Game.party.size():
 		selected_hero = 0
 	_build()
@@ -597,11 +597,3 @@ func _unhandled_input(ev):
 			current_tab = (current_tab + 1) % tabs.size()
 			_build_tabs()
 			_refresh()
-
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j

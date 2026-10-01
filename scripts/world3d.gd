@@ -69,10 +69,10 @@ func _ready():
 	loc_id = Game.cur_loc
 	_setup()
 	_lights()
-	CLASSES = _lj("res://data/classes.json")
-	LOCS = _lj("res://data/locations.json")
-	CHARS = _lj("res://data/chars.json")
-	OBJ3 = _lj("res://data/objects.json")
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	LOCS = DataLoader.load_json("res://data/locations.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
 	hl_root = Node3D.new()
 	add_child(hl_root)
 	_build()
@@ -102,13 +102,6 @@ func _setup():
 	cam = Camera3D.new()
 	pitch_n.add_child(cam)
 	cam.position = Vector3(0, 0, dist)
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -122,7 +115,7 @@ func _th(c):
 	var h = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
 	return h + ELEV.get(str(c.x) + "," + str(c.y), 0.0)
 func _mat_defs():
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	var d = []
 	for k in m:
 		d.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})
@@ -1041,12 +1034,8 @@ func _float_text(pos, txt, col):
 func _play_dlg(dn, hook = false):
 	if dn == "":
 		return
-	var f = FileAccess.open("res://data/dialogs/%s.json" % dn, FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	f.close()
-	if data == null:
+	var data = DataLoader.load_json("res://data/dialogs/%s.json" % dn, {})
+	if data.is_empty():
 		return
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS

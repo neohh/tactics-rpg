@@ -34,8 +34,8 @@ var sculpt_btn = ""
 var brush_ind = null
 var ind_alpha = 0.07
 func _ready():
-	CLASSES = _lj("res://data/classes.json")
-	OBJ3 = _lj("res://data/objects.json")
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
 	svc = SubViewportContainer.new()
 	svc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	svc.stretch = true
@@ -66,14 +66,6 @@ func _ready():
 	svc.gui_input.connect(_on_gui)
 	rebuild()
 	_apply()
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -82,7 +74,7 @@ func _tex(path):
 		return null
 	return ImageTexture.create_from_image(im)
 func _mat_defs():
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	var defs = []
 	for k in m:
 		defs.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})

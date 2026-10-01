@@ -1,19 +1,11 @@
 class_name StatsTools
 extends RefCounted
 
-static func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
-
 static func perks_data() -> Dictionary:
-	return _lj("res://data/perks.json")
+	return DataLoader.load_json("res://data/perks.json")
 
 static func equip_agg(equip: Dictionary) -> Dictionary:
-	var items = _lj("res://data/items.json")
+	var items = DataLoader.load_json("res://data/items.json")
 	var agg = {"mods": {}, "grants": [], "on_hit": []}
 	for slot in equip:
 		var iid = str(equip[slot])

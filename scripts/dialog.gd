@@ -213,7 +213,7 @@ func _tex(path):
 	return ImageTexture.create_from_image(im)
 
 func live_reload():
-	chars = _ljc("res://data/chars.json")
+	chars = DataLoader.load_json("res://data/chars.json", {})
 	if root != null and root.visible:
 		var lines = data.get("lines", [])
 		if idx >= lines.size():
@@ -223,12 +223,3 @@ func live_reload():
 		name_l.text = ch.get("name", "")
 		name_l.add_theme_color_override("font_color", _col(ch.get("color", "#ffffff")))
 		_apply_portrait(ch)
-
-func _ljc(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var s = f.get_as_text()
-	f.close()
-	var j = JSON.parse_string(s)
-	return {} if j == null else j

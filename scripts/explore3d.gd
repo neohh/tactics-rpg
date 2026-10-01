@@ -27,10 +27,10 @@ var npcs3 = []
 
 func _ready():
 	loc_id = Game.cur_loc
-	CLASSES = _lj("res://data/classes.json")
-	LOCS = _lj("res://data/locations.json")
-	OBJ3 = _lj("res://data/objects.json")
-	CHARS = _lj("res://data/chars.json")
+	CLASSES = DataLoader.load_json("res://data/classes.json")
+	LOCS = DataLoader.load_json("res://data/locations.json")
+	OBJ3 = DataLoader.load_json("res://data/objects.json")
+	CHARS = DataLoader.load_json("res://data/chars.json")
 	Game.ensure_party()
 	var td = LOCS.get(loc_id, {}).get("terrain", {})
 	terrain = load("res://scripts/terrain.gd").new(int(td.get("gw", 8)), int(td.get("gh", 6)), int(td.get("sub", 8)))
@@ -465,12 +465,8 @@ func _try_pick():
 func _play_dlg(dn):
 	if dn == "":
 		return
-	var f = FileAccess.open("res://data/dialogs/%s.json" % dn, FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	f.close()
-	if data == null:
+	var data = DataLoader.load_json("res://data/dialogs/%s.json" % dn, {})
+	if data.is_empty():
 		return
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS
@@ -537,14 +533,6 @@ func _ray_ground(m):
 		return null
 	return p
 
-func _lj(p):
-	var f = FileAccess.open(p, FileAccess.READ)
-	if f == null:
-		return {}
-	var j = JSON.parse_string(f.get_as_text())
-	f.close()
-	return {} if j == null else j
-
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -554,7 +542,7 @@ func _tex(path):
 	return ImageTexture.create_from_image(im)
 
 func _mat_defs():
-	var m = _lj("res://data/materials.json")
+	var m = DataLoader.load_json("res://data/materials.json")
 	var d = []
 	for k in m:
 		d.append({"col": Color(str(m[k].get("color", "#888888"))), "tex": str(m[k].get("tex", ""))})

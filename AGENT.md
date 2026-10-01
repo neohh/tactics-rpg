@@ -20,7 +20,6 @@ Godot 4.7 turn-based tactical RPG with 3D exploration, global map, and grid-base
 |------|--------|---------|
 | `Game` | `scripts/game.gd` | Global state: party, inventory, gold, quests, flags, save/load |
 | `ConHotkey` | `scripts/con_hotkey.gd` | Hotkey controller |
-| `DumpTool` | `scripts/dump_tool.gd` | Debug dump utility |
 
 ### Game Flow
 ```
@@ -29,7 +28,7 @@ Menu → Overworld (global map) → click location → Explore3D (free walk) →
 
 1. **Overworld** (`overworld3d.gd`): Click locations to travel. If type != "town", enters explore3d. 35% random encounter chance when traveling (creates `Game.enc`, spawns encounter enemies in explore3d).
 2. **Explore** (`explore3d.gd`): Free WASD movement with squad. NPCs clickable (talk/shop). Walk near enemies → auto-combat triggers.
-3. **Combat** (`world3d.gd`): Grid-based tactics. Deploy or snap-from-explore. Turn-based with 2 activations/turn. Right-click rotate, middle-click pan, scroll zoom.
+3. **Combat** (`world3d.gd`): Grid-based tactics. Deploy or snap-from-explore. Turn-based, activations per turn calculated via `StatsTools.activations_for()` from `data/config.json` (`act_base` / `act_big`). Right-click rotate, middle-click pan, scroll zoom.
 
 ### Key Scripts
 | Script | Purpose |
@@ -44,12 +43,6 @@ Menu → Overworld (global map) → click location → Explore3D (free walk) →
 | `scripts/config_tools.gd` | Game config reader |
 | `scripts/terrain.gd` | 3D terrain: chunks, heightmap, painting, collision |
 | `scripts/dialog.gd` | Dialog system |
-| `scripts/battle_coordinator.gd` | Battle logic coordinator (signal-based) |
-| `scripts/battle_state_manager.gd` | Battle state machine |
-| `scripts/battle_ai.gd` | Enemy AI decisions |
-| `scripts/action_resolver.gd` | Attack/damage resolution |
-| `scripts/unit_manager.gd` | Unit CRUD operations |
-| `scripts/battle_ui.gd` | Battle UI elements |
 | `scripts/camp_ui.gd` | Camp/rest UI |
 | `scripts/party_ui.gd` | Party management UI |
 | `scripts/shop.gd` | Shop UI |
@@ -93,7 +86,7 @@ Menu → Overworld (global map) → click location → Explore3D (free walk) →
 - `Game.party_pool` stores dismissed members
 
 ## Combat System
-- Grid-based, turn-based with 2 activations per turn per unit
+- Grid-based, turn-based; activations per turn calculated via `StatsTools.activations_for()` using `act_base`/`act_big` from `data/config.json`
 - 5 classes: swordsman, archer, halberd, mage, assassin
 - Zone-based damage: front/side/back affects hit chance
 - Skills: shove (swordsman), fire arrow (archer), sneak (assassin), heal/fire (mage), reactive halberd

@@ -210,8 +210,11 @@ func load_game(slot: int = -1) -> bool:
 						best_time = mod
 		if best >= 0:
 			path = "user://save_%d.json" % best
+		elif FileAccess.file_exists("user://save.json"):
+			path = "user://save.json"
+			print("Слоты 0..9 пусты, загружаю user://save.json.")
 		else:
-			print("Нет сохранений в слотах 0..9.")
+			print("Нет сохранений в слотах 0..9 и нет user://save.json.")
 			return false
 	else:
 		print("Неверный номер слота: %d" % slot)

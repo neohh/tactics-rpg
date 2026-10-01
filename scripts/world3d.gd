@@ -1,5 +1,6 @@
 extends Node3D
 var _busy_time = 0.0
+var _enemy_phase_running = false
 var yaw_n: Node3D
 var pitch_n: Node3D
 var cam: Camera3D
@@ -1900,7 +1901,9 @@ func _end_turn_safe():
 	_compute_hl()
 	status.text = "Ход врагов…"
 	_busy_time = 0.0
+	_enemy_phase_running = true
 	await _enemy_phase_old()
+	_enemy_phase_running = false
 	_finalize_turn_safe()
 func _finalize_turn_safe():
 	act_max = _calc_act_max()
@@ -1914,9 +1917,13 @@ func _process(d):
 	if busy:
 		_busy_time += d
 		if _busy_time > 10.0:
-			push_error("Turn watchdog: enemy phase timed out after 10.0s, forcing _finalize_turn_safe()")
-			_busy_time = 0.0
-			_finalize_turn_safe()
+			if _enemy_phase_running:
+				push_error("Turn watchdog: 10s passed but _enemy_phase_old() still running, waiting…")
+				_busy_time = 0.0
+			else:
+				push_error("Turn watchdog: enemy phase timed out after 10.0s, forcing _finalize_turn_safe()")
+				_busy_time = 0.0
+				_finalize_turn_safe()
 	else:
 		_busy_time = 0.0
 func _leave_battle():

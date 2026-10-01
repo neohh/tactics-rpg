@@ -4,7 +4,7 @@ var work_node = null
 var mode_lab: Label
 func _ready():
 	mode_lab = Label.new()
-	get_tree().root.add_child(mode_lab)
+	get_tree().root.add_child.call_deferred(mode_lab)
 	mode_lab.anchor_top = 1.0
 	mode_lab.anchor_bottom = 1.0
 	mode_lab.offset_left = 8

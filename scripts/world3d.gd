@@ -415,7 +415,7 @@ func _start_battle():
 	var pre = LOCS.get(loc_id, {}).get("dlg", {}).get("pre", "")
 	if pre != "":
 		await _play_dlg(pre)
-	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits", false):
+	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
 		var mode = str(LOCS.get(loc_id, {}).get("dlg", {}).get("peace", "leave"))
 		if mode == "neutral":
 			for u in units3:

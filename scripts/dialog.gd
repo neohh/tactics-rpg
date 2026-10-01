@@ -120,6 +120,8 @@ func _col(h):
 	return Color(h) if h != "" else Color.WHITE
 
 func _show():
+	if root == null:
+		_build()
 	var lines = data.get("lines", [])
 	if idx >= lines.size():
 		done.emit()
@@ -140,9 +142,20 @@ func _show():
 	if fx.has("give"):
 		Game.add_item(fx["give"])
 	if fx.has("gold"):
-		Game.gold += int(fx["gold"])
+		var g_delta = int(fx["gold"])
+		if g_delta < 0:
+			Game.gold = max(0, Game.gold + g_delta)
+		else:
+			Game.gold += g_delta
 	if fx.has("flag"):
-		Game.flags[fx["flag"]] = true
+		var fl = str(fx["flag"])
+		Game.flags[fl] = true
+		if fl == "paid_bandits" or fl == "bandits_paid":
+			Game.flags["paid_bandits"] = true
+			Game.flags["bandits_paid"] = true
+			if Game.cur_loc != "":
+				Game.flags["paid_bandits_" + Game.cur_loc] = true
+				Game.flags["peace_" + Game.cur_loc] = true
 	if fx.has("peace"):
 		Game.flags["peace_" + Game.cur_loc] = true
 	if fx.has("hostile"):
@@ -160,9 +173,17 @@ func _show():
 	for c in choice_box.get_children():
 		c.queue_free()
 	for c in L.get("choices", []):
+		var target_idx = int(c.get("to", idx + 1))
 		var b = Button.new()
 		b.text = c.get("t", "")
-		b.pressed.connect(_pick.bind(int(c.get("to", idx + 1))))
+		if not preview_mode and target_idx >= 0 and target_idx < lines.size():
+			var target_fx = lines[target_idx].get("fx", {})
+			if target_fx.has("gold") and int(target_fx["gold"]) < 0:
+				var cost = -int(target_fx["gold"])
+				if Game.gold < cost:
+					b.disabled = true
+					b.text += " (нужно %d золота)" % cost
+		b.pressed.connect(_pick.bind(target_idx))
 		choice_box.add_child(b)
 
 func _apply_portrait(ch):

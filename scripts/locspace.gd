@@ -16,6 +16,8 @@ func _ready():
 	bb.text = "← в игру"
 	bb.pressed.connect(_back)
 	top.add_child(bb)
+	if (Game.edit_loc == "" or not DATA.has(Game.edit_loc)) and DATA.size() > 0:
+		Game.edit_loc = DATA.keys()[0]
 	ttl = Label.new()
 	ttl.text = "МАСТЕРСКАЯ ЛОКАЦИЙ: %s" % Game.edit_loc
 	top.add_child(ttl)
@@ -66,7 +68,8 @@ func _write():
 	get_tree().call_group("live", "live_reload")
 	dirty = false
 func _exit():
-	get_tree().change_scene_to_file(Game.return_scene)
+	var ret = Game.return_scene if (Game.return_scene != null and Game.return_scene != "") else "res://constructor.tscn"
+	get_tree().change_scene_to_file(ret)
 func _lj(p):
 	var f = FileAccess.open(p, FileAccess.READ)
 	if f == null:

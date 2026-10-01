@@ -1634,33 +1634,8 @@ func _unhandled_input(ev):
 			var tv = load("res://scripts/tavern.gd").new()
 			add_child(tv)
 			return
-		if ev.keycode == KEY_P:
-			var pu = load("res://scripts/party_ui.gd").new()
-			add_child(pu)
-			return
-		if ev.keycode == KEY_R:
-			var cu = load("res://scripts/camp_ui.gd").new()
-			add_child(cu)
-			return
-		if ev.keycode == KEY_N and str(LOCS.get(Game.cur_loc, {}).get("type", "")) == "town":
-			var tv = load("res://scripts/tavern.gd").new()
-			add_child(tv)
-			return
-		# UI_KEYS_V1
-		if ev.keycode == KEY_P:
-			var pu = load("res://scripts/party_ui.gd").new()
-			add_child(pu)
-			return
-		if ev.keycode == KEY_N and str(LOCS.get(Game.cur_loc, {}).get("type", "")) == "town":
-			var tv = load("res://scripts/tavern.gd").new()
-			add_child(tv)
-			return
 		if ev.keycode == KEY_E:
 			get_tree().change_scene_to_file("res://explore3d.tscn")
-			return
-		if ev.keycode == KEY_R:
-			var c = load("res://scripts/camp_ui.gd").new()
-			add_child(c)
 			return
 		if ev.keycode == KEY_J:
 			var j = load("res://scripts/journal.gd").new()

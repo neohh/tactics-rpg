@@ -401,12 +401,14 @@ func _try_move(node, dir, step):
 func _try_combat():
 	if party_n.size() == 0:
 		return
-	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits", false):
+	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
 		return
 	var pre = str(LOCS.get(loc_id, {}).get("dlg", {}).get("pre", ""))
 	if pre != "" and not pre_played:
 		pre_played = true
 		await _play_dlg(pre)
+		if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
+			return
 	_start_combat()
 
 func _start_combat():

@@ -90,8 +90,7 @@ func _notify(t):
 	notice = t
 	print(t)
 func journal_text():
-	var s = "ЖУРНАЛ ЗАДАНИЙ
-"
+	var s = "ЖУРНАЛ ЗАДАНИЙ\n"
 	var any = false
 	for q in QUESTS:
 		var st = int(quests.get(q, 0))
@@ -101,14 +100,11 @@ func journal_text():
 		var Q = QUESTS[q]
 		var sd = Q.get("stages", {}).get(str(st), {})
 		if sd.get("done", false):
-			s += "✔ %s — выполнено
-" % Q.get("title", q)
+			s += "✔ %s — выполнено\n" % Q.get("title", q)
 		else:
-			s += "• %s: %s
-" % [Q.get("title", q), sd.get("text", "")]
+			s += "• %s: %s\n" % [Q.get("title", q), sd.get("text", "")]
 	if not any:
-		s += "(пусто)
-"
+		s += "(пусто)\n"
 	return s
 
 func save_game(slot: int = 0):

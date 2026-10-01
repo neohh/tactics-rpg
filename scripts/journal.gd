@@ -17,8 +17,7 @@ func _ready():
 	root.add_child(lab)
 	refresh()
 func refresh():
-	lab.text = Game.journal_text() + "
-(клик — закрыть)"
+	lab.text = Game.journal_text() + "\n(клик — закрыть)"
 func _click(ev):
 	if ev is InputEventMouseButton and ev.pressed:
 		visible = false

@@ -1,4 +1,3 @@
-# END_RETURN_V1
 extends Node3D
 var _busy_time = 0.0
 var yaw_n: Node3D
@@ -198,7 +197,6 @@ func _build():
 		if tm == 0 and from_explore:
 			continue
 		_spawn_unit(Vector2i(u["cell"][0], u["cell"][1]), tm, u.get("cls", "swordsman"), Vector2(1, 0) if tm == 0 else Vector2(-1, 0), u.get("char", ""))
-	# F2_WORLD
 	if not from_explore:
 		if Game.party.size() > 0:
 			has0 = true
@@ -1886,7 +1884,7 @@ func _talk_ui():
 	x.pressed.connect(func(): ui.queue_free())
 	box.add_child(x)
 	add_child(ui)
-# BATTLE_TAIL_V1
+
 func _end_turn_safe():
 	if game_over3:
 		_leave_battle()
@@ -1969,4 +1967,4 @@ func _on_to_map():
 					m["maxhp"] = u.maxhp
 	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
-# DEDUP_DONE
+

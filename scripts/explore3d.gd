@@ -60,9 +60,7 @@ func _ready():
 			var p = ks[0].split(",")
 			sx = int(p[0]) * 8.0 + 4.0
 			sy = int(p[1]) * 8.0 + 4.0
-	# RETPOS_V1
 	var ret = Game.explore_return
-	# F2_EXP
 	var any_alive = false
 	for m in Game.party:
 		if int(m.get("hp", 0)) > 0:

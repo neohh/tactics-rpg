@@ -1088,7 +1088,7 @@ func _enter(id):
 	if str(LOCS.get(Game.cur_loc, {}).get("type", "")) == "town":
 		_upd_hint()
 	else:
-		get_tree().change_scene_to_file("res://explore3d.tscn")  # EXPLORE_ROUTE_V1
+		get_tree().change_scene_to_file("res://explore3d.tscn")
 
 func _play_dlg(dn):
 	if dn == "":

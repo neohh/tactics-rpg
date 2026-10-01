@@ -1,3 +1,6 @@
+# Редактор/мастерская 3D-локаций (Work3D)
+# Служит 3D-вьювером и редактором ландшафта, чанков, света и декораций локации.
+# Работает в тандеме с Конструктором (scripts/constructor.gd) и 2D-сеткой (scripts/loc_editor.gd / loc_grid.gd).
 extends Node3D
 
 var light_mode = false
@@ -494,7 +497,6 @@ func _input(ev):
 func _unhandled_input(ev):
 	if not visible:
 		return
-	# SPAWN_TOOL_V1
 	if ev is InputEventKey and ev.pressed and ev.keycode == KEY_V:
 		spawn_mode = not spawn_mode
 		_upd_tool()

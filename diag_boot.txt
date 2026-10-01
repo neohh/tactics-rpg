@@ -1,6 +1,0 @@
-DIAG BOOT
-game started at: 2026-08-22T00:33:43
-work3d.gd mtime: 1787340814
-file has 'var light_mode': true
-file has 'blight': false
-file has '_diag_ui': true

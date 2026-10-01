@@ -1,4 +1,0 @@
-DIAG WORKSHOP
-opened at: 2026-08-22T13:30:25
-has light_mode var: true
-buttons: [-] НАВИГАЦИЯ, ← в игру, [-] ИНСТРУМЕНТЫ, ЧАНКИ [C], СВОБОДНО, СВЕТ, В GODOT, ГОТОВО (сохранить), база

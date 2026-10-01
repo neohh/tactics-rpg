@@ -1,7 +1,5 @@
 # END_RETURN_V1
 extends Node3D
-var turn_state = null
-var coordinator = null
 var _busy_time = 0.0
 var yaw_n: Node3D
 var pitch_n: Node3D
@@ -53,8 +51,19 @@ var arrow_mode = false
 var skills_box: VBoxContainer
 var heal_mode = false
 var activations_left = 2
+var act_max = 2
 var act_lab: Label
 const PCLS = ["assassin", "swordsman", "halberd", "archer", "mage"]
+
+func _calc_act_max() -> int:
+	var count = 0
+	for u in units3:
+		if u.team == 0 and u.hp > 0:
+			count += 1
+	if count == 0 and Game.party.size() > 0:
+		count = Game.party.size()
+	return StatsTools.activations_for(maxi(1, count))
+
 func _ready():
 	add_to_group("live")
 	loc_id = Game.cur_loc
@@ -68,6 +77,8 @@ func _ready():
 	add_child(hl_root)
 	_build()
 	_apply_explore()
+	act_max = _calc_act_max()
+	activations_left = act_max
 	if units3.size() > 0:
 		var mnx = 999
 		var mny = 999
@@ -83,7 +94,6 @@ func _ready():
 		target = Vector3(terrain.GW * 0.5, 0, terrain.GH * 0.5)
 	_apply()
 	_ui()
-	_init_turn_state()
 func _setup():
 	yaw_n = Node3D.new()
 	add_child(yaw_n)
@@ -174,8 +184,21 @@ func _build():
 			var c = Vector2i(int(pl["cell"][0]), int(pl["cell"][1]))
 			_spawn_unit(c, 0, str(pl.get("cls", "swordsman")), Vector2(1, 0), str(pl.get("char", "")))
 			var uu = units3[units3.size() - 1]
-			uu.hp = int(pl.get("hp", uu.hp))
-			uu.maxhp = int(pl.get("maxhp", uu.maxhp))
+			# Match corresponding party member
+			var pm = null
+			for m in Game.party:
+				if (str(pl.get("char", "")) != "" and str(m.get("char", "")) == str(pl.get("char", ""))) or (str(pl.get("char", "")) == "" and str(m.get("cls", "")) == str(uu.cls)):
+					pm = m
+					break
+			if pm != null:
+				PartyTools.ensure_hp(pm)
+				var d_stats = StatsTools.derived(CLASSES.get(str(pm.get("cls", "swordsman")), {}), int(pm.get("level", 1)), pm.get("perks", []), pm.get("equip", {}))
+				uu.stats = d_stats
+				uu.maxhp = int(d_stats.get("hp", uu.maxhp))
+				uu.hp = int(pm.get("hp", uu.maxhp))
+			else:
+				uu.hp = int(pl.get("hp", uu.hp))
+				uu.maxhp = int(pl.get("maxhp", uu.maxhp))
 			_set_hp_bar(uu)
 	for u in camp.get("units", []):
 		var tm = int(u.get("team", 1))
@@ -192,10 +215,12 @@ func _build():
 				if di >= 6:
 					break
 				PartyTools.ensure_hp(m)
+				var d_stats = StatsTools.derived(CLASSES.get(str(m.get("cls", "swordsman")), {}), int(m.get("level", 1)), m.get("perks", []), m.get("equip", {}))
 				_spawn_unit(Vector2i(dmin, 1 + di), 0, str(m.get("cls", "swordsman")), Vector2(1, 0), str(m.get("char", "")))
 				var uu2 = units3[units3.size() - 1]
-				uu2.hp = int(m.get("hp", uu2.hp))
-				uu2.maxhp = int(m.get("maxhp", uu2.maxhp))
+				uu2.stats = d_stats
+				uu2.maxhp = int(d_stats.get("hp", uu2.maxhp))
+				uu2.hp = int(m.get("hp", uu2.maxhp))
 				_set_hp_bar(uu2)
 				di += 1
 			var enc = Game.enc
@@ -224,7 +249,7 @@ func _build():
 	_log_click("BUILD loc=%s GW=%d GH=%d OX=%d OY=%d chunks=%s deploy_min_x=%d" % [loc_id, terrain.GW, terrain.GH, terrain.OX, terrain.OY, str(terrain.chunk_mask.keys()), deploy_min_x])
 	if deploy_mode:
 		_hl_deploy()
-func _spawn_unit(c, team, cls, dir, cid = ""):
+func _spawn_unit(c, team, cls, dir, cid = "", stats = null):
 	var cd = CLASSES.get(cls, {})
 	var sc = float(cd.get("scale", 1.0))
 	var root = Node3D.new()
@@ -303,7 +328,7 @@ func _spawn_unit(c, team, cls, dir, cid = ""):
 	area.add_child(csh)
 	root.add_child(area)
 	area.input_event.connect(_on_area_click.bind(units3.size()))
-	units3.append({"cell": c, "team": team, "cls": cls, "hp": int(cd.get("hp", 2)), "maxhp": int(cd.get("hp", 2)), "facing": dir, "root": root, "bar": bar, "arrow": holder, "moved": false, "attacked": false, "char": cid})
+	units3.append({"cell": c, "team": team, "cls": cls, "hp": int(cd.get("hp", 2)), "maxhp": int(cd.get("hp", 2)), "facing": dir, "root": root, "bar": bar, "arrow": holder, "moved": false, "attacked": false, "char": cid, "stats": stats})
 func _obj(p, k):
 	p.y = terrain.sample_h(p.x, p.z) if terrain != null else 0.0
 	var od = OBJ3.get(k, {})
@@ -389,18 +414,18 @@ func _ui():
 	_upd_info()
 func _upd_info():
 	if act_lab != null:
-		act_lab.text = "Активаций: %d из 2" % activations_left
+		act_lab.text = "Активаций: %d из %d" % [activations_left, act_max]
 	if info == null:
 		return
 	if acted_idx < 0:
-		info.text = "За раунд: 2 активации — две разные фигуры или одна дважды (усталость)."
+		info.text = "За раунд: %d активаций — разные фигуры или повторно (усталость)." % act_max
 	else:
 		var u = units3[acted_idx]
 		info.text = "%s: ходов %d, атак %d." % [CLASSES.get(u.cls, {}).get("name", ""), 0 if u.moved else 1, 0 if u.attacked else 1]
 func _start_battle():
-	deploy_mode = false; _turn_state_on_battle_start()
-	_setup_coordinator()
-	activations_left = 2
+	deploy_mode = false
+	act_max = _calc_act_max()
+	activations_left = act_max
 	for u in units3:
 		u.acts = 0
 		u.spent = false
@@ -449,9 +474,13 @@ func _unit_at(c):
 			return i
 	return -1
 func _ar(u):
+	if u.get("stats") is Dictionary and u["stats"].has("ar"):
+		return int(u["stats"]["ar"])
 	return int(CLASSES.get(u.cls, {}).get("ar", 1))
 func _mv(u):
 	var base = int(CLASSES.get(u.cls, {}).get("move", 3))
+	if u.get("stats") is Dictionary and u["stats"].has("move"):
+		base = int(u["stats"]["move"])
 	if u.get("tired", false):
 		base -= 1
 	if u.get("fresh", false):
@@ -657,9 +686,12 @@ func _attack(i, j):
 	_set_face(u, _dir_to(t.cell - u.cell))
 	var cd = CLASSES.get(u.cls, {})
 	var z = _zone_of(t, u.cell)
-	var cf = float(cd.get("cf", 0.6))
-	var cbk = float(cd.get("cb", 0.6))
+	var u_stats = u.get("stats") if u.get("stats") is Dictionary else {}
+	var cf = float(u_stats.get("cf", cd.get("cf", 0.6)))
+	var cbk = float(u_stats.get("cb", cd.get("cb", 0.6)))
 	var chance = cbk if z == "back" else (cf if z == "front" else (cf + cbk) * 0.5)
+	if u_stats.has("hit_bonus"):
+		chance += float(u_stats["hit_bonus"])
 	if u.get("tired", false):
 		chance *= 0.9
 	if u.get("fresh", false):
@@ -678,7 +710,7 @@ func _attack(i, j):
 			_upd_info()
 			return
 	if randf() < chance:
-		var dmg = 1
+		var dmg = 1 + int(u_stats.get("dmg_bonus", 0))
 		var prey = str(cd.get("prey", ""))
 		if prey != "" and prey == str(t.cls):
 			dmg += 1
@@ -719,7 +751,11 @@ func _end_turn_old():
 	_enemy_phase_old()
 func _enemy_phase_old():
 	var acted = false
-	var e_acts = 2
+	var enemy_count = 0
+	for u in units3:
+		if u.team == 1 and u.hp > 0:
+			enemy_count += 1
+	var e_acts = StatsTools.activations_for(maxi(1, enemy_count))
 	for i in units3.size():
 		var u = units3[i]
 		if u.team != 1 or u.hp <= 0:
@@ -737,9 +773,10 @@ func _enemy_phase_old():
 				var from = u.cell
 				_set_face(u, _dir_to(st - u.cell))
 				u.cell = st
-				var tw = create_tween()
-				tw.tween_property(u.root, "position", _p(st) + Vector3(0, _th(st), 0), 0.25)
-				await tw.finished
+				if is_instance_valid(u.root):
+					var tw = create_tween()
+					tw.tween_property(u.root, "position", _p(st) + Vector3(0, _th(st), 0), 0.25)
+					await tw.finished
 				if _fire_at(st):
 					u.burn = 1
 				await _slip_check(i, from, st)
@@ -750,6 +787,12 @@ func _enemy_phase_old():
 				acted = true
 			if action.has("mage_fire"):
 				_cast_fire(action["mage_fire"], i)
+				acted = true
+			if action.has("fire_at"):
+				_ai_fire(i, action["fire_at"])
+				acted = true
+			if action.has("shove") and units3[action["shove"]].hp > 0:
+				_do_shove(i, action["shove"])
 				acted = true
 			if action.has("attack") and units3[action["attack"]].hp > 0:
 				await _attack(i, action["attack"])
@@ -780,7 +823,8 @@ func _enemy_phase_old():
 				_float_text(u.root.position, "-1 горение", Color(1, 0.5, 0.1))
 				if u.hp <= 0:
 					u.root.visible = false
-	activations_left = 2
+	act_max = _calc_act_max()
+	activations_left = act_max
 	busy = false
 	acted_idx = -1
 	if not game_over3:
@@ -1069,7 +1113,20 @@ func _click_action():
 		var dmin = _calc_deploy_min_x()
 		if c.x >= dmin and c.x < dmin + 3 and terrain != null and terrain.has_cell(c.x, c.y) and _unit_at(c) < 0 and not objects3.has(c) and deploy_i < 5:
 			var cls = PCLS[deploy_i]
-			_spawn_unit(c, 0, cls, Vector2(1, 0))
+			var pm = null
+			if deploy_i < Game.party.size():
+				pm = Game.party[deploy_i]
+			var cid = str(pm.get("char", "")) if pm != null else ""
+			var d_stats = null
+			if pm != null:
+				PartyTools.ensure_hp(pm)
+				d_stats = StatsTools.derived(CLASSES.get(cls, {}), int(pm.get("level", 1)), pm.get("perks", []), pm.get("equip", {}))
+			_spawn_unit(c, 0, cls, Vector2(1, 0), cid, d_stats)
+			var deployed_u = units3[units3.size() - 1]
+			if pm != null and d_stats != null:
+				deployed_u.maxhp = int(d_stats.get("hp", deployed_u.maxhp))
+				deployed_u.hp = int(pm.get("hp", deployed_u.maxhp))
+				_set_hp_bar(deployed_u)
 			deploy_i += 1
 			status.text = "Поставлен %s (%d/4). «В БОЙ» — начать." % [CLASSES.get(cls, {}).get("name", ""), deploy_i]
 		return
@@ -1391,7 +1448,11 @@ func _slip_check(i, from, to):
 		return
 	var cur = to
 	var touched = false
+	var steps = 0
 	while bfs_parent.has(cur) and cur != from:
+		steps += 1
+		if steps > 100:
+			break
 		cur = bfs_parent[cur]
 		if cur != from and _unit_at(cur) >= 0:
 			touched = true
@@ -1433,11 +1494,17 @@ func _strike(i, j):
 	var t = units3[j]
 	_set_face(u, _dir_to(t.cell - u.cell))
 	var cd = CLASSES.get(u.cls, {})
-	var chance = (float(cd.get("cf", 0.6)) + float(cd.get("cb", 0.6))) * 0.5
+	var u_stats = u.get("stats") if u.get("stats") is Dictionary else {}
+	var cf = float(u_stats.get("cf", cd.get("cf", 0.6)))
+	var cbk = float(u_stats.get("cb", cd.get("cb", 0.6)))
+	var chance = (cf + cbk) * 0.5
+	if u_stats.has("hit_bonus"):
+		chance += float(u_stats["hit_bonus"])
 	if randf() < chance:
-		t.hp -= 1
+		var dmg = 1 + int(u_stats.get("dmg_bonus", 0))
+		t.hp -= dmg
 		_set_hp_bar(t)
-		_float_text(t.root.position, "-1", Color(1, 0.3, 0.3))
+		_float_text(t.root.position, "-%d" % dmg, Color(1, 0.3, 0.3))
 		if t.hp <= 0:
 			t.root.visible = false
 	else:
@@ -1831,12 +1898,6 @@ func _talk_ui():
 	box.add_child(x)
 	add_child(ui)
 # BATTLE_TAIL_V1
-func _init_turn_state():
-	pass
-func _turn_state_on_battle_start():
-	pass
-func _setup_coordinator():
-	pass
 func _end_turn_safe():
 	if game_over3:
 		_leave_battle()
@@ -1855,7 +1916,8 @@ func _end_turn_safe():
 	await _enemy_phase_old()
 	_finalize_turn_safe()
 func _finalize_turn_safe():
-	activations_left = 2
+	act_max = _calc_act_max()
+	activations_left = act_max
 	busy = false
 	acted_idx = -1
 	if not game_over3:
@@ -1865,6 +1927,7 @@ func _process(d):
 	if busy:
 		_busy_time += d
 		if _busy_time > 10.0:
+			push_error("Turn watchdog: enemy phase timed out after 10.0s, forcing _finalize_turn_safe()")
 			_busy_time = 0.0
 			_finalize_turn_safe()
 	else:

@@ -52,6 +52,7 @@ var shove_mode = false
 var arrow_mode = false
 var skills_box: Control
 var heal_mode = false
+var fire1_mode = false
 var activations_left = 2
 var act_max = 2
 var act_lab: Label
@@ -86,6 +87,14 @@ func _ready():
 	add_child(hover_hl_root)
 	_build()
 	_apply_explore()
+	for un in units3:
+		if un.cls == "mage":
+			if int(un.get("heal_uses", 0)) <= 0:
+				un.heal_uses = 3
+			if int(un.get("fire_uses", 0)) <= 0:
+				un.fire_uses = 2
+			if int(un.get("fire1_uses", 0)) <= 0:
+				un.fire1_uses = 4
 	act_max = _calc_act_max()
 	activations_left = act_max
 	if units3.size() > 0:
@@ -332,7 +341,14 @@ func _spawn_unit(c, team, cls, dir, cid = "", stats = null):
 	area.input_event.connect(_on_area_click.bind(u_idx))
 	area.mouse_entered.connect(_on_unit_mouse_entered.bind(u_idx))
 	area.mouse_exited.connect(_on_unit_mouse_exited.bind(u_idx))
-	units3.append({"cell": c, "team": team, "cls": cls, "hp": int(cd.get("hp", 2)), "maxhp": int(cd.get("hp", 2)), "facing": dir, "root": root, "bar": bar, "arrow": holder, "moved": false, "attacked": false, "char": cid, "stats": stats})
+	units3.append({
+		"cell": c, "team": team, "cls": cls, "hp": int(cd.get("hp", 2)), "maxhp": int(cd.get("hp", 2)),
+		"facing": dir, "root": root, "bar": bar, "arrow": holder, "moved": false, "attacked": false,
+		"char": cid, "stats": stats,
+		"heal_uses": 3 if cls == "mage" else 0,
+		"fire_uses": 2 if cls == "mage" else 0,
+		"fire1_uses": 4 if cls == "mage" else 0
+	})
 func _obj(p, k):
 	p.y = terrain.sample_h(p.x, p.z) if terrain != null else 0.0
 	var od = OBJ3.get(k, {})
@@ -836,7 +852,8 @@ func _start_battle():
 		u.acted_prev = false
 		if u.cls == "mage":
 			u.heal_uses = 3
-			u.fire_uses = 3
+			u.fire_uses = 2
+			u.fire1_uses = 4
 	if start_btn != null:
 		start_btn.visible = false
 	var pre = LOCS.get(loc_id, {}).get("dlg", {}).get("pre", "")
@@ -1160,6 +1177,8 @@ func _end_turn_old():
 	shove_mode = false
 	arrow_mode = false
 	heal_mode = false
+	fire1_mode = false
+	casting = false
 	_compute_hl()
 	status.text = "Ход врагов…"
 	_enemy_phase_old()
@@ -1486,13 +1505,14 @@ func _calc_attack_reach(att_i: int, tgt_i: int) -> Dictionary:
 	if u.team != 0 or t.team != 1 or u.hp <= 0 or t.hp <= 0:
 		return {}
 	if u.cls == "mage":
-		return {}
+		if int(u.get("fire1_uses", 0)) <= 0:
+			return {}
 	if u.attacked:
 		return {}
 	if activations_left <= 0 and not u.get("spent", false):
 		return {}
 
-	var ar = _ar(u)
+	var ar = 4 if u.cls == "mage" else _ar(u)
 	var cur_dist = _cheb(u.cell, t.cell)
 	if cur_dist <= ar:
 		return {"can_attack": true, "need_move": false, "target_cell": u.cell, "steps": 0}
@@ -1536,8 +1556,12 @@ func _execute_move_and_attack(att_i: int, tgt_i: int, dest_c: Vector2i):
 	_upd_info()
 	await _move_to(att_i, dest_c)
 	await get_tree().create_timer(0.26).timeout
-	if u.hp > 0 and t.hp > 0 and _cheb(u.cell, t.cell) <= _ar(u):
-		_attack(att_i, tgt_i)
+	var ar_chk = 4 if u.cls == "mage" else _ar(u)
+	if u.hp > 0 and t.hp > 0 and _cheb(u.cell, t.cell) <= ar_chk:
+		if u.cls == "mage":
+			_cast_fire1(t.cell, att_i)
+		else:
+			_attack(att_i, tgt_i)
 	busy = false
 	_update_hover_hl()
 	_compute_hl()
@@ -1613,6 +1637,9 @@ func _on_area_click(_cam, ev, _p2, _n, _si, i):
 	if arrow_mode and selected >= 0 and u.team == 1:
 		_fire_arrow(selected, u.cell)
 		return
+	if fire1_mode and selected >= 0 and u.team == 1:
+		_cast_fire1(u.cell)
+		return
 	if u.team == 0:
 		if selected != i and activations_left <= 0 and u.get("acts", 0) == 0:
 			status.text = "Активации закончились — заверши ход."
@@ -1661,6 +1688,9 @@ func _click_action():
 	var c = _pick_cell()
 	if arrow_mode and selected >= 0 and c != null:
 		_fire_arrow(selected, c)
+		return
+	if fire1_mode and selected >= 0 and c != null:
+		_cast_fire1(c)
 		return
 	if c == null:
 		return
@@ -1748,16 +1778,30 @@ func _unhandled_input(ev):
 					_skills_ui()
 					return
 				elif u.cls == "mage":
-					heal_mode = not heal_mode
+					fire1_mode = not fire1_mode
+					heal_mode = false
 					shove_mode = false
 					arrow_mode = false
 					casting = false
-					status.text = "Лечение: клик по своему в радиусе 4." if heal_mode else "Лечение отменено."
+					status.text = "Огонь 1: клик по цели в радиусе 4." if fire1_mode else "Огонь 1 отменен."
 					_skills_ui()
 					return
 			if ev.keycode == KEY_2:
 				var u = units3[selected]
 				if u.cls == "mage":
+					heal_mode = not heal_mode
+					fire1_mode = false
+					shove_mode = false
+					arrow_mode = false
+					casting = false
+					status.text = "Лечение: клик по союзнику в радиусе 4." if heal_mode else "Лечение отменено."
+					_skills_ui()
+					return
+			if ev.keycode == KEY_3:
+				var u = units3[selected]
+				if u.cls == "mage":
+					fire1_mode = false
+					heal_mode = false
 					_toggle_cast()
 					_skills_ui()
 					return
@@ -1834,7 +1878,52 @@ func _toggle_cast():
 func _upd_magic():
 	if fire_btn != null:
 		fire_btn.text = "Огонь 3x3 — %d" % magic_charges
-		fire_btn.disabled = magic_charges <= 0
+func _cast_fire1(center, caster_i = -1):
+	var u = null
+	if caster_i >= 0 and caster_i < units3.size():
+		u = units3[caster_i]
+	elif selected >= 0 and selected < units3.size() and units3[selected].cls == "mage":
+		u = units3[selected]
+	if u == null or u.cls != "mage":
+		return
+	if u.attacked or u.get("fire1_uses", 0) <= 0:
+		if u.team == 0:
+			status.text = "Огонь 1 недоступен."
+		return
+	if _cheb(u.cell, center) > 4:
+		if u.team == 0:
+			status.text = "Слишком далеко (макс. 4 кл)."
+		return
+	var u_idx = units3.find(u)
+	_act_spend(u_idx)
+	u.attacked = true
+	u.fire1_uses = maxi(0, int(u.get("fire1_uses", 0)) - 1)
+	fire1_mode = false
+	if u.team == 0:
+		selected = -1
+	var boosted = false
+	if u.team == 0:
+		boosted = await _qte("ФОКУС! [SPACE]", 0.9)
+	var dmg = 2 if boosted else 1
+	var target_idx = _unit_at(center)
+	if target_idx >= 0:
+		var t = units3[target_idx]
+		t.hp -= dmg
+		_set_hp_bar(t)
+		_float_text(t.root.position, "-%d ОГОНЬ" % dmg, Color(1, 0.4, 0.1))
+		t.burn = 2
+		if t.hp <= 0:
+			t.root.visible = false
+			status.text = "Огонь 1: цель уничтожена!"
+		else:
+			status.text = "Огонь 1: попадание (-%d)!" % dmg
+	else:
+		status.text = "Огонь 1: клетка подожжена."
+	fires.append({"cells": [center], "left": 2, "nodes": [_fire_quad(center)], "dmg": 1})
+	_compute_hl()
+	_check_end()
+	_upd_info()
+
 func _cast_fire(center, caster_i = -1):
 	var u = null
 	if caster_i >= 0:
@@ -2285,15 +2374,28 @@ func _skills_ui():
 	elif u.cls == "mage":
 		var h_uses = int(u.get("heal_uses", 0))
 		var f_uses = int(u.get("fire_uses", 0))
-		cards_hb.add_child(_make_card("💚", "Лечение", "Заряды: %d (дист. 4)" % h_uses, "1", heal_mode, h_uses <= 0 or act_spent, func():
+		var f1_uses = int(u.get("fire1_uses", 0))
+		cards_hb.add_child(_make_card("🔥", "Огонь 1", "Заряды: %d (1 цель, д. 4)" % f1_uses, "1", fire1_mode, f1_uses <= 0 or act_spent or u.attacked, func():
+			fire1_mode = not fire1_mode
+			heal_mode = false
+			casting = false
+			shove_mode = false
+			arrow_mode = false
+			status.text = "Огонь 1: клик по цели в радиусе 4." if fire1_mode else "Огонь 1 отменен."
+			_skills_ui()
+		))
+		cards_hb.add_child(_make_card("💚", "Лечение", "Заряды: %d (дист. 4)" % h_uses, "2", heal_mode, h_uses <= 0 or act_spent or u.attacked, func():
 			heal_mode = not heal_mode
+			fire1_mode = false
 			shove_mode = false
 			arrow_mode = false
 			casting = false
-			status.text = "Лечение: клик по своему в радиусе 4." if heal_mode else "Лечение отменено."
+			status.text = "Лечение: клик по союзнику в радиусе 4." if heal_mode else "Лечение отменено."
 			_skills_ui()
 		))
-		cards_hb.add_child(_make_card("💥", "Огонь 3x3", "Заряды: %d (зона 3x3)" % f_uses, "2", casting, f_uses <= 0 or act_spent, func():
+		cards_hb.add_child(_make_card("💥", "Огонь 3x3", "Заряды: %d (зона 3x3)" % f_uses, "3", casting, f_uses <= 0 or act_spent or u.attacked, func():
+			fire1_mode = false
+			heal_mode = false
 			_toggle_cast()
 			_skills_ui()
 		))
@@ -2714,6 +2816,8 @@ func _end_turn_safe():
 	shove_mode = false
 	arrow_mode = false
 	heal_mode = false
+	fire1_mode = false
+	casting = false
 	_compute_hl()
 	status.text = "Ход врагов…"
 	_busy_time = 0.0

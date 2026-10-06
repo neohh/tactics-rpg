@@ -41,6 +41,20 @@ func _target_of(i, port):
 	return -1
 func _draw():
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.09, 0.09, 0.12))
+	var grid_step = 40.0 * zoom
+	if grid_step >= 16.0:
+		var ox = fmod(pan.x, grid_step)
+		if ox < 0: ox += grid_step
+		var oy = fmod(pan.y, grid_step)
+		if oy < 0: oy += grid_step
+		var x = ox
+		while x < size.x:
+			draw_line(Vector2(x, 0), Vector2(x, size.y), Color(0.13, 0.14, 0.18, 0.5), 1.0)
+			x += grid_step
+		var y = oy
+		while y < size.y:
+			draw_line(Vector2(0, y), Vector2(size.x, y), Color(0.13, 0.14, 0.18, 0.5), 1.0)
+			y += grid_step
 	var n = lines.size()
 	for i in n:
 		var t = _target_of(i, -1)
@@ -68,6 +82,7 @@ func _draw():
 			draw_circle(_out_sock(i, k), 5, Color(1, 0.75, 0.2))
 	if wire_from != null:
 		_wire(_out_sock(wire_from["i"], wire_from["port"]), mouse_pos, Color(1, 1, 1, 0.6), "")
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.25, 0.28, 0.38, 0.8), false, 1.0)
 func _wire(p1, p2, col, lab):
 	draw_line(p1, p2, col, 2.0)
 	var d = (p2 - p1).normalized()
@@ -121,12 +136,14 @@ func _gui_input(ev):
 			var sh = _sock_hit(ev.position)
 			if sh.has("port") and sh["port"] >= -1:
 				_clear_out(sh["i"], sh["port"])
+			else:
+				panning = true
 	elif ev is InputEventMouseMotion:
 		mouse_pos = ev.position
 		if drag_node >= 0:
 			var w = _s2w(ev.position) - drag_off
-			lines[drag_node]["px"] = int(w.x)
-			lines[drag_node]["py"] = int(w.y)
+			lines[drag_node]["px"] = int(maxf(0.0, w.x))
+			lines[drag_node]["py"] = int(maxf(0.0, w.y))
 			queue_redraw()
 		elif mid_drag:
 			pan += ev.relative
@@ -138,8 +155,8 @@ func _gui_input(ev):
 			queue_redraw()
 	elif ev is InputEventMouseButton and not ev.pressed and ev.button_index == MOUSE_BUTTON_MIDDLE:
 		mid_drag = false
-	elif ev is InputEventMouseButton and not ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-		if wire_from != null:
+	elif ev is InputEventMouseButton and not ev.pressed and (ev.button_index == MOUSE_BUTTON_LEFT or ev.button_index == MOUSE_BUTTON_RIGHT):
+		if wire_from != null and ev.button_index == MOUSE_BUTTON_LEFT:
 			var sh = _sock_hit(ev.position)
 			var target = sh["i"] if sh.has("port") and sh["port"] == -2 else _node_hit(ev.position)
 			if target >= 0 and target != wire_from["i"]:
@@ -147,7 +164,7 @@ func _gui_input(ev):
 			wire_from = null
 			queue_redraw()
 		panning = false
-		if drag_node >= 0:
+		if drag_node >= 0 and ev.button_index == MOUSE_BUTTON_LEFT:
 			drag_node = -1
 			changed.emit()
 func _zoom_at(m, f):

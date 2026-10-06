@@ -50,50 +50,93 @@ func _preview():
 func _build():
 	for c in get_children():
 		c.queue_free()
+
+	# Top toolbar
+	var top_bar = HBoxContainer.new()
+	top_bar.position = Vector2(0, 0)
+	top_bar.add_theme_constant_override("separation", 6)
+	add_child(top_bar)
+
 	var bt = Button.new()
 	bt.text = "+ строка"
-	bt.position = Vector2(0, 0)
 	bt.pressed.connect(_add_line)
-	add_child(bt)
+	top_bar.add_child(bt)
+
 	var bl = Button.new()
 	bl.text = "авторасклад"
-	bl.position = Vector2(90, 0)
 	bl.pressed.connect(_auto_layout)
-	add_child(bl)
+	top_bar.add_child(bl)
+
 	var bc = Button.new()
 	bc.text = "панель"
-	bc.position = Vector2(210, 0)
 	bc.pressed.connect(_toggle_panel)
-	add_child(bc)
+	top_bar.add_child(bc)
+
+	var pv = Button.new()
+	pv.text = "▶ тест"
+	pv.pressed.connect(_preview)
+	top_bar.add_child(pv)
+
+	var sep = VSeparator.new()
+	top_bar.add_child(sep)
+
+	var rl = Label.new()
+	rl.text = "Файл:"
+	rl.add_theme_color_override("font_color", Color(0.7, 0.75, 0.8))
+	top_bar.add_child(rl)
+
+	ren = LineEdit.new()
+	ren.text = id
+	ren.custom_minimum_size = Vector2(160, 26)
+	top_bar.add_child(ren)
+
+	var rb = Button.new()
+	rb.text = "переименовать"
+	rb.pressed.connect(_rename)
+	top_bar.add_child(rb)
+
 	scheme = load("res://scripts/dialog_scheme.gd").new()
 	scheme.anchor_right = 1.0
 	scheme.anchor_bottom = 1.0
-	scheme.offset_top = 30
-	scheme.offset_bottom = -230
+	scheme.offset_top = 34
+	scheme.offset_bottom = -210
+	scheme.clip_contents = true
 	scheme.lines = data["lines"]
 	scheme.sel = sel_line
 	scheme.selected.connect(_sel_line)
 	scheme.changed.connect(_save)
 	add_child(scheme)
+
 	insp_root = ScrollContainer.new()
 	insp_root.anchor_left = 0.0
-	insp_root.anchor_right = 0.45
+	insp_root.anchor_right = 1.0
 	insp_root.anchor_top = 1.0
-	insp_root.offset_top = -222
+	insp_root.offset_top = -204
 	insp_root.anchor_bottom = 1.0
 	insp_root.offset_bottom = -4
+
+	var insp_st = StyleBoxFlat.new()
+	insp_st.bg_color = Color(0.10, 0.11, 0.14, 0.96)
+	insp_st.border_color = Color(0.3, 0.35, 0.45, 0.8)
+	insp_st.set_border_width_all(1)
+	insp_st.set_corner_radius_all(4)
+	insp_st.content_margin_left = 8
+	insp_st.content_margin_top = 6
+	insp_st.content_margin_right = 8
+	insp_st.content_margin_bottom = 6
+	insp_root.add_theme_stylebox_override("panel", insp_st)
 	add_child(insp_root)
+
 	insp_box = VBoxContainer.new()
 	insp_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	insp_root.add_child(insp_box)
 	_build_inspector()
-	_build_rename()
 
 func _toggle_panel():
 	collapsed = not collapsed
 	if insp_root != null:
 		insp_root.visible = not collapsed
-	scheme.offset_bottom = -4 if collapsed else -230
+	scheme.offset_bottom = -4 if collapsed else -210
 
 func _auto_layout():
 	var n = data["lines"].size()
@@ -120,8 +163,11 @@ func _auto_layout():
 		var d = depth.get(i, 0)
 		var r = colcount.get(d, 0)
 		colcount[d] = r + 1
-		data["lines"][i]["px"] = 15 + d * 165
-		data["lines"][i]["py"] = 15 + r * 55
+		data["lines"][i]["px"] = 20 + d * 210
+		data["lines"][i]["py"] = 20 + r * 90
+	if scheme != null:
+		scheme.pan = Vector2(20, 20)
+		scheme.zoom = 1.0
 	_save()
 	_sync_scheme()
 
@@ -156,9 +202,10 @@ func _build_inspector():
 	if L == null:
 		return
 	var rw = HBoxContainer.new()
+	rw.add_theme_constant_override("separation", 8)
 	var lw = Label.new()
-	lw.text = "Кто"
-	lw.custom_minimum_size = Vector2(60, 24)
+	lw.text = "Кто:"
+	lw.custom_minimum_size = Vector2(50, 24)
 	rw.add_child(lw)
 	var wo = OptionButton.new()
 	wo.add_item("(автор)")
@@ -171,115 +218,176 @@ func _build_inspector():
 		if cid == L.get("who", ""):
 			cur = k
 	wo.selected = cur
+	wo.custom_minimum_size = Vector2(160, 26)
 	wo.item_selected.connect(_set_who)
 	rw.add_child(wo)
-	insp_box.add_child(rw)
-	var rt = HBoxContainer.new()
-	var lt = Label.new()
-	lt.text = "Текст"
-	lt.custom_minimum_size = Vector2(60, 24)
-	rt.add_child(lt)
-	var te = LineEdit.new()
-	te.text = str(L.get("text", ""))
-	te.custom_minimum_size = Vector2(260, 26)
-	te.text_changed.connect(_set_text)
-	rt.add_child(te)
-	insp_box.add_child(rt)
-	var rn = HBoxContainer.new()
+
+	var sp1 = Control.new()
+	sp1.custom_minimum_size = Vector2(16, 0)
+	rw.add_child(sp1)
+
 	var ln2 = Label.new()
-	ln2.text = "Далее"
-	ln2.custom_minimum_size = Vector2(60, 24)
-	rn.add_child(ln2)
+	ln2.text = "Далее:"
+	rw.add_child(ln2)
 	var ns = SpinBox.new()
 	ns.min_value = -1
 	ns.max_value = 99
 	ns.value = int(L.get("next", -1))
-	ns.custom_minimum_size = Vector2(90, 26)
+	ns.custom_minimum_size = Vector2(80, 26)
 	ns.value_changed.connect(_set_next)
-	rn.add_child(ns)
+	rw.add_child(ns)
 	var lh = Label.new()
-	lh.text = "-1 = след.; номер = переход"
-	rn.add_child(lh)
-	insp_box.add_child(rn)
+	lh.text = "(-1 = след.)"
+	lh.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7))
+	rw.add_child(lh)
+
+	var sp2 = Control.new()
+	sp2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rw.add_child(sp2)
+
+	var bd = Button.new()
+	bd.text = "удалить строку"
+	var bd_st = StyleBoxFlat.new()
+	bd_st.bg_color = Color(0.22, 0.12, 0.12, 0.95)
+	bd_st.border_color = Color(0.8, 0.35, 0.35, 0.8)
+	bd_st.set_border_width_all(1)
+	bd_st.set_corner_radius_all(4)
+	bd.add_theme_stylebox_override("normal", bd_st)
+	bd.pressed.connect(_del_line)
+	rw.add_child(bd)
+	insp_box.add_child(rw)
+
+	var rt = HBoxContainer.new()
+	rt.add_theme_constant_override("separation", 8)
+	var lt = Label.new()
+	lt.text = "Текст:"
+	lt.custom_minimum_size = Vector2(50, 24)
+	rt.add_child(lt)
+	var te = LineEdit.new()
+	te.text = str(L.get("text", ""))
+	te.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	te.custom_minimum_size = Vector2(400, 26)
+	te.text_changed.connect(_set_text)
+	rt.add_child(te)
+	insp_box.add_child(rt)
+
+	var rbg = HBoxContainer.new()
+	rbg.add_theme_constant_override("separation", 8)
+	var lbg = Label.new()
+	lbg.text = "Фон:"
+	lbg.custom_minimum_size = Vector2(50, 24)
+	rbg.add_child(lbg)
+	var bg_opt = OptionButton.new()
+	bg_opt.add_item("3D (по умолчанию)")
+	var art_files = _art_files()
+	var cur_bg = str(L.get("bg", ""))
+	var sel_opt = 0
+	for i in range(art_files.size()):
+		var fpath = "res://art/" + art_files[i]
+		bg_opt.add_item(art_files[i])
+		if cur_bg == fpath or cur_bg == art_files[i]:
+			sel_opt = i + 1
+	bg_opt.selected = sel_opt
+	bg_opt.custom_minimum_size = Vector2(180, 26)
+	rbg.add_child(bg_opt)
+	var bge = LineEdit.new()
+	bge.placeholder_text = "или свой путь..."
+	bge.text = cur_bg
+	bge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bge.custom_minimum_size = Vector2(200, 26)
+	bge.text_changed.connect(_set_bg)
+	bg_opt.item_selected.connect(func(idx):
+		if idx == 0:
+			bge.text = ""
+			_set_bg("")
+		else:
+			var chosen = "res://art/" + art_files[idx - 1]
+			bge.text = chosen
+			_set_bg(chosen)
+	)
+	rbg.add_child(bge)
+	insp_box.add_child(rbg)
+
 	var lc = Label.new()
 	lc.text = "Выборы:"
+	lc.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	insp_box.add_child(lc)
 	var ci = 0
 	for ch in L.get("choices", []):
 		var hb = HBoxContainer.new()
+		hb.add_theme_constant_override("separation", 8)
+		var num_l = Label.new()
+		num_l.text = "%d." % (ci + 1)
+		hb.add_child(num_l)
 		var ce = LineEdit.new()
 		ce.text = str(ch.get("t", ""))
-		ce.custom_minimum_size = Vector2(160, 26)
+		ce.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ce.custom_minimum_size = Vector2(280, 26)
 		ce.text_changed.connect(_set_choice_t.bind(ci))
 		hb.add_child(ce)
 		var to = Label.new()
-		to.text = "→"
+		to.text = "→ переход:"
 		hb.add_child(to)
 		var sb = SpinBox.new()
 		sb.max_value = 99
 		sb.value = int(ch.get("to", 0))
+		sb.custom_minimum_size = Vector2(80, 26)
 		sb.value_changed.connect(_set_choice_to.bind(ci))
 		hb.add_child(sb)
 		var dl = Button.new()
-		dl.text = "X"
+		dl.text = "✕"
+		dl.custom_minimum_size = Vector2(28, 26)
 		dl.pressed.connect(_del_choice.bind(ci))
 		hb.add_child(dl)
 		insp_box.add_child(hb)
 		ci += 1
 	var ac = Button.new()
 	ac.text = "+ выбор"
+	ac.custom_minimum_size = Vector2(100, 26)
 	ac.pressed.connect(_add_choice)
 	insp_box.add_child(ac)
-	var bd = Button.new()
-	bd.text = "удалить строку"
-	bd.pressed.connect(_del_line)
-	insp_box.add_child(bd)
+
 	var lf = Label.new()
 	lf.text = "Эффекты:"
+	lf.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
 	insp_box.add_child(lf)
 	var fx = L.get("fx", {})
-	var f1 = HBoxContainer.new()
+	var f_row = HBoxContainer.new()
+	f_row.add_theme_constant_override("separation", 8)
 	var lg = Label.new()
-	lg.text = "дать"
-	lg.custom_minimum_size = Vector2(60, 24)
-	f1.add_child(lg)
+	lg.text = "дать:"
+	f_row.add_child(lg)
 	var ge = LineEdit.new()
 	ge.text = str(fx.get("give", ""))
-	ge.custom_minimum_size = Vector2(100, 26)
+	ge.custom_minimum_size = Vector2(120, 26)
 	ge.text_changed.connect(_set_fx.bind("give"))
-	f1.add_child(ge)
+	f_row.add_child(ge)
 	var lgl = Label.new()
-	lgl.text = "золото"
-	f1.add_child(lgl)
+	lgl.text = "золото:"
+	f_row.add_child(lgl)
 	var gs = SpinBox.new()
 	gs.max_value = 9999
 	gs.value = int(fx.get("gold", 0))
+	gs.custom_minimum_size = Vector2(90, 26)
 	gs.value_changed.connect(_set_fx_int.bind("gold"))
-	f1.add_child(gs)
-	insp_box.add_child(f1)
-	var f2 = HBoxContainer.new()
+	f_row.add_child(gs)
 	var lfl = Label.new()
-	lfl.text = "флаг (мир: paid_bandits)"
-	lfl.custom_minimum_size = Vector2(60, 24)
-	f2.add_child(lfl)
+	lfl.text = "флаг:"
+	f_row.add_child(lfl)
 	var fe = LineEdit.new()
 	fe.text = str(fx.get("flag", ""))
-	fe.custom_minimum_size = Vector2(100, 26)
+	fe.custom_minimum_size = Vector2(120, 26)
 	fe.text_changed.connect(_set_fx.bind("flag"))
-	f2.add_child(fe)
+	f_row.add_child(fe)
 	var lq = Label.new()
-	lq.text = "квест"
-	f2.add_child(lq)
+	lq.text = "квест:"
+	f_row.add_child(lq)
 	var qe = LineEdit.new()
 	qe.text = str(fx.get("quest", ""))
-	qe.custom_minimum_size = Vector2(80, 26)
+	qe.custom_minimum_size = Vector2(100, 26)
 	qe.text_changed.connect(_set_fx.bind("quest"))
-	f2.add_child(qe)
-	insp_box.add_child(f2)
-	var pv = Button.new()
-	pv.text = "▶ просмотр"
-	pv.pressed.connect(_preview)
-	insp_box.add_child(pv)
+	f_row.add_child(qe)
+	insp_box.add_child(f_row)
 
 func _del_line():
 	if sel_line < 0:
@@ -306,6 +414,17 @@ func _set_text(v):
 	if L == null:
 		return
 	L["text"] = v
+	_save()
+	_sync_scheme()
+
+func _set_bg(v):
+	var L = _line()
+	if L == null:
+		return
+	if str(v).strip_edges() == "":
+		L.erase("bg")
+	else:
+		L["bg"] = str(v).strip_edges()
 	_save()
 	_sync_scheme()
 
@@ -383,6 +502,22 @@ func _set_fx_int(v, key):
 func _chars():
 	return DataLoader.load_json("res://data/chars.json", {})
 
+func _art_files():
+	var res = []
+	var da = DirAccess.open("res://art")
+	if da != null:
+		da.list_dir_begin()
+		var fn = da.get_next()
+		while fn != "":
+			if not da.current_is_dir():
+				var ext = fn.get_extension().to_lower()
+				if ext in ["png", "jpg", "jpeg", "webp"]:
+					res.append(fn)
+			fn = da.get_next()
+		da.list_dir_end()
+	res.sort()
+	return res
+
 func _rename():
 	var nn = ren.text.strip_edges().replace(" ", "_")
 	if nn == "" or nn == id:
@@ -428,21 +563,3 @@ func _update_refs(old, new):
 					changed = true
 		if changed:
 			DataLoader.save_json(p, j)
-
-func _build_rename():
-	if ren != null and is_instance_valid(ren):
-		return
-	var rh = HBoxContainer.new()
-	rh.position = Vector2(8, 660)
-	var rl = Label.new()
-	rl.text = "имя файла:"
-	rh.add_child(rl)
-	ren = LineEdit.new()
-	ren.text = id
-	ren.custom_minimum_size = Vector2(160, 26)
-	rh.add_child(ren)
-	var rb = Button.new()
-	rb.text = "переименовать"
-	rb.pressed.connect(_rename)
-	rh.add_child(rb)
-	add_child(rh)

@@ -11,41 +11,60 @@ func _build():
 	for c in get_children():
 		c.queue_free()
 	var Q = _q()
+	
+	var outer_vbox = VBoxContainer.new()
+	outer_vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(outer_vbox)
+	
+	var main = VBoxContainer.new()
+	main.add_theme_constant_override("separation", 10)
+	outer_vbox.add_child(main)
+	
 	var r1 = HBoxContainer.new()
 	var l1 = Label.new()
 	l1.text = "Название"
+	l1.custom_minimum_size = Vector2(120, 26)
 	r1.add_child(l1)
 	var te = LineEdit.new()
 	te.text = str(Q.get("title", ""))
-	te.custom_minimum_size = Vector2(180, 26)
+	te.custom_minimum_size = Vector2(300, 26)
 	te.text_changed.connect(_set_title)
 	r1.add_child(te)
-	r1.position = Vector2(0, 0)
-	add_child(r1)
+	main.add_child(r1)
+	
 	var r2 = HBoxContainer.new()
 	var l2 = Label.new()
 	l2.text = "Награда, золото"
+	l2.custom_minimum_size = Vector2(120, 26)
 	r2.add_child(l2)
 	var gs = SpinBox.new()
 	gs.max_value = 9999
 	gs.value = int(Q.get("reward", {}).get("gold", 0))
 	gs.value_changed.connect(_set_gold)
 	r2.add_child(gs)
-	r2.position = Vector2(0, 30)
-	add_child(r2)
-	var l3 = Label.new()
-	l3.text = "Стадии: clear=зачистить loc | talk=поговорить с who | goto=прибыть в loc (играет dlg) | done=конец"
-	l3.position = Vector2(0, 60)
-	add_child(l3)
+	main.add_child(r2)
+	
 	var act = Label.new()
 	act.text = _activation_text()
 	act.autowrap_mode = TextServer.AUTOWRAP_WORD
 	act.custom_minimum_size = Vector2(520, 0)
-	add_child(act)
+	act.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	main.add_child(act)
+	
+	var sc = ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer_vbox.add_child(sc)
+	
 	var sb = VBoxContainer.new()
-	sb.position = Vector2(0, 85)
-	add_child(sb)
+	sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(sb)
 	_stages_ui(sb)
+	
+	var ba = Button.new()
+	ba.text = "+ стадия"
+	ba.custom_minimum_size = Vector2(0, 30)
+	ba.pressed.connect(_add_stage)
+	outer_vbox.add_child(ba)
 	
 func _stages_ui(sb):
 	for c in sb.get_children():
@@ -138,10 +157,6 @@ func _stages_ui(sb):
 		cm.text_changed.connect(_set_st_comment.bind(key))
 		vb.add_child(cm)
 		sb.add_child(p)
-	var ba = Button.new()
-	ba.text = "+ стадия"
-	ba.pressed.connect(_add_stage)
-	sb.add_child(ba)
 func _set_title(v):
 	_q()["title"] = v
 	_save()

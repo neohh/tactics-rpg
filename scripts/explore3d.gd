@@ -20,6 +20,7 @@ var enemies = []
 var objects3 = []
 var ground = []
 var target_point = null
+var current_path: Array = []
 var hint: Label
 var pre_played = false
 var combat_lock = false
@@ -152,7 +153,9 @@ func _ready():
 	hint = Label.new()
 	hint.position = Vector2(10, 10)
 	ui.add_child(hint)
-	hint.text = "WASD/клик — идти | ПКМ камера | колесо зум | E подобрать | R привал | P отряд | M карта"
+	var is_town = str(LOCS.get(loc_id, {}).get("type", "")) == "town"
+	var town_hint = " | N таверна" if is_town else ""
+	hint.text = "WASD/клик — идти | ПКМ камера | колесо зум | E подобрать | R привал | P отряд%s | M карта" % town_hint
 	_party_bar(ui)
 
 func _party_bar(ui):
@@ -161,25 +164,93 @@ func _party_bar(ui):
 	bar.anchor_right = 0.5
 	bar.anchor_top = 1.0
 	bar.anchor_bottom = 1.0
-	bar.offset_left = -336
-	bar.offset_right = 336
-	bar.offset_top = -86
-	bar.offset_bottom = -8
-	bar.add_theme_constant_override("separation", 6)
+	bar.offset_left = -330
+	bar.offset_right = 330
+	bar.offset_top = -120
+	bar.offset_bottom = -10
+	bar.add_theme_constant_override("separation", 8)
 	ui.add_child(bar)
 	for i in 6:
 		var slot = PanelContainer.new()
-		slot.custom_minimum_size = Vector2(106, 78)
-		var vb = VBoxContainer.new()
-		slot.add_child(vb)
+		slot.custom_minimum_size = Vector2(96, 110)
+		
+		# Copper rounded border style
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.07, 0.08, 0.10, 0.92)
+		style.border_color = Color(0.78, 0.48, 0.22, 1.0) # Copper / bronze
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(6)
+		style.content_margin_left = 2
+		style.content_margin_top = 2
+		style.content_margin_right = 2
+		style.content_margin_bottom = 2
+		slot.add_theme_stylebox_override("panel", style)
+		
+		var slot_box = VBoxContainer.new()
+		slot_box.add_theme_constant_override("separation", 2)
+		slot.add_child(slot_box)
+		
+		# Portrait image area with relative overlays (HP text, name)
+		var img_cont = Control.new()
+		img_cont.custom_minimum_size = Vector2(92, 82)
+		img_cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		img_cont.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		slot_box.add_child(img_cont)
+		
 		var tr = TextureRect.new()
-		tr.custom_minimum_size = Vector2(48, 48)
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		vb.add_child(tr)
+		img_cont.add_child(tr)
+		
+		# Name overlay (top-left or bottom)
 		var nl = Label.new()
-		vb.add_child(nl)
+		nl.anchor_top = 0.0
+		nl.anchor_bottom = 0.0
+		nl.offset_left = 4
+		nl.offset_top = 2
+		nl.add_theme_font_size_override("font_size", 11)
+		nl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		nl.add_theme_constant_override("shadow_offset_x", 1)
+		nl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(nl)
+		
+		# Numbers in bottom right corner (e.g. "9 / 9")
+		var num_lbl = Label.new()
+		num_lbl.anchor_left = 1.0
+		num_lbl.anchor_right = 1.0
+		num_lbl.anchor_top = 1.0
+		num_lbl.anchor_bottom = 1.0
+		num_lbl.offset_left = -66
+		num_lbl.offset_top = -20
+		num_lbl.offset_right = -4
+		num_lbl.offset_bottom = -2
+		num_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		num_lbl.add_theme_font_size_override("font_size", 12)
+		num_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+		num_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		num_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		num_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(num_lbl)
+		
+		# Red HP bar at the bottom
+		var hp_bar = ProgressBar.new()
+		hp_bar.custom_minimum_size = Vector2(92, 10)
+		hp_bar.show_percentage = false
+		
+		var hp_bg = StyleBoxFlat.new()
+		hp_bg.bg_color = Color(0.2, 0.05, 0.05, 1.0) # dark blood background
+		hp_bg.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("background", hp_bg)
+		
+		var hp_fill = StyleBoxFlat.new()
+		hp_fill.bg_color = Color(0.88, 0.12, 0.12, 1.0) # Bright red
+		hp_fill.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("fill", hp_fill)
+		
+		slot_box.add_child(hp_bar)
 		bar.add_child(slot)
+		
 		if i < Game.party.size():
 			var m = Game.party[i]
 			var cid = str(m.get("char", ""))
@@ -189,9 +260,17 @@ func _party_bar(ui):
 			var t = _tex(img)
 			if t != null:
 				tr.texture = t
-			nl.text = "%s %d/%d" % [str(CHARS.get(cid, {}).get("name", str(m.get("cls", "")))), int(m.get("hp", 0)), int(m.get("maxhp", 0))]
+			var cur_hp = int(m.get("hp", 0))
+			var max_hp = maxi(1, int(m.get("maxhp", 1)))
+			nl.text = str(CHARS.get(cid, {}).get("name", str(m.get("cls", ""))))
+			num_lbl.text = "%d / %d" % [cur_hp, max_hp]
+			hp_bar.max_value = max_hp
+			hp_bar.value = cur_hp
 		else:
 			nl.text = "(пусто)"
+			num_lbl.text = ""
+			hp_bar.visible = false
+			style.border_color = Color(0.35, 0.35, 0.35, 0.4)
 
 func _actor(cls, col, cid = ""):
 	var root = Node3D.new()
@@ -344,18 +423,30 @@ func _process(d):
 		mv.x += 1
 	if mv.length() > 0:
 		target_point = null
+		current_path.clear()
 		mv = mv.normalized()
 		var forward = Vector3(-sin(yaw), 0, -cos(yaw))
 		var right = Vector3(cos(yaw), 0, -sin(yaw))
 		var dir = (forward * (-mv.y) + right * mv.x).normalized()
 		_try_move(lead, dir, speed * d)
 		lead.rotation.y = atan2(dir.x, dir.z)
-	elif target_point != null:
-		var to = target_point - lead.position
+	elif current_path.size() > 0 or target_point != null:
+		var target_pos = target_point
+		if current_path.size() > 0:
+			var wp = current_path[0]
+			target_pos = Vector3(float(wp.x) + 0.5, 0, float(wp.y) + 0.5)
+			if current_path.size() == 1 and target_point != null:
+				target_pos = target_point
+		var to = target_pos - lead.position
 		to.y = 0
 		var dl = to.length()
-		if dl < 0.1:
-			target_point = null
+		if dl < 0.2:
+			if current_path.size() > 0:
+				current_path.pop_front()
+				if current_path.is_empty():
+					target_point = null
+			else:
+				target_point = null
 		else:
 			var dir = to.normalized()
 			_try_move(lead, dir, min(dl, speed * d))
@@ -386,15 +477,37 @@ func _process(d):
 				_try_combat()
 				break
 
+func _can_occupy(pos: Vector3) -> bool:
+	var cx = int(floor(pos.x))
+	var cz = int(floor(pos.z))
+	if terrain != null and not terrain.has_cell(cx, cz):
+		return false
+	if objects3.has(Vector2i(cx, cz)):
+		return false
+	return true
+
 func _try_move(node, dir, step):
 	var np = node.position + dir * step
-	if terrain != null and not terrain.has_cell(int(np.x), int(np.z)):
+	var gw = (terrain.GW if terrain != null else 8)
+	var gh = (terrain.GH if terrain != null else 6)
+	np.x = clampf(np.x, 0.3, gw - 0.3)
+	np.z = clampf(np.z, 0.3, gh - 0.3)
+	
+	if _can_occupy(np):
+		node.position = np
 		return
-	if objects3.has(Vector2i(int(np.x), int(np.z))):
+	
+	# Sliding attempt along X
+	var npx = Vector3(np.x, node.position.y, node.position.z)
+	if _can_occupy(npx):
+		node.position = npx
 		return
-	node.position = np
-	node.position.x = clampf(node.position.x, 0.3, (terrain.GW if terrain != null else 8) - 0.3)
-	node.position.z = clampf(node.position.z, 0.3, (terrain.GH if terrain != null else 6) - 0.3)
+		
+	# Sliding attempt along Z
+	var npz = Vector3(node.position.x, node.position.y, np.z)
+	if _can_occupy(npz):
+		node.position = npz
+		return
 
 func _try_combat():
 	if party_n.size() == 0:
@@ -439,6 +552,41 @@ func _is_free_cell(x, y):
 	if objects3.has(Vector2i(x, y)):
 		return false
 	return true
+
+func _find_path(from: Vector2i, to: Vector2i) -> Array:
+	if from == to:
+		return [to]
+	var gw = terrain.GW if terrain != null else 8
+	var gh = terrain.GH if terrain != null else 6
+	var visited = {from: true}
+	var parent = {}
+	var q: Array = [from]
+	var found = false
+	while q.size() > 0:
+		var cur = q.pop_front()
+		if cur == to:
+			found = true
+			break
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var nxt = cur + d
+			if nxt.x < 0 or nxt.y < 0 or nxt.x >= gw or nxt.y >= gh:
+				continue
+			if visited.has(nxt):
+				continue
+			if not _is_free_cell(nxt.x, nxt.y):
+				continue
+			visited[nxt] = true
+			parent[nxt] = cur
+			q.append(nxt)
+	if not found:
+		return []
+	var path: Array = []
+	var curr = to
+	while curr != from:
+		path.append(curr)
+		curr = parent[curr]
+	path.reverse()
+	return path
 
 func _try_pick():
 	if party_n.size() == 0:
@@ -485,6 +633,10 @@ func _unhandled_input(ev):
 			var pu = load("res://scripts/party_ui.gd").new()
 			add_child(pu)
 			return
+		if ev.keycode == KEY_N and str(LOCS.get(loc_id, {}).get("type", "")) == "town":
+			var tv = load("res://scripts/tavern.gd").new()
+			add_child(tv)
+			return
 		if ev.keycode == KEY_I:
 			var hub = load("res://scripts/game_hub.gd").new()
 			add_child(hub)
@@ -503,8 +655,35 @@ func _unhandled_input(ev):
 			cam_dist = clampf(cam_dist + 0.5, 2, 8)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 			var p = _ray_ground(ev.position)
-			if p != null:
-				target_point = p
+			if p != null and party_n.size() > 0:
+				var lead = party_n[0].root
+				var from_c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
+				var to_c = Vector2i(int(floor(p.x)), int(floor(p.z)))
+				
+				# If destination is obstacle, try adjacent free cell
+				var dest_c = to_c
+				if not _is_free_cell(dest_c.x, dest_c.y):
+					var best_adj = null
+					var min_ad = 9999.0
+					for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1)]:
+						var adj = to_c + d
+						if _is_free_cell(adj.x, adj.y):
+							var ddist = Vector2(adj.x + 0.5 - p.x, adj.y + 0.5 - p.z).length()
+							if ddist < min_ad:
+								min_ad = ddist
+								best_adj = adj
+					if best_adj != null:
+						dest_c = best_adj
+				
+				var path = _find_path(from_c, dest_c)
+				if path.size() > 0 or from_c == dest_c:
+					current_path = path
+					target_point = p
+				else:
+					target_point = null
+					current_path.clear()
+					if hint != null:
+						hint.text = "Сюда нельзя добраться!"
 	elif ev is InputEventMouseMotion:
 		if right_drag:
 			yaw -= ev.relative.x * 0.005

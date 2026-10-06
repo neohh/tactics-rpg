@@ -14,8 +14,7 @@ static func fill_party():
 	if Game.party.size() > 0:
 		return
 	var defs = [
-		["hero", "swordsman", "iron_sword", "leather_armor"],
-		["kael", "swordsman", "iron_sword", ""],
+		["kael", "swordsman", "iron_sword", "leather_armor"],
 		["bria", "archer", "hunting_bow", "leather_armor"],
 		["dorn", "halberd", "war_hammer", "chainmail"],
 		["vesna", "mage", "", "magic_robe"],
@@ -34,7 +33,9 @@ static func hire(char_id: String, cls: String, price: int, level: int = 1) -> bo
 	if Game.gold < price or not can_recruit():
 		return false
 	Game.gold -= price
-	Game.party.append(new_member(char_id, cls, level))
+	var m = new_member(char_id, cls, level)
+	ensure_hp(m)
+	Game.party.append(m)
 	return true
 
 static func dismiss(idx: int):

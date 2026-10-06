@@ -45,7 +45,19 @@ static func derived(cls_data: Dictionary, level: int, perks: Array, equip: Dicti
 	s["on_hit"] = agg["on_hit"]
 	s["cf"] = clampf(s["cf"], 0.05, 0.95)
 	s["cb"] = clampf(s["cb"], 0.05, 0.95)
+	var fat = get_game_fatigue()
+	if fat >= 3:
+		s["move"] = maxi(1, int(s["move"]) - 1)
+		s["hit_bonus"] = float(s["hit_bonus"]) - 0.15
 	return s
+
+static func get_game_fatigue() -> int:
+	var root = Engine.get_main_loop()
+	if root != null and root.has_method("root"):
+		var g = root.root.get_node_or_null("/root/Game")
+		if g != null and "fatigue" in g:
+			return int(g.fatigue)
+	return 0
 
 static func _apply(s: Dictionary, mods: Dictionary):
 	for k in mods:

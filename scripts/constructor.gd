@@ -57,11 +57,24 @@ func _ready():
 	top.add_child(folder_opt)
 	cat_box = VBoxContainer.new()
 	cat_box.position = Vector2(8, 40)
+	cat_box.add_theme_constant_override("separation", 3)
 	add_child(cat_box)
 	for c in CATS:
 		var b = Button.new()
 		b.text = c
-		b.custom_minimum_size = Vector2(90, 30)
+		b.custom_minimum_size = Vector2(94, 28)
+		var b_st = StyleBoxFlat.new()
+		b_st.bg_color = Color(0.12, 0.13, 0.17, 0.95)
+		b_st.border_color = Color(0.65, 0.42, 0.22, 0.75)
+		b_st.set_border_width_all(1)
+		b_st.set_corner_radius_all(4)
+		b.add_theme_stylebox_override("normal", b_st)
+		var b_hov = b_st.duplicate()
+		b_hov.bg_color = Color(0.18, 0.20, 0.26, 1.0)
+		b_hov.border_color = Color(1.0, 0.75, 0.3, 1.0)
+		b.add_theme_stylebox_override("hover", b_hov)
+		b.add_theme_color_override("font_color", Color(0.9, 0.85, 0.75))
+		b.add_theme_font_size_override("font_size", 12)
 		b.pressed.connect(_set_cat.bind(c))
 		cat_box.add_child(b)
 	edit_box = VBoxContainer.new()
@@ -97,6 +110,18 @@ func _ready():
 	bn.anchor_right = 0.14
 	bn.position = Vector2(8, 40)
 	bn.size = Vector2(90, 26)
+	var bn_st = StyleBoxFlat.new()
+	bn_st.bg_color = Color(0.12, 0.18, 0.14, 0.95)
+	bn_st.border_color = Color(0.4, 0.75, 0.45, 0.8)
+	bn_st.set_border_width_all(1)
+	bn_st.set_corner_radius_all(4)
+	bn.add_theme_stylebox_override("normal", bn_st)
+	var bn_hov = bn_st.duplicate()
+	bn_hov.bg_color = Color(0.16, 0.25, 0.18, 1.0)
+	bn_hov.border_color = Color(0.5, 0.95, 0.55, 1.0)
+	bn.add_theme_stylebox_override("hover", bn_hov)
+	bn.add_theme_color_override("font_color", Color(0.85, 0.95, 0.85))
+	bn.add_theme_font_size_override("font_size", 12)
 	bn.pressed.connect(_new_entry)
 	add_child(bn)
 	bdel = Button.new()
@@ -105,6 +130,18 @@ func _ready():
 	bdel.anchor_right = 0.14
 	bdel.position = Vector2(108, 40)
 	bdel.size = Vector2(80, 26)
+	var bdel_st = StyleBoxFlat.new()
+	bdel_st.bg_color = Color(0.18, 0.12, 0.12, 0.95)
+	bdel_st.border_color = Color(0.75, 0.35, 0.35, 0.8)
+	bdel_st.set_border_width_all(1)
+	bdel_st.set_corner_radius_all(4)
+	bdel.add_theme_stylebox_override("normal", bdel_st)
+	var bdel_hov = bdel_st.duplicate()
+	bdel_hov.bg_color = Color(0.26, 0.14, 0.14, 1.0)
+	bdel_hov.border_color = Color(0.95, 0.45, 0.45, 1.0)
+	bdel.add_theme_stylebox_override("hover", bdel_hov)
+	bdel.add_theme_color_override("font_color", Color(0.95, 0.85, 0.85))
+	bdel.add_theme_font_size_override("font_size", 12)
 	bdel.pressed.connect(_del_entry)
 	add_child(bdel)
 	list_box = VBoxContainer.new()
@@ -129,14 +166,13 @@ func _ready():
 	fd.access = FileDialog.ACCESS_FILESYSTEM
 	fd.file_selected.connect(_file_pick)
 	add_child(fd)
-	preview = load("res://scripts/preview.gd").new()
-	preview.position = Vector2(8, 220)
-	add_child(preview)
 	_set_cat("chars")
 func _set_cat(c):
 	Game.log_scene("set_cat " + c)
 	cat = c
 	folder = ""
+	if preview != null and is_instance_valid(preview):
+		preview.visible = false
 	if (c == "locs" or c == "catalog") and Game.edit_loc != "":
 		sel_id = Game.edit_loc
 	else:
@@ -150,6 +186,13 @@ func _set_cat(c):
 		edit_box.visible = edit_mode
 	if (c == "locs" or c == "catalog") and Game.edit_loc != "" and Game.edit_data != null:
 		_ensure_work()
+	if cat_box != null:
+		var ci = 0
+		for child in cat_box.get_children():
+			if child is Button:
+				var is_active = (CATS[ci] == c)
+				child.modulate = Color(1.3, 1.15, 0.6) if is_active else Color(1, 1, 1)
+				ci += 1
 	_refresh_folders()
 	_refresh_list()
 	_build_inspector()
@@ -181,7 +224,8 @@ func _refresh_list():
 		for fn in _dlg_files():
 			var b2 = Button.new()
 			b2.text = fn
-			b2.custom_minimum_size = Vector2(160, 28)
+			b2.custom_minimum_size = Vector2(170, 28)
+			_style_list_btn(b2, fn == sel_id)
 			b2.pressed.connect(_select.bind(fn))
 			list_box.add_child(b2)
 		return
@@ -191,11 +235,27 @@ func _refresh_list():
 			continue
 		var b = Button.new()
 		b.text = str(e.get("name", e.get("title", id)))
-		b.custom_minimum_size = Vector2(160, 28)
+		b.custom_minimum_size = Vector2(170, 28)
+		var is_sel = (id == sel_id) or (Game.edit_loc != "" and id == Game.edit_loc and (cat == "locs" or cat == "catalog"))
+		_style_list_btn(b, is_sel)
 		b.pressed.connect(_select.bind(id))
-		if Game.edit_loc != "" and id == Game.edit_loc and (cat == "locs" or cat == "catalog"):
-			b.modulate = Color(1, 0.85, 0.4)
 		list_box.add_child(b)
+
+func _style_list_btn(b: Button, is_sel: bool):
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.18, 0.16, 0.12, 0.95) if is_sel else Color(0.10, 0.11, 0.14, 0.92)
+	st.border_color = Color(1.0, 0.78, 0.3, 1.0) if is_sel else Color(0.55, 0.38, 0.22, 0.6)
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(4)
+	st.content_margin_left = 8
+	st.content_margin_right = 8
+	b.add_theme_stylebox_override("normal", st)
+	var hov = st.duplicate()
+	hov.bg_color = Color(0.22, 0.24, 0.30, 1.0)
+	hov.border_color = Color(1.0, 0.75, 0.3, 1.0)
+	b.add_theme_stylebox_override("hover", hov)
+	b.add_theme_color_override("font_color", Color(1.0, 0.92, 0.75) if is_sel else Color(0.88, 0.88, 0.90))
+	b.add_theme_font_size_override("font_size", 12)
 func _select(id):
 	sel_id = id
 	if cat == "locs" or cat == "catalog":
@@ -231,8 +291,8 @@ func _new_entry():
 	if cat == "dialogs":
 		var de = load("res://scripts/dialog_editor.gd").new()
 		de.setup(sel_id)
-		_mount_editor(de)
-		if preview != null:
+		_mount_editor(de, 0.28)
+		if preview != null and is_instance_valid(preview):
 			preview.visible = false
 		return
 	if cat == "locs":
@@ -299,15 +359,15 @@ func _build_inspector():
 	if cat == "quests":
 		var qe = load("res://scripts/quest_editor.gd").new()
 		qe.setup(DATA, sel_id)
-		_mount_editor(qe)
-		if preview != null:
+		_mount_editor(qe, 0.32)
+		if preview != null and is_instance_valid(preview):
 			preview.visible = false
 		return
 	if cat == "dialogs":
 		var de = load("res://scripts/dialog_editor.gd").new()
 		de.setup(sel_id)
-		_mount_editor(de)
-		if preview != null:
+		_mount_editor(de, 0.32)
+		if preview != null and is_instance_valid(preview):
 			preview.visible = false
 		return
 	if cat == "locs" or cat == "catalog":
@@ -315,14 +375,46 @@ func _build_inspector():
 		le.setup(DATA, sel_id, CAT_FILES[cat], edit_mode)
 		le.dirty.connect(_on_edit_dirty)
 		le.save_req.connect(_write_cat_file)
-		_mount_editor(le)
+		_mount_editor(le, 0.32)
 		return
 	if cat == "map":
 		var me = load("res://scripts/global_map_editor.gd").new()
 		me.setup(DATA)
-		_mount_editor(me)
+		_mount_editor(me, 0.32)
 		return
 	var e = DATA[sel_id]
+	if cat in ["classes", "objects"]:
+		var prev_row = HBoxContainer.new()
+		prev_row.add_theme_constant_override("separation", 14)
+		var pcard = PanelContainer.new()
+		pcard.custom_minimum_size = Vector2(110, 110)
+		var pst = StyleBoxFlat.new()
+		pst.bg_color = Color(0.08, 0.09, 0.12, 0.95)
+		pst.border_color = Color(0.65, 0.45, 0.25, 0.8)
+		pst.set_border_width_all(1)
+		pst.set_corner_radius_all(6)
+		pcard.add_theme_stylebox_override("panel", pst)
+		preview = load("res://scripts/preview.gd").new()
+		preview.custom_minimum_size = Vector2(110, 110)
+		pcard.add_child(preview)
+		prev_row.add_child(pcard)
+		var prev_info = VBoxContainer.new()
+		prev_info.alignment = BoxContainer.ALIGNMENT_CENTER
+		var l_name = Label.new()
+		l_name.text = str(e.get("name", sel_id))
+		l_name.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+		l_name.add_theme_font_size_override("font_size", 14)
+		prev_info.add_child(l_name)
+		var l_id = Label.new()
+		l_id.text = "ID: " + sel_id
+		l_id.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7))
+		l_id.add_theme_font_size_override("font_size", 11)
+		prev_info.add_child(l_id)
+		prev_row.add_child(prev_info)
+		insp_box.add_child(prev_row)
+		var sep = HSeparator.new()
+		sep.custom_minimum_size = Vector2(0, 8)
+		insp_box.add_child(sep)
 	for fld in SCHEMAS[cat]:
 		var key = fld[0]
 		var row = HBoxContainer.new()
@@ -416,6 +508,7 @@ func _set_field_f(v, key):
 		return
 	DATA[sel_id][key] = float(v)
 	_save()
+	_update_preview()
 func _set_field_color(col, key):
 	if sel_id == "":
 		return
@@ -445,6 +538,7 @@ func _set_field_b(v, key):
 		return
 	DATA[sel_id][key] = v
 	_save()
+	_update_preview()
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -453,9 +547,9 @@ func _tex(path):
 		return null
 	return ImageTexture.create_from_image(im)
 func _update_preview():
-	if preview == null:
+	if preview == null or not is_instance_valid(preview):
 		return
-	if sel_id == "" or not DATA.has(sel_id):
+	if cat not in ["classes", "objects"] or sel_id == "" or not DATA.has(sel_id):
 		preview.visible = false
 		return
 	preview.visible = true

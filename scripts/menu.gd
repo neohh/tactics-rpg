@@ -23,5 +23,28 @@ func _go(name):
 		get_tree().change_scene_to_file("res://world3d.tscn")
 		return
 	Game.clear_transient_state()
-	var sc = "res://overworld3d.tscn" if name == "ИГРАТЬ" else "res://world3d.tscn"
-	get_tree().change_scene_to_file(sc)
+	if name == "ИГРАТЬ":
+		Game.party = []
+		Game.party_pool = []
+		Game.gold = 50
+		Game.food = 3
+		# Стартуем с Каэла (мечник), остальных нанимаем в таверне по ходу пролога
+		var leader = PartyTools.new_member("kael", "swordsman", 1)
+		leader["equip"]["weapon"] = "iron_sword"
+		leader["equip"]["armor"] = "leather_armor"
+		PartyTools.ensure_hp(leader)
+		Game.party.append(leader)
+		Game.cur_loc = "village"
+		Game.flags.erase("tut_village_done")
+		Game.flags.erase("clear_bandit_road")
+		Game.flags.erase("tut_prologue_rewarded")
+		if Game.QUESTS.has("q_intro"):
+			Game.quests["q_intro"] = 1
+
+		var pro = load("res://scripts/prologue_2d.gd").new()
+		add_child(pro)
+		await pro.finished
+		get_tree().change_scene_to_file("res://overworld3d.tscn")
+		return
+
+	get_tree().change_scene_to_file("res://world3d.tscn")

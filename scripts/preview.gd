@@ -4,23 +4,23 @@ var kind = "rock"
 var data = {}
 var tex: Texture2D = null
 func _draw():
-	var c = Vector2(44, 44)
+	var c = size * 0.5 if size.x > 0 and size.y > 0 else Vector2(55, 55)
 	var sc = float(data.get("scale", 1.0))
 	c.y -= float(data.get("yoff", 0.0)) * 20.0
 	var drew = false
 	if tex != null:
-		var s = 60.0 * sc
+		var s = 84.0 * sc
 		draw_texture_rect(tex, Rect2(c.x - s * 0.5, c.y - s * 0.5, s, s), false)
 		drew = true
 	if not drew:
 		if mode == "class":
-			draw_circle(c, 24, Color(0.3, 0.5, 0.9))
-			draw_arc(c, 24, 0, TAU, 32, Color.WHITE, 2.0)
+			draw_circle(c, 28, Color(0.3, 0.5, 0.9))
+			draw_arc(c, 28, 0, TAU, 32, Color.WHITE, 2.0)
 			var letter = str(data.get("name", "?")).substr(0, 1)
 			var font = ThemeDB.fallback_font
-			var ts = font.get_string_size(letter, HORIZONTAL_ALIGNMENT_CENTER, -1, 20)
-			draw_string(font, Vector2(c.x - ts.x * 0.5, c.y + ts.y * 0.25), letter, HORIZONTAL_ALIGNMENT_CENTER, -1, 20, Color.WHITE)
-			draw_line(c + Vector2(12, 0), c + Vector2(30, 0), Color.WHITE, 3.0)
+			var ts = font.get_string_size(letter, HORIZONTAL_ALIGNMENT_CENTER, -1, 22)
+			draw_string(font, Vector2(c.x - ts.x * 0.5, c.y + ts.y * 0.25), letter, HORIZONTAL_ALIGNMENT_CENTER, -1, 22, Color.WHITE)
+			draw_line(c + Vector2(14, 0), c + Vector2(34, 0), Color.WHITE, 3.0)
 		else:
 			if kind == "tree":
 				draw_rect(Rect2(c.x - 3, c.y, 6, 14), Color(0.35, 0.25, 0.15))

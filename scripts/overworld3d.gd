@@ -9,13 +9,22 @@ var dist = 18.0
 var target = Vector3(0, 0, 0)
 var mid_drag = false
 var right_drag = false
-var token: MeshInstance3D
+var token: Node3D
 var traveling = false
 var LOCS = {}
 var CHARS = {}
+var CLASSES = {}
 var LOC_TYPES = {}
 var S = 0.0171
 var hint: Label
+var hud_loc_lbl: Label = null
+var hud_gold_lbl: Label = null
+var hud_food_lbl: Label = null
+var hud_time_lbl: Label = null
+var hud_float_hint: Label = null
+var party_bar_root: Control = null
+var tut_banner: Label = null
+var act_vb: VBoxContainer = null
 var last_arr = ""
 var edit_mode = false
 var terr = null
@@ -84,6 +93,7 @@ func _ready():
 	edit_mode = Game.edit_world
 	LOCS = DataLoader.load_json("res://data/locations.json")
 	CHARS = DataLoader.load_json("res://data/chars.json")
+	CLASSES = DataLoader.load_json("res://data/classes.json")
 	LOC_TYPES = DataLoader.load_json("res://data/loc_types.json")
 	OBJ3 = DataLoader.load_json("res://data/objects.json")
 	print("OBJ3 keys: ", OBJ3.keys())
@@ -97,7 +107,9 @@ func _ready():
 	_build_world()
 	if not edit_mode:
 		var c = LOCS.get(Game.cur_loc, {}).get("pos", [400, 300])
-		target = Vector3(c[0] * S, 0, c[1] * S)
+		var wx = c[0] * S
+		var wz = c[1] * S
+		target = Vector3(wx, _h_w(wx, wz), wz)
 	_apply()
 	_ui()
 
@@ -109,6 +121,11 @@ func _ui():
 	hint = Label.new()
 	hint.position = Vector2(10, 10)
 	ui.add_child(hint)
+	
+	if not edit_mode:
+		hint.visible = false
+		_build_hud(ui)
+	
 	if edit_mode:
 		var evb = VBoxContainer.new()
 		evb.position = Vector2(10, 40)
@@ -353,6 +370,7 @@ func _ui():
 		_refresh_btns()
 		_upd_edit_hint()
 	else:
+		_party_bar(ui)
 		_upd_hint()
 
 func _set_wmode(m):
@@ -434,15 +452,425 @@ func _arr_check():
 	last_arr = Game.cur_loc
 	Game.goto_hook(Game.cur_loc)
 	var dn = Game.arrive_dlg(Game.cur_loc, LOCS)
+	if Game.cur_loc == "village" and not Game.flags.has("tut_village_done"):
+		dn = "elder_village"
 	if dn != "":
 		_play_dlg(dn)
 
+func _build_hud(ui):
+	# Top bar container
+	var top_bar = HBoxContainer.new()
+	top_bar.anchor_left = 0.0
+	top_bar.anchor_right = 1.0
+	top_bar.offset_left = 16
+	top_bar.offset_right = -16
+	top_bar.offset_top = 10
+	top_bar.offset_bottom = 44
+	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(top_bar)
+	
+	# Left: Location badge
+	var loc_panel = PanelContainer.new()
+	var loc_style = StyleBoxFlat.new()
+	loc_style.bg_color = Color(0.08, 0.10, 0.12, 0.88)
+	loc_style.border_color = Color(0.78, 0.48, 0.22, 0.9)
+	loc_style.set_border_width_all(2)
+	loc_style.set_corner_radius_all(6)
+	loc_style.content_margin_left = 12
+	loc_style.content_margin_right = 12
+	loc_style.content_margin_top = 4
+	loc_style.content_margin_bottom = 4
+	loc_panel.add_theme_stylebox_override("panel", loc_style)
+	top_bar.add_child(loc_panel)
+	
+	hud_loc_lbl = Label.new()
+	hud_loc_lbl.text = "📍 Локация"
+	hud_loc_lbl.add_theme_font_size_override("font_size", 14)
+	hud_loc_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.75))
+	loc_panel.add_child(hud_loc_lbl)
+	
+	var spacer1 = Control.new()
+	spacer1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer1.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_bar.add_child(spacer1)
+	
+	# Center: Economy & Time badges
+	var center_box = HBoxContainer.new()
+	center_box.add_theme_constant_override("separation", 10)
+	top_bar.add_child(center_box)
+	
+	var res_style = StyleBoxFlat.new()
+	res_style.bg_color = Color(0.08, 0.10, 0.12, 0.88)
+	res_style.border_color = Color(0.78, 0.48, 0.22, 0.7)
+	res_style.set_border_width_all(1)
+	res_style.set_corner_radius_all(6)
+	res_style.content_margin_left = 10
+	res_style.content_margin_right = 10
+	res_style.content_margin_top = 4
+	res_style.content_margin_bottom = 4
+	
+	var g_panel = PanelContainer.new()
+	g_panel.add_theme_stylebox_override("panel", res_style.duplicate())
+	hud_gold_lbl = Label.new()
+	hud_gold_lbl.text = "🪙 Золото: 0"
+	hud_gold_lbl.add_theme_font_size_override("font_size", 13)
+	hud_gold_lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	g_panel.add_child(hud_gold_lbl)
+	center_box.add_child(g_panel)
+	
+	var f_panel = PanelContainer.new()
+	f_panel.add_theme_stylebox_override("panel", res_style.duplicate())
+	hud_food_lbl = Label.new()
+	hud_food_lbl.text = "🍖 Еда: 0"
+	hud_food_lbl.add_theme_font_size_override("font_size", 13)
+	f_panel.add_child(hud_food_lbl)
+	center_box.add_child(f_panel)
+	
+	var t_panel = PanelContainer.new()
+	t_panel.add_theme_stylebox_override("panel", res_style.duplicate())
+	hud_time_lbl = Label.new()
+	hud_time_lbl.text = "⏳ День 1 | 08:00"
+	hud_time_lbl.add_theme_font_size_override("font_size", 13)
+	hud_time_lbl.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
+	t_panel.add_child(hud_time_lbl)
+	center_box.add_child(t_panel)
+	
+	var spacer2 = Control.new()
+	spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_bar.add_child(spacer2)
+	
+	# Right: Menu button
+	var menu_btn = Button.new()
+	menu_btn.text = "⚙️ [M] Меню"
+	menu_btn.pressed.connect(func():
+		Game.clear_transient_state()
+		get_tree().change_scene_to_file("res://menu.tscn")
+	)
+	top_bar.add_child(menu_btn)
+	
+	# Floating context hint in upper middle
+	hud_float_hint = Label.new()
+	hud_float_hint.anchor_left = 0.5
+	hud_float_hint.anchor_right = 0.5
+	hud_float_hint.offset_left = -220
+	hud_float_hint.offset_right = 220
+	hud_float_hint.offset_top = 58
+	hud_float_hint.offset_bottom = 86
+	hud_float_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_float_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hud_float_hint.add_theme_font_size_override("font_size", 14)
+	hud_float_hint.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
+	hud_float_hint.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	hud_float_hint.add_theme_constant_override("shadow_offset_x", 1)
+	hud_float_hint.add_theme_constant_override("shadow_offset_y", 1)
+	hud_float_hint.visible = false
+	ui.add_child(hud_float_hint)
+
+	# Tutorial banner
+	tut_banner = Label.new()
+	tut_banner.anchor_left = 0.5
+	tut_banner.anchor_right = 0.5
+	tut_banner.offset_left = -460
+	tut_banner.offset_right = 460
+	tut_banner.offset_top = 48
+	tut_banner.offset_bottom = 76
+	tut_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tut_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tut_banner.add_theme_font_size_override("font_size", 12)
+	tut_banner.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55))
+	tut_banner.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 1.0))
+	tut_banner.add_theme_constant_override("shadow_offset_x", 1)
+	tut_banner.add_theme_constant_override("shadow_offset_y", 1)
+	var tb_st = StyleBoxFlat.new()
+	tb_st.bg_color = Color(0.08, 0.08, 0.12, 0.9)
+	tb_st.border_color = Color(0.85, 0.65, 0.25, 0.8)
+	tb_st.set_border_width_all(1)
+	tb_st.set_corner_radius_all(6)
+	tut_banner.add_theme_stylebox_override("normal", tb_st)
+	tut_banner.visible = false
+	ui.add_child(tut_banner)
+
 func _upd_hint():
-	if hint == null:
-		return
 	var L = LOCS.get(Game.cur_loc, {})
-	hint.text = "%s | Золото %d | Еда %d | День %d %d:00 | Клик по связи — переход, по своей — войти | H лавка S сон J журнал G/L сейв M меню| T говорить" % [str(L.get("name", "")), Game.gold, Game.food, Game.day, Game.hour]
+	var loc_name = str(L.get("name", Game.cur_loc))
+	var is_town = str(L.get("type", "")) == "town"
+	var icon = "🏠 " if is_town else "🌲 "
+	
+	if hud_loc_lbl != null:
+		hud_loc_lbl.text = "%s%s" % [icon, loc_name]
+	if hud_gold_lbl != null:
+		hud_gold_lbl.text = "🪙 Золото: %d" % Game.gold
+	if hud_food_lbl != null:
+		hud_food_lbl.text = "🍖 Еда: %d" % Game.food
+		if Game.food <= 0:
+			hud_food_lbl.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
+		else:
+			hud_food_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	if hud_time_lbl != null:
+		hud_time_lbl.text = "⏳ День %d | %02d:00" % [Game.day, Game.hour]
+		
+	if hint != null and edit_mode:
+		hint.text = "%s | Золото %d | Еда %d | День %d %02d:00" % [loc_name, Game.gold, Game.food, Game.day, Game.hour]
+
+	if tut_banner != null and not edit_mode:
+		if not Game.flags.has("tut_village_done"):
+			tut_banner.text = "💡 ПРОЛОГ (Шаг 1): Вы один в деревне. Поговорите со Старостой [T] справа внизу, чтобы узнать о беде!"
+			tut_banner.visible = true
+		elif Game.party.size() < 2:
+			tut_banner.text = "💡 ПРОЛОГ (Шаг 2): Одному на перевал нельзя! Загляните в Таверну [N], чтобы нанять первого бойца на полученные монеты."
+			tut_banner.visible = true
+		elif not Game.flags.has("clear_bandit_road"):
+			tut_banner.text = "💡 ПРОЛОГ (Шаг 3): Отряд готов! Проверьте снаряжение [P], лавку [H] и выдвигайтесь на «Разбойничий перевал» (1 еда, 2 ч)."
+			tut_banner.visible = true
+		elif not Game.flags.has("tut_prologue_rewarded"):
+			tut_banner.text = "💡 ПРОЛОГ (Финал): Перевал очищен! Возвращайтесь в деревню и сдайте задание Старосте [T] за наградой."
+			tut_banner.visible = true
+		else:
+			tut_banner.visible = false
+
 	_arr_check()
+	_refresh_party_bar()
+	_refresh_act_panel()
+
+func _party_bar(ui):
+	party_bar_root = HBoxContainer.new()
+	party_bar_root.anchor_left = 0.5
+	party_bar_root.anchor_right = 0.5
+	party_bar_root.anchor_top = 1.0
+	party_bar_root.anchor_bottom = 1.0
+	party_bar_root.offset_left = -340
+	party_bar_root.offset_right = 340
+	party_bar_root.offset_top = -120
+	party_bar_root.offset_bottom = -10
+	party_bar_root.add_theme_constant_override("separation", 8)
+	party_bar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(party_bar_root)
+	
+	# Compact quick action panel to the right of party portraits
+	var act_panel = PanelContainer.new()
+	act_panel.anchor_left = 1.0
+	act_panel.anchor_right = 1.0
+	act_panel.anchor_top = 1.0
+	act_panel.anchor_bottom = 1.0
+	act_panel.offset_left = -175
+	act_panel.offset_right = -10
+	act_panel.offset_top = -200
+	act_panel.offset_bottom = -10
+	
+	var act_style = StyleBoxFlat.new()
+	act_style.bg_color = Color(0.07, 0.08, 0.10, 0.92)
+	act_style.border_color = Color(0.78, 0.48, 0.22, 0.8)
+	act_style.set_border_width_all(2)
+	act_style.set_corner_radius_all(6)
+	act_style.content_margin_left = 6
+	act_style.content_margin_right = 6
+	act_style.content_margin_top = 6
+	act_style.content_margin_bottom = 6
+	act_panel.add_theme_stylebox_override("panel", act_style)
+	ui.add_child(act_panel)
+	
+	act_vb = VBoxContainer.new()
+	act_vb.add_theme_constant_override("separation", 3)
+	act_panel.add_child(act_vb)
+	
+	_refresh_party_bar()
+	_refresh_act_panel()
+
+func _refresh_act_panel():
+	if act_vb == null:
+		return
+	for ch in act_vb.get_children():
+		ch.queue_free()
+	var is_town = (str(LOCS.get(Game.cur_loc, {}).get("type", "")) == "town")
+	if Game.cur_loc == "village":
+		var bt = Button.new()
+		bt.text = "🗣️ [T] Староста"
+		bt.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bt.focus_mode = Control.FOCUS_NONE
+		bt.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bt.add_theme_font_size_override("font_size", 11)
+		bt.pressed.connect(func(): _talk())
+		act_vb.add_child(bt)
+	if is_town:
+		var bh = Button.new()
+		bh.text = "🛒 [H] Лавка"
+		bh.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bh.focus_mode = Control.FOCUS_NONE
+		bh.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bh.add_theme_font_size_override("font_size", 11)
+		bh.pressed.connect(func():
+			var s = load("res://scripts/shop.gd").new()
+			s.stock = LOCS.get(Game.cur_loc, {}).get("shop", ["potion", "food"])
+			add_child(s)
+		)
+		act_vb.add_child(bh)
+		var bn = Button.new()
+		bn.text = "🍺 [N] Таверна"
+		bn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bn.focus_mode = Control.FOCUS_NONE
+		bn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bn.add_theme_font_size_override("font_size", 11)
+		bn.pressed.connect(func():
+			var tv = load("res://scripts/tavern.gd").new()
+			add_child(tv)
+		)
+		act_vb.add_child(bn)
+		var bs = Button.new()
+		bs.text = "🛏️ [S] Отдых"
+		bs.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bs.focus_mode = Control.FOCUS_NONE
+		bs.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		bs.add_theme_font_size_override("font_size", 11)
+		bs.pressed.connect(func():
+			Game.day += 1
+			Game.hour = 8
+			Game.fatigue = 0
+			_upd_hint()
+		)
+		act_vb.add_child(bs)
+	var bp = Button.new()
+	bp.text = "👥 [P] Отряд"
+	bp.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	bp.focus_mode = Control.FOCUS_NONE
+	bp.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bp.add_theme_font_size_override("font_size", 11)
+	bp.pressed.connect(func():
+		var pu = load("res://scripts/party_ui.gd").new()
+		add_child(pu)
+	)
+	act_vb.add_child(bp)
+	var bj = Button.new()
+	bj.text = "📜 [J] Журнал"
+	bj.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	bj.focus_mode = Control.FOCUS_NONE
+	bj.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bj.add_theme_font_size_override("font_size", 11)
+	bj.pressed.connect(func():
+		var j = load("res://scripts/journal.gd").new()
+		add_child(j)
+	)
+	act_vb.add_child(bj)
+		
+	_refresh_party_bar()
+
+func _refresh_party_bar():
+	if party_bar_root == null:
+		return
+	for c in party_bar_root.get_children():
+		c.queue_free()
+	for i in 6:
+		var slot = PanelContainer.new()
+		slot.custom_minimum_size = Vector2(96, 110)
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		
+		# Copper rounded border style
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.07, 0.08, 0.10, 0.92)
+		style.border_color = Color(0.78, 0.48, 0.22, 1.0) # Copper / bronze
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(6)
+		style.content_margin_left = 2
+		style.content_margin_top = 2
+		style.content_margin_right = 2
+		style.content_margin_bottom = 2
+		slot.add_theme_stylebox_override("panel", style)
+		
+		var slot_box = VBoxContainer.new()
+		slot_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot_box.add_theme_constant_override("separation", 2)
+		slot.add_child(slot_box)
+		
+		var img_cont = Control.new()
+		img_cont.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		img_cont.custom_minimum_size = Vector2(92, 82)
+		img_cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		img_cont.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		slot_box.add_child(img_cont)
+		
+		var tr = TextureRect.new()
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		img_cont.add_child(tr)
+		
+		var nl = Label.new()
+		nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		nl.anchor_top = 0.0
+		nl.anchor_bottom = 0.0
+		nl.offset_left = 4
+		nl.offset_top = 2
+		nl.add_theme_font_size_override("font_size", 11)
+		nl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		nl.add_theme_constant_override("shadow_offset_x", 1)
+		nl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(nl)
+		
+		var num_lbl = Label.new()
+		num_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		num_lbl.anchor_left = 1.0
+		num_lbl.anchor_right = 1.0
+		num_lbl.anchor_top = 1.0
+		num_lbl.anchor_bottom = 1.0
+		num_lbl.offset_left = -66
+		num_lbl.offset_top = -20
+		num_lbl.offset_right = -4
+		num_lbl.offset_bottom = -2
+		num_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		num_lbl.add_theme_font_size_override("font_size", 12)
+		num_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+		num_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		num_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		num_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(num_lbl)
+		
+		var hp_bar = ProgressBar.new()
+		hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hp_bar.custom_minimum_size = Vector2(92, 10)
+		hp_bar.show_percentage = false
+		
+		var hp_bg = StyleBoxFlat.new()
+		hp_bg.bg_color = Color(0.2, 0.05, 0.05, 1.0)
+		hp_bg.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("background", hp_bg)
+		
+		var hp_fill = StyleBoxFlat.new()
+		hp_fill.bg_color = Color(0.88, 0.12, 0.12, 1.0)
+		hp_fill.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("fill", hp_fill)
+		
+		slot_box.add_child(hp_bar)
+		party_bar_root.add_child(slot)
+		
+		if i < Game.party.size():
+			var m = Game.party[i]
+			var cid = str(m.get("char", ""))
+			var img = str(CHARS.get(cid, {}).get("img", ""))
+			if img == "":
+				img = str(CLASSES.get(m.get("cls", ""), {}).get("img", ""))
+			var t = _tex_loader(img)
+			if t != null:
+				tr.texture = t
+			var cur_hp = int(m.get("hp", 0))
+			var max_hp = maxi(1, int(m.get("maxhp", 1)))
+			nl.text = str(CHARS.get(cid, {}).get("name", str(m.get("cls", ""))))
+			num_lbl.text = "%d / %d" % [cur_hp, max_hp]
+			hp_bar.max_value = max_hp
+			hp_bar.value = cur_hp
+		else:
+			nl.text = "(пусто)"
+			num_lbl.text = ""
+			hp_bar.visible = false
+			style.border_color = Color(0.35, 0.35, 0.35, 0.4)
+
+func _tex_loader(path):
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var im = Image.new()
+	if im.load(path) != OK:
+		return null
+	return ImageTexture.create_from_image(im)
 
 func _setup_cam():
 	yaw_n = Node3D.new()
@@ -571,6 +999,8 @@ func _build_world():
 			area.add_child(cs)
 			root.add_child(area)
 			area.input_event.connect(_on_loc_click.bind(id))
+			area.mouse_entered.connect(_on_loc_hover.bind(id, true))
+			area.mouse_exited.connect(_on_loc_hover.bind(id, false))
 	if not edit_mode:
 		_make_token()
 	for d in DECOR:
@@ -962,25 +1392,67 @@ func _gizmo_drag(mp):
 			sel_ring.position = Vector3(nx, ny + 0.05, nz)
 
 func _make_token():
-	token = MeshInstance3D.new()
-	var tm = CylinderMesh.new()
-	tm.top_radius = 0.8
-	tm.bottom_radius = 0.8
-	tm.height = 0.15
-	var tmi = StandardMaterial3D.new()
-	tmi.albedo_color = Color(1, 0.8, 0.2)
-	tmi.emission_enabled = true
-	tmi.emission = Color(1, 0.7, 0.1)
-	tmi.emission_energy_multiplier = 2.0
-	tm.material = tmi
-	token.mesh = tm
+	token = Node3D.new()
+
+	# Сдержанное парящее кольцо цвета рамок иконок (бронза / медь / янтарное золото)
+	var ring = MeshInstance3D.new()
+	var rm = TorusMesh.new()
+	rm.inner_radius = 0.85
+	rm.outer_radius = 1.05
+	var rmi = StandardMaterial3D.new()
+	rmi.albedo_color = Color(0.85, 0.55, 0.25)
+	rmi.emission_enabled = true
+	rmi.emission = Color(0.85, 0.52, 0.22)
+	rmi.emission_energy_multiplier = 2.2
+	rmi.roughness = 0.3
+	rmi.metallic = 0.5
+	ring.mesh = rm
+	ring.material_override = rmi
+	token.add_child(ring)
+
+	# Внутренний аккуратный указатель
+	var ptr = MeshInstance3D.new()
+	var pm = CylinderMesh.new()
+	pm.top_radius = 0.0
+	pm.bottom_radius = 0.28
+	pm.height = 0.5
+	var pmi = StandardMaterial3D.new()
+	pmi.albedo_color = Color(1.0, 0.72, 0.3)
+	pmi.emission_enabled = true
+	pmi.emission = Color(0.9, 0.6, 0.25)
+	pmi.emission_energy_multiplier = 2.0
+	ptr.mesh = pm
+	ptr.material_override = pmi
+	ptr.position = Vector3(0, 0.15, 0)
+	ptr.rotation_degrees = Vector3(180, 0, 0) # Стрелка указывает вниз
+	token.add_child(ptr)
+
+	# Мягкий неслепящий тёплый свет в тон интерфейса
+	var light = OmniLight3D.new()
+	light.light_color = Color(1.0, 0.75, 0.4)
+	light.light_energy = 1.2
+	light.omni_range = 4.5
+	light.position = Vector3(0, 0.3, 0)
+	token.add_child(light)
+
 	token.position = _pos3(Game.cur_loc)
 	add_child(token)
 
+func _token_height_at(x: float, z: float, is_at_loc: bool) -> float:
+	var h = _h_w(x, z)
+	# Когда стоим в локации с домиками/деревьями, парим над крышами на высоте 2.5
+	return (h + 2.4) if is_at_loc else (h + 0.6)
+
 func _process(_d):
-	if traveling:
-		target = token.position
-		_apply()
+	if token != null:
+		token.rotate_y(_d * 1.8)
+		if traveling:
+			token.position.y = _token_height_at(token.position.x, token.position.z, false)
+			target = token.position
+			_apply()
+		else:
+			var base_y = _token_height_at(token.position.x, token.position.z, true)
+			token.position.y = base_y + sin(Time.get_ticks_msec() * 0.003) * 0.1
 	if edit_mode and w_sel != "" and LOCS.has(w_sel):
 		_ms_timer += _d
 		if _ms_timer >= 0.2:
@@ -1044,6 +1516,25 @@ func _process(_d):
 		else:
 			brush_ind.visible = false
 
+func _on_loc_hover(id, entered):
+	if hud_float_hint == null:
+		return
+	if not entered:
+		hud_float_hint.visible = false
+		return
+	var target_loc = LOCS.get(id, {})
+	var cur_loc = LOCS.get(Game.cur_loc, {})
+	var tname = str(target_loc.get("name", id))
+	if id == Game.cur_loc:
+		hud_float_hint.text = "Кликните, чтобы войти в %s" % tname
+		hud_float_hint.visible = true
+	elif cur_loc.get("links", []).has(id):
+		hud_float_hint.text = "Переход в %s (расход: 1 еда)" % tname
+		hud_float_hint.visible = true
+	else:
+		hud_float_hint.text = "%s (нет прямого пути)" % tname
+		hud_float_hint.visible = true
+
 func _on_loc_click(_c, ev, _p2, _n, _si, id):
 	if not (ev is InputEventMouseButton) or not ev.pressed or ev.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -1051,12 +1542,17 @@ func _on_loc_click(_c, ev, _p2, _n, _si, id):
 
 func _pos3(id):
 	var p = LOCS.get(id, {}).get("pos", [200, 200])
-	return Vector3(p[0] * S, 0, p[1] * S)
+	var wx = p[0] * S
+	var wz = p[1] * S
+	return Vector3(wx, _token_height_at(wx, wz, true), wz)
 
 func _click_loc(id):
 	var cur = LOCS.get(Game.cur_loc, {})
 	if id == Game.cur_loc:
-		_enter(id)
+		if id == "village":
+			_play_dlg("elder_village")
+		else:
+			_enter(id)
 		return
 	if not cur.get("links", []).has(id):
 		_upd_hint()
@@ -1064,8 +1560,10 @@ func _click_loc(id):
 	if traveling:
 		return
 	traveling = true
-	var tw = create_tween()
-	tw.tween_property(token, "position", _pos3(id), 1.2)
+	var target_p = _pos3(id)
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(token, "position:x", target_p.x, 1.2)
+	tw.tween_property(token, "position:z", target_p.z, 1.2)
 	await tw.finished
 	traveling = false
 	if Game.food > 0:
@@ -1077,6 +1575,9 @@ func _click_loc(id):
 		Game.hour -= 24
 		Game.day += 1
 	Game.cur_loc = id
+	if not Game.flags.has("tut_road_seen"):
+		Game.flags["tut_road_seen"] = true
+		Game._notify("ОБУЧЕНИЕ: Расход 1 еды, +2 ч. При 0 еды растет Усталость (-1 ход, -10% меткость)!")
 	Game.autosave()
 	_upd_hint()
 	if randf() < 0.35 and str(LOCS.get(id, {}).get("type", "")) != "town":
@@ -1099,7 +1600,9 @@ func _play_dlg(dn):
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS
 	add_child(d)
-	d.play(data)
+	await d.play(data)
+	d.queue_free()
+	_upd_hint()
 
 func _apply():
 	yaw_n.position = target
@@ -1676,6 +2179,9 @@ func _make_enc():
 	Game.enc = {"map": {"rocks": [], "objects": objs, "units": units}, "gold": 6 + randi() % 12}
 
 func _talk():
+	if Game.cur_loc == "village":
+		_play_dlg("elder_village")
+		return
 	var here = []
 	for cid in CHARS:
 		if str(CHARS[cid].get("loc", "")) == Game.cur_loc:

@@ -79,19 +79,11 @@
     "name": "Грик",
     "status": "friendly"
   },
-  "hero": {
-    "class": "swordsman",
-    "color": "#88ccff",
-    "kind": "unique",
-    "name": "Герой",
-    "status": "friendly"
-  },
   "kael": {
     "class": "swordsman",
     "color": "#66aaff",
-    "hire": {
-      "price": 40
-    },
+    "img": "res://art/swordrer.png",
+    "img_scale": 1.0,
     "kind": "unique",
     "name": "Каэл",
     "status": "friendly"
@@ -112,12 +104,6 @@
       "food"
     ],
     "status": "friendly"
-  },
-  "vasya": {
-    "color": "#7ab8ff",
-    "img": "res://art/Moy portrait.jpg",
-    "img_scale": 1.2,
-    "name": "Вася"
   },
   "vesna": {
     "class": "mage",

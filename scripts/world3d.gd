@@ -60,7 +60,13 @@ var party_bar_root: HBoxContainer
 var end_turn_btn: Button
 var pips_box: HBoxContainer
 var turn_lab: Label
-var toast_panel: PanelContainer
+var toast_panel: PanelContainer = null
+var tut_battle_banner: Label = null
+var hint_card_panel: PanelContainer = null
+var hint_card_content: VBoxContainer = null
+var hint_card_toggle_btn: Button = null
+var hint_collapsed: bool = false
+var combat_round: int = 1
 const PCLS = ["assassin", "swordsman", "halberd", "archer", "mage"]
 
 func _calc_act_max() -> int:
@@ -485,6 +491,67 @@ func _ui():
 	info.visible = false
 	ui.add_child(info)
 
+	# 2.5 RIGHT-SIDE COLLAPSIBLE TACTICAL HINT WIDGET
+	hint_card_panel = PanelContainer.new()
+	hint_card_panel.anchor_left = 1.0
+	hint_card_panel.anchor_right = 1.0
+	hint_card_panel.anchor_top = 0.0
+	hint_card_panel.anchor_bottom = 0.0
+	hint_card_panel.offset_left = -280
+	hint_card_panel.offset_right = -14
+	hint_card_panel.offset_top = 56
+	hint_card_panel.offset_bottom = 260
+	
+	var hc_st = StyleBoxFlat.new()
+	hc_st.bg_color = Color(0.08, 0.09, 0.12, 0.94)
+	hc_st.border_color = Color(0.78, 0.48, 0.22, 0.9)
+	hc_st.set_border_width_all(2)
+	hc_st.set_corner_radius_all(6)
+	hc_st.content_margin_left = 10
+	hc_st.content_margin_right = 10
+	hc_st.content_margin_top = 8
+	hc_st.content_margin_bottom = 8
+	hint_card_panel.add_theme_stylebox_override("panel", hc_st)
+	ui.add_child(hint_card_panel)
+
+	var hc_vb = VBoxContainer.new()
+	hc_vb.add_theme_constant_override("separation", 6)
+	hint_card_panel.add_child(hc_vb)
+
+	var hc_header = HBoxContainer.new()
+	hc_vb.add_child(hc_header)
+
+	var hc_title = Label.new()
+	hc_title.text = "💡 ТАКТИКА И СОВЕТЫ"
+	hc_title.add_theme_font_size_override("font_size", 12)
+	hc_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.5))
+	hc_header.add_child(hc_title)
+
+	var hc_sp = Control.new()
+	hc_sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hc_header.add_child(hc_sp)
+
+	hint_card_toggle_btn = Button.new()
+	hint_card_toggle_btn.text = "▲"
+	hint_card_toggle_btn.custom_minimum_size = Vector2(24, 20)
+	hint_card_toggle_btn.focus_mode = Control.FOCUS_NONE
+	hint_card_toggle_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	hint_card_toggle_btn.pressed.connect(_toggle_hint_panel)
+	hc_header.add_child(hint_card_toggle_btn)
+
+	hint_card_content = VBoxContainer.new()
+	hint_card_content.add_theme_constant_override("separation", 6)
+	hint_card_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hc_vb.add_child(hint_card_content)
+
+	tut_battle_banner = Label.new()
+	tut_battle_banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tut_battle_banner.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tut_battle_banner.add_theme_font_size_override("font_size", 11)
+	tut_battle_banner.add_theme_color_override("font_color", Color(0.92, 0.94, 0.96))
+	tut_battle_banner.text = "Выберите бойца для просмотра роли и тактических приёмов."
+	hint_card_content.add_child(tut_battle_banner)
+
 	# 3. END TURN BUTTON (Top Right)
 	end_turn_btn = Button.new()
 	end_turn_btn.anchor_left = 1.0
@@ -571,9 +638,9 @@ func _ui():
 	act_panel.anchor_right = 1.0
 	act_panel.anchor_top = 1.0
 	act_panel.anchor_bottom = 1.0
-	act_panel.offset_left = -500
-	act_panel.offset_right = -14
-	act_panel.offset_top = -120
+	act_panel.offset_left = -580
+	act_panel.offset_right = -10
+	act_panel.offset_top = -125
 	act_panel.offset_bottom = -10
 	
 	var act_style = StyleBoxFlat.new()
@@ -626,6 +693,53 @@ func _upd_info():
 			info.text = "%s: ходов %d, атак %d." % [CLASSES.get(u.cls, {}).get("name", ""), 0 if u.moved else 1, 0 if u.attacked else 1]
 	_refresh_party_bar()
 	_skills_ui()
+	_upd_tut_banner()
+
+func _toggle_hint_panel():
+	hint_collapsed = not hint_collapsed
+	if hint_card_content != null:
+		hint_card_content.visible = not hint_collapsed
+	if hint_card_toggle_btn != null:
+		hint_card_toggle_btn.text = "▼" if hint_collapsed else "▲"
+	if hint_card_panel != null:
+		hint_card_panel.offset_bottom = 94 if hint_collapsed else 260
+
+func _upd_tut_banner():
+	if tut_battle_banner == null:
+		return
+	if Game.flags.has("clear_bandit_road") and loc_id != "bandit_road":
+		if hint_card_panel != null:
+			hint_card_panel.visible = false
+		return
+	if hint_card_panel != null:
+		hint_card_panel.visible = true
+	
+	if selected < 0 or selected >= units3.size():
+		tut_battle_banner.text = "⚔️ ЗОНЫ АТАКИ:\n• СПИНА — шанс до 90% (критично!)\n• БОК — средний шанс попадания\n• ЛОБ — высокий шанс блока/промаха\n\n🔄 УПРАВЛЕНИЕ:\n• [Q] / [E] — вращение бойца лицом к угрозе\n• [Space] — завершить раунд"
+		return
+		
+	var u = units3[selected]
+	if u.team != 0:
+		var prey_info = ""
+		if u.cls == "swordsman": prey_info = "Опасен для Убийц"
+		elif u.cls == "assassin": prey_info = "Опасен для Лучников"
+		elif u.cls == "archer": prey_info = "Опасен для Алебардистов"
+		elif u.cls == "halberd": prey_info = "Опасен для Мечников"
+		tut_battle_banner.text = "🎯 ВРАГ: %s\n• Здоровье: %d / %d HP\n• Дальность шага: %d кл.\n• Приоритет: %s\n\n💡 Совет: Обойдите во фланг или в спину, чтобы свести защиту к минимуму!" % [CLASSES.get(u.cls, {}).get("name", u.cls), u.hp, u.maxhp, _mv(u), prey_info]
+		return
+		
+	if u.cls == "swordsman":
+		tut_battle_banner.text = "🗡️ КЛАСС: МЕЧНИК\n• Преимущество: Контрит Убийц (+1 урон)\n• Защита: Лоб 75%, Спина 30%\n• Навык «Толчок» [1]: сдвигает цель на 1 кл. Столкновение с обрывом/огнём даёт -2 HP или расбаланс!"
+	elif u.cls == "archer":
+		tut_battle_banner.text = "🏹 КЛАСС: ЛУЧНИК\n• Преимущество: Контрит Алебардистов\n• Дальность стрельбы: 8 клеток\n• Навык «Огненная стрела» [1]: зажигает клетку на 2 раунда. Враги получают ожог и теряют шаг!"
+	elif u.cls == "mage":
+		tut_battle_banner.text = "🔮 КЛАСС: МАГ\n• «Огонь 1» [1]: прямой точечный урон (до 4 кл)\n• «Лечение» [2]: восстановление +1 HP союзнику\n• «Огонь 3×3» [3]: мощный площадной удар с поджогом всей зоны!"
+	elif u.cls == "halberd":
+		tut_battle_banner.text = "🪓 КЛАСС: АЛЕБАРДИСТ\n• Преимущество: Контрит Мечников\n• Дальность удара: 2 клетки\n• Реакция: враг, подошедший вплотную, получает автоматический удар и сковывание (pin)!"
+	elif u.cls == "assassin":
+		tut_battle_banner.text = "⚡ КЛАСС: УБИЙЦА\n• Преимущество: Контрит Лучников\n• Высокая мобильность: ход %d кл.\n• Проскок: шаг сквозь врагов (QTE [Space])\n• Удар в спину: 90%% попадания + метка ослабления!" % _mv(u)
+	else:
+		tut_battle_banner.text = "💡 БОЕЦ:\nИспользуйте шаг и атаку за раунд. Завершить ход — кнопка вверху справа или [Space]."
 
 func _find_unit_for_party_member(party_idx: int) -> int:
 	if party_idx < 0 or party_idx >= Game.party.size():
@@ -1461,6 +1575,8 @@ func _on_win():
 		for u in units3:
 			if u.team == 1 and u.hp <= 0:
 				total += StatsTools.xp_for_kill(CLASSES.get(u.cls, {}), int(u.get("lvl", 1)))
+		if total == 0 and loc_id == "bandit_road":
+			total = 10
 		total_xp = total
 		if total > 0:
 			for m in Game.party:
@@ -1468,10 +1584,25 @@ func _on_win():
 				if ups > 0:
 					Game._notify("Новый уровень: %s (ур. %d, +1 перк-поинт)" % [str(Game.resolve_char(str(m.get("char", ""))).get("name", str(m.get("char", "")))), int(m.get("level", 1))])
 	else:
+		var total = 0
+		for u in units3:
+			if u.team == 1 and u.hp <= 0:
+				total += StatsTools.xp_for_kill(CLASSES.get(u.cls, {}), int(u.get("lvl", 1)))
+		if total == 0 and loc_id == "bandit_road":
+			total = 10
+		total_xp = total
+		if total > 0:
+			for m in Game.party:
+				var ups = PartyTools.add_xp(m, total)
+				if ups > 0:
+					Game._notify("Новый уровень: %s (ур. %d, +1 перк-поинт)" % [str(Game.resolve_char(str(m.get("char", ""))).get("name", str(m.get("char", "")))), int(m.get("level", 1))])
 		for row in L.get("loot", []):
 			if randf() * 100.0 < float(row.get("chance", 0)):
 				Game.add_item(row.get("item", ""))
 				got.append(str(row.get("item", "")))
+	if tut_battle_banner != null:
+		tut_battle_banner.text = "🏆 ПОБЕДА! Боец получил 2-й уровень (+1 перк). Нажмите [P] для прокачки и вернитесь в деревню!"
+		tut_battle_banner.visible = true
 	_show_end_overlay(true, {"xp": total_xp, "loot": got})
 	_play_dlg(L.get("dlg", {}).get("win", ""))
 	status.text = "ПОБЕДА! Лут: %s. M — дальше." % (", ".join(got) if got.size() > 0 else "ничего")
@@ -1659,21 +1790,10 @@ func _on_area_click(_cam, ev, _p2, _n, _si, i):
 		else:
 			status.text = "Враг вне досягаемости хода и атаки."
 			return
-	# Если не атакуем, то для нейтралов (team=2) — диалог/лавка
+	# Если не атакуем, то для нейтралов (team=2) — не отвлекать во время боя
 	if u.team == 2:
-		var cid = str(u.get("char", ""))
-		if cid != "":
-			var cd = CHARS.get(cid, {})
-			if cd.has("shop"):
-				var sh = load("res://scripts/shop.gd").new()
-				sh.stock = cd.get("shop", ["potion", "food"])
-				add_child(sh)
-				return
-			var dn = Game.talk_dlg(cid)
-			if dn == "":
-				dn = str(cd.get("dlg", ""))
-			if dn != "":
-				_play_dlg(dn, true)
+		status.text = "Торговец ждёт окончания боя! Защитите его от разбойников."
+		return
 func _click_action():
 	var _lgc = _pick_cell()
 	_log_click("CLICK mouse=%s cell=%s deploy=%s min_x=%d" % [str(get_viewport().get_mouse_position()), str(_lgc), str(deploy_mode), _calc_deploy_min_x()])
@@ -2113,7 +2233,12 @@ func _qte(text, dur):
 	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui.add_child(bgc)
 	var lab = Label.new()
-	lab.text = text
+	if text.begins_with("ВРАГ АТАКУЕТ"):
+		lab.text = text + " | [SPACE] ДЛЯ БЛОКА!"
+		if tut_battle_banner != null:
+			tut_battle_banner.text = "💡 ОБУЧЕНИЕ (Ход 2): Враг атакует! Нажмите [ПРОБЕЛ] во время полосы для блокирования урона!"
+	else:
+		lab.text = text
 	lab.position = Vector2(280, 180)
 	lab.add_theme_font_size_override("font_size", 26)
 	ui.add_child(lab)
@@ -2335,9 +2460,17 @@ func _skills_ui():
 	atk_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if not u.attacked else Color(0.6, 0.6, 0.6))
 	head_hb.add_child(atk_badge)
 
+	var scroll = ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(0, 68)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	skills_box.add_child(scroll)
+
 	var cards_hb = HBoxContainer.new()
 	cards_hb.add_theme_constant_override("separation", 6)
-	skills_box.add_child(cards_hb)
+	cards_hb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(cards_hb)
 
 	var act_spent = (activations_left <= 0 and u.get("acts", 0) == 0)
 
@@ -2432,17 +2565,17 @@ func _skills_ui():
 
 func _make_card(icon: String, title: String, desc: String, hotkey: String, is_active: bool, is_disabled: bool, on_click: Callable) -> Control:
 	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(148, 70)
+	btn.custom_minimum_size = Vector2(118, 62)
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not is_disabled else Control.CURSOR_ARROW
 	btn.disabled = is_disabled
 
 	var base_style = StyleBoxFlat.new()
 	base_style.set_corner_radius_all(6)
-	base_style.content_margin_left = 6
-	base_style.content_margin_right = 6
-	base_style.content_margin_top = 4
-	base_style.content_margin_bottom = 4
+	base_style.content_margin_left = 5
+	base_style.content_margin_right = 5
+	base_style.content_margin_top = 3
+	base_style.content_margin_bottom = 3
 
 	if is_active:
 		base_style.bg_color = Color(0.20, 0.16, 0.06, 0.98)
@@ -2472,7 +2605,7 @@ func _make_card(icon: String, title: String, desc: String, hotkey: String, is_ac
 
 	var vb = VBoxContainer.new()
 	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vb.add_theme_constant_override("separation", 2)
+	vb.add_theme_constant_override("separation", 1)
 	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
 	btn.add_child(vb)
 
@@ -2483,7 +2616,7 @@ func _make_card(icon: String, title: String, desc: String, hotkey: String, is_ac
 	var l_title = Label.new()
 	l_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l_title.text = "%s %s" % [icon, title]
-	l_title.add_theme_font_size_override("font_size", 11)
+	l_title.add_theme_font_size_override("font_size", 10)
 	l_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7) if not is_disabled else Color(0.55, 0.55, 0.55))
 	r1.add_child(l_title)
 
@@ -2496,14 +2629,14 @@ func _make_card(icon: String, title: String, desc: String, hotkey: String, is_ac
 		var hk = Label.new()
 		hk.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		hk.text = "[%s]" % hotkey
-		hk.add_theme_font_size_override("font_size", 10)
+		hk.add_theme_font_size_override("font_size", 9)
 		hk.add_theme_color_override("font_color", Color(1.0, 0.8, 0.25) if not is_disabled else Color(0.45, 0.45, 0.45))
 		r1.add_child(hk)
 
 	var l_desc = Label.new()
 	l_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l_desc.text = desc
-	l_desc.add_theme_font_size_override("font_size", 10)
+	l_desc.add_theme_font_size_override("font_size", 9)
 	l_desc.add_theme_color_override("font_color", Color(0.75, 0.78, 0.82) if not is_disabled else Color(0.45, 0.45, 0.45))
 	vb.add_child(l_desc)
 
@@ -2518,7 +2651,7 @@ func _make_card(icon: String, title: String, desc: String, hotkey: String, is_ac
 	else:
 		l_st.text = "Готово"
 		l_st.add_theme_color_override("font_color", Color(0.4, 0.85, 0.5))
-	l_st.add_theme_font_size_override("font_size", 9)
+	l_st.add_theme_font_size_override("font_size", 8)
 	vb.add_child(l_st)
 
 	btn.pressed.connect(on_click)
@@ -2830,6 +2963,7 @@ func _finalize_turn_safe():
 	activations_left = act_max
 	busy = false
 	acted_idx = -1
+	combat_round += 1
 	if not game_over3:
 		status.text = "Твой ход: клик по своему юниту."
 	_upd_info()
@@ -2876,7 +3010,7 @@ func _sync_party_deaths():
 	var survivors = []
 	for m in Game.party:
 		if int(m.get("hp", 0)) <= 0:
-			if str(m.get("char", "")) == "hero":
+			if str(m.get("char", "")) == "kael":
 				m["hp"] = 1
 				survivors.append(m)
 			else:
@@ -2912,4 +3046,3 @@ func _on_to_map():
 	_sync_party_deaths()
 	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
-

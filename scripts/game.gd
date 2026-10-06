@@ -112,6 +112,9 @@ var QUESTS = {}
 var notice = ""
 func _ready():
 	add_to_group("live")
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	get_tree().root.content_scale_size = Vector2i(1152, 648)
 	QUESTS = DataLoader.load_json("res://data/quests.json")
 	CHARS_RAW = DataLoader.load_json("res://data/chars.json")
 func clear_hook(loc):

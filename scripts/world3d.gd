@@ -24,6 +24,7 @@ var selected = -1
 var move_hl = []
 var attack_hl = []
 var hl_root: Node3D
+var hover_hl_root: Node3D
 var busy = false
 var terrain = null
 var hovered = -1
@@ -46,13 +47,19 @@ var qte_pressed = false
 var qte_on = false
 var fires = []
 var bfs_parent = {}
+var bfs_dist = {}
 var shove_mode = false
 var arrow_mode = false
-var skills_box: VBoxContainer
+var skills_box: Control
 var heal_mode = false
 var activations_left = 2
 var act_max = 2
 var act_lab: Label
+var party_bar_root: HBoxContainer
+var end_turn_btn: Button
+var pips_box: HBoxContainer
+var turn_lab: Label
+var toast_panel: PanelContainer
 const PCLS = ["assassin", "swordsman", "halberd", "archer", "mage"]
 
 func _calc_act_max() -> int:
@@ -75,6 +82,8 @@ func _ready():
 	OBJ3 = DataLoader.load_json("res://data/objects.json")
 	hl_root = Node3D.new()
 	add_child(hl_root)
+	hover_hl_root = Node3D.new()
+	add_child(hover_hl_root)
 	_build()
 	_apply_explore()
 	act_max = _calc_act_max()
@@ -319,7 +328,10 @@ func _spawn_unit(c, team, cls, dir, cid = "", stats = null):
 	csh.position = Vector3(0, 0.9 * sc, 0)
 	area.add_child(csh)
 	root.add_child(area)
-	area.input_event.connect(_on_area_click.bind(units3.size()))
+	var u_idx = units3.size()
+	area.input_event.connect(_on_area_click.bind(u_idx))
+	area.mouse_entered.connect(_on_unit_mouse_entered.bind(u_idx))
+	area.mouse_exited.connect(_on_unit_mouse_exited.bind(u_idx))
 	units3.append({"cell": c, "team": team, "cls": cls, "hp": int(cd.get("hp", 2)), "maxhp": int(cd.get("hp", 2)), "facing": dir, "root": root, "bar": bar, "arrow": holder, "moved": false, "attacked": false, "char": cid, "stats": stats})
 func _obj(p, k):
 	p.y = terrain.sample_h(p.x, p.z) if terrain != null else 0.0
@@ -366,54 +378,452 @@ func _ui():
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
-	var btn = Button.new()
-	btn.focus_mode = Control.FOCUS_NONE
-	btn.text = "Завершить ход"
-	btn.position = Vector2(10, 10)
-	btn.pressed.connect(_end_turn_safe)
-	ui.add_child(btn)
+
+	# 1. TOP CENTRAL STATUS BAR (Activations counter, Pips, Turn state)
+	var top_bar = PanelContainer.new()
+	top_bar.anchor_left = 0.5
+	top_bar.anchor_right = 0.5
+	top_bar.anchor_top = 0.0
+	top_bar.anchor_bottom = 0.0
+	top_bar.offset_left = -230
+	top_bar.offset_right = 230
+	top_bar.offset_top = 10
+	top_bar.offset_bottom = 48
+	
+	var top_style = StyleBoxFlat.new()
+	top_style.bg_color = Color(0.07, 0.08, 0.11, 0.94)
+	top_style.border_color = Color(0.78, 0.52, 0.25, 0.9)
+	top_style.set_border_width_all(2)
+	top_style.set_corner_radius_all(6)
+	top_style.content_margin_left = 12
+	top_style.content_margin_right = 12
+	top_style.content_margin_top = 4
+	top_style.content_margin_bottom = 4
+	top_bar.add_theme_stylebox_override("panel", top_style)
+	ui.add_child(top_bar)
+
+	var top_hb = HBoxContainer.new()
+	top_hb.add_theme_constant_override("separation", 8)
+	top_hb.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_bar.add_child(top_hb)
+
+	var act_title = Label.new()
+	act_title.text = "⚡ АКТИВАЦИИ:"
+	act_title.add_theme_font_size_override("font_size", 12)
+	act_title.add_theme_color_override("font_color", Color(0.9, 0.88, 0.82))
+	top_hb.add_child(act_title)
+
+	pips_box = HBoxContainer.new()
+	pips_box.add_theme_constant_override("separation", 3)
+	top_hb.add_child(pips_box)
+
+	act_lab = Label.new()
+	act_lab.add_theme_font_size_override("font_size", 13)
+	act_lab.add_theme_color_override("font_color", Color(1.0, 0.88, 0.25))
+	top_hb.add_child(act_lab)
+
+	var sep = Label.new()
+	sep.text = "│"
+	sep.add_theme_font_size_override("font_size", 12)
+	sep.add_theme_color_override("font_color", Color(0.5, 0.55, 0.6))
+	top_hb.add_child(sep)
+
+	turn_lab = Label.new()
+	turn_lab.text = "ХОД ИГРОКА"
+	turn_lab.add_theme_font_size_override("font_size", 12)
+	turn_lab.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	top_hb.add_child(turn_lab)
+
+	# 2. TOAST / MINIMALIST NOTIFICATION (Below top bar)
+	toast_panel = PanelContainer.new()
+	toast_panel.anchor_left = 0.5
+	toast_panel.anchor_right = 0.5
+	toast_panel.anchor_top = 0.0
+	toast_panel.anchor_bottom = 0.0
+	toast_panel.offset_left = -260
+	toast_panel.offset_right = 260
+	toast_panel.offset_top = 52
+	toast_panel.offset_bottom = 78
+	
+	var toast_style = StyleBoxFlat.new()
+	toast_style.bg_color = Color(0.04, 0.05, 0.07, 0.85)
+	toast_style.border_color = Color(0.4, 0.45, 0.5, 0.4)
+	toast_style.set_border_width_all(1)
+	toast_style.set_corner_radius_all(10)
+	toast_style.content_margin_left = 10
+	toast_style.content_margin_right = 10
+	toast_style.content_margin_top = 2
+	toast_style.content_margin_bottom = 2
+	toast_panel.add_theme_stylebox_override("panel", toast_style)
+	ui.add_child(toast_panel)
+
+	status = Label.new()
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status.text = "Твой ход: выберите бойца."
+	status.add_theme_font_size_override("font_size", 11)
+	status.add_theme_color_override("font_color", Color(0.92, 0.94, 0.96))
+	toast_panel.add_child(status)
+
+	info = Label.new()
+	info.visible = false
+	ui.add_child(info)
+
+	# 3. END TURN BUTTON (Top Right)
+	end_turn_btn = Button.new()
+	end_turn_btn.anchor_left = 1.0
+	end_turn_btn.anchor_right = 1.0
+	end_turn_btn.anchor_top = 0.0
+	end_turn_btn.anchor_bottom = 0.0
+	end_turn_btn.offset_left = -224
+	end_turn_btn.offset_right = -14
+	end_turn_btn.offset_top = 10
+	end_turn_btn.offset_bottom = 48
+	end_turn_btn.text = "⌛ ЗАВЕРШИТЬ ХОД [Space]"
+	end_turn_btn.focus_mode = Control.FOCUS_NONE
+	end_turn_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.18, 0.12, 0.08, 0.95)
+	btn_style.border_color = Color(0.9, 0.6, 0.22, 1.0)
+	btn_style.set_border_width_all(2)
+	btn_style.set_corner_radius_all(6)
+	end_turn_btn.add_theme_stylebox_override("normal", btn_style)
+	
+	var btn_hover = btn_style.duplicate()
+	btn_hover.bg_color = Color(0.28, 0.18, 0.10, 0.98)
+	btn_hover.border_color = Color(1.0, 0.8, 0.3, 1.0)
+	end_turn_btn.add_theme_stylebox_override("hover", btn_hover)
+	
+	var btn_dis = btn_style.duplicate()
+	btn_dis.bg_color = Color(0.08, 0.08, 0.08, 0.6)
+	btn_dis.border_color = Color(0.35, 0.35, 0.35, 0.4)
+	end_turn_btn.add_theme_stylebox_override("disabled", btn_dis)
+	
+	end_turn_btn.add_theme_font_size_override("font_size", 12)
+	end_turn_btn.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	end_turn_btn.pressed.connect(_end_turn_safe)
+	ui.add_child(end_turn_btn)
+
+	# 4. START BATTLE BUTTON (Deploy mode)
 	start_btn = Button.new()
+	start_btn.anchor_left = 1.0
+	start_btn.anchor_right = 1.0
+	start_btn.anchor_top = 0.0
+	start_btn.anchor_bottom = 0.0
+	start_btn.offset_left = -390
+	start_btn.offset_right = -234
+	start_btn.offset_top = 10
+	start_btn.offset_bottom = 48
+	start_btn.text = "⚔️ В БОЙ"
 	start_btn.focus_mode = Control.FOCUS_NONE
-	start_btn.text = "В БОЙ"
-	start_btn.position = Vector2(150, 10)
+	start_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var start_style = btn_style.duplicate()
+	start_style.bg_color = Color(0.08, 0.18, 0.10, 0.95)
+	start_style.border_color = Color(0.3, 0.85, 0.4, 1.0)
+	start_btn.add_theme_stylebox_override("normal", start_style)
+	var start_hov = start_style.duplicate()
+	start_hov.bg_color = Color(0.12, 0.26, 0.14, 0.98)
+	start_btn.add_theme_stylebox_override("hover", start_hov)
+	start_btn.add_theme_font_size_override("font_size", 13)
+	start_btn.add_theme_color_override("font_color", Color(0.8, 1.0, 0.8))
 	start_btn.pressed.connect(_start_battle)
 	start_btn.visible = deploy_mode
 	ui.add_child(start_btn)
-	act_lab = Label.new()
-	act_lab.position = Vector2(400, 10)
-	act_lab.add_theme_color_override("font_color", Color(1, 0.9, 0.1))
-	ui.add_child(act_lab)
-	start_btn.visible = deploy_mode
-	start_btn.visible = deploy_mode
+
 	fire_btn = Button.new()
-	fire_btn.focus_mode = Control.FOCUS_NONE
-	fire_btn.text = "Огонь 3x3 — 2"
-	fire_btn.position = Vector2(260, 10)
-	fire_btn.pressed.connect(_toggle_cast)
-	ui.add_child(fire_btn)
 	fire_btn.visible = false
+	ui.add_child(fire_btn)
+
+	# 5. BOTTOM LEFT PARTY BAR
+	party_bar_root = HBoxContainer.new()
+	party_bar_root.anchor_left = 0.0
+	party_bar_root.anchor_right = 0.0
+	party_bar_root.anchor_top = 1.0
+	party_bar_root.anchor_bottom = 1.0
+	party_bar_root.offset_left = 14
+	party_bar_root.offset_right = 620
+	party_bar_root.offset_top = -120
+	party_bar_root.offset_bottom = -10
+	party_bar_root.add_theme_constant_override("separation", 6)
+	party_bar_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(party_bar_root)
+
+	# 6. BOTTOM RIGHT ACTION / SKILLS PANEL
+	var act_panel = PanelContainer.new()
+	act_panel.anchor_left = 1.0
+	act_panel.anchor_right = 1.0
+	act_panel.anchor_top = 1.0
+	act_panel.anchor_bottom = 1.0
+	act_panel.offset_left = -500
+	act_panel.offset_right = -14
+	act_panel.offset_top = -120
+	act_panel.offset_bottom = -10
+	
+	var act_style = StyleBoxFlat.new()
+	act_style.bg_color = Color(0.07, 0.08, 0.10, 0.94)
+	act_style.border_color = Color(0.78, 0.48, 0.22, 0.9)
+	act_style.set_border_width_all(2)
+	act_style.set_corner_radius_all(6)
+	act_style.content_margin_left = 8
+	act_style.content_margin_right = 8
+	act_style.content_margin_top = 6
+	act_style.content_margin_bottom = 6
+	act_panel.add_theme_stylebox_override("panel", act_style)
+	ui.add_child(act_panel)
+
 	skills_box = VBoxContainer.new()
-	skills_box.position = Vector2(880, 60)
-	skills_box.custom_minimum_size = Vector2(240, 0)
-	ui.add_child(skills_box)
-	status = Label.new()
-	status.position = Vector2(10, 45)
-	status.text = "Твой ход: клик по своему юниту."
-	ui.add_child(status)
-	info = Label.new()
-	info.position = Vector2(10, 70)
-	ui.add_child(info)
+	skills_box.add_theme_constant_override("separation", 4)
+	act_panel.add_child(skills_box)
+
 	_upd_info()
+
 func _upd_info():
 	if act_lab != null:
-		act_lab.text = "Активаций: %d из %d" % [activations_left, act_max]
-	if info == null:
+		act_lab.text = "%d из %d" % [activations_left, act_max]
+	if pips_box != null:
+		for ch in pips_box.get_children():
+			ch.queue_free()
+		for pi in act_max:
+			var pl = Label.new()
+			pl.text = "◆" if pi < activations_left else "◇"
+			pl.add_theme_font_size_override("font_size", 14)
+			pl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2) if pi < activations_left else Color(0.4, 0.45, 0.5))
+			pips_box.add_child(pl)
+	if turn_lab != null:
+		if deploy_mode:
+			turn_lab.text = "РАССТАНОВКА"
+			turn_lab.add_theme_color_override("font_color", Color(0.3, 0.9, 1.0))
+		elif busy:
+			turn_lab.text = "ХОД ВРАГА"
+			turn_lab.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+		else:
+			turn_lab.text = "ХОД ИГРОКА"
+			turn_lab.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
+	if end_turn_btn != null:
+		end_turn_btn.disabled = busy or deploy_mode
+	if info != null:
+		if acted_idx < 0:
+			info.text = "За раунд: %d активаций — разные фигуры или повторно (усталость)." % act_max
+		else:
+			var u = units3[acted_idx]
+			info.text = "%s: ходов %d, атак %d." % [CLASSES.get(u.cls, {}).get("name", ""), 0 if u.moved else 1, 0 if u.attacked else 1]
+	_refresh_party_bar()
+	_skills_ui()
+
+func _find_unit_for_party_member(party_idx: int) -> int:
+	if party_idx < 0 or party_idx >= Game.party.size():
+		return -1
+	var m = Game.party[party_idx]
+	var cid = str(m.get("char", ""))
+	var cls = str(m.get("cls", ""))
+	if cid != "":
+		for idx in units3.size():
+			var u = units3[idx]
+			if u.team == 0 and str(u.get("char", "")) == cid:
+				return idx
+	var ally_idx = 0
+	for idx in units3.size():
+		var u = units3[idx]
+		if u.team == 0:
+			if ally_idx == party_idx:
+				return idx
+			ally_idx += 1
+	for idx in units3.size():
+		var u = units3[idx]
+		if u.team == 0 and str(u.cls) == cls:
+			return idx
+	return -1
+
+func _refresh_party_bar():
+	if party_bar_root == null:
 		return
-	if acted_idx < 0:
-		info.text = "За раунд: %d активаций — разные фигуры или повторно (усталость)." % act_max
-	else:
-		var u = units3[acted_idx]
-		info.text = "%s: ходов %d, атак %d." % [CLASSES.get(u.cls, {}).get("name", ""), 0 if u.moved else 1, 0 if u.attacked else 1]
+	for c in party_bar_root.get_children():
+		c.queue_free()
+	var party_size = Game.party.size()
+	for i in 6:
+		var slot = PanelContainer.new()
+		slot.custom_minimum_size = Vector2(94, 110)
+		slot.mouse_filter = Control.MOUSE_FILTER_PASS
+		
+		var style = StyleBoxFlat.new()
+		style.set_corner_radius_all(6)
+		style.content_margin_left = 2
+		style.content_margin_top = 2
+		style.content_margin_right = 2
+		style.content_margin_bottom = 2
+		
+		var slot_box = VBoxContainer.new()
+		slot_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot_box.add_theme_constant_override("separation", 2)
+		slot.add_child(slot_box)
+		
+		var img_cont = Control.new()
+		img_cont.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		img_cont.custom_minimum_size = Vector2(90, 82)
+		img_cont.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		img_cont.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		slot_box.add_child(img_cont)
+		
+		var tr = TextureRect.new()
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		img_cont.add_child(tr)
+		
+		var nl = Label.new()
+		nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		nl.offset_left = 4
+		nl.offset_top = 2
+		nl.add_theme_font_size_override("font_size", 11)
+		nl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		nl.add_theme_constant_override("shadow_offset_x", 1)
+		nl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(nl)
+		
+		var num_lbl = Label.new()
+		num_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		num_lbl.anchor_left = 1.0
+		num_lbl.anchor_right = 1.0
+		num_lbl.anchor_top = 1.0
+		num_lbl.anchor_bottom = 1.0
+		num_lbl.offset_left = -66
+		num_lbl.offset_top = -20
+		num_lbl.offset_right = -4
+		num_lbl.offset_bottom = -2
+		num_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		num_lbl.add_theme_font_size_override("font_size", 12)
+		num_lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+		num_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		num_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		num_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		img_cont.add_child(num_lbl)
+		
+		var hp_bar = ProgressBar.new()
+		hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hp_bar.custom_minimum_size = Vector2(90, 10)
+		hp_bar.show_percentage = false
+		
+		var hp_bg = StyleBoxFlat.new()
+		hp_bg.bg_color = Color(0.2, 0.05, 0.05, 1.0)
+		hp_bg.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("background", hp_bg)
+		
+		var hp_fill = StyleBoxFlat.new()
+		hp_fill.bg_color = Color(0.88, 0.12, 0.12, 1.0)
+		hp_fill.set_corner_radius_all(2)
+		hp_bar.add_theme_stylebox_override("fill", hp_fill)
+		slot_box.add_child(hp_bar)
+		
+		if i < party_size:
+			var m = Game.party[i]
+			var cid = str(m.get("char", ""))
+			var img = str(CHARS.get(cid, {}).get("img", ""))
+			if img == "":
+				img = str(CLASSES.get(m.get("cls", ""), {}).get("img", ""))
+			var t = _tex(img)
+			if t != null:
+				tr.texture = t
+			
+			var u_idx = _find_unit_for_party_member(i)
+			var cur_hp = int(m.get("hp", 0))
+			var max_hp = maxi(1, int(m.get("maxhp", 1)))
+			var is_active = false
+			var has_acted = false
+			var is_dead = false
+			
+			if u_idx >= 0:
+				var u = units3[u_idx]
+				cur_hp = u.hp
+				max_hp = u.maxhp
+				is_active = (selected >= 0 and selected == u_idx)
+				has_acted = bool(u.get("spent", false)) or int(u.get("acts", 0)) > 0
+				is_dead = (u.hp <= 0)
+			else:
+				is_dead = (cur_hp <= 0)
+			
+			nl.text = str(CHARS.get(cid, {}).get("name", str(m.get("cls", ""))))
+			
+			if is_active:
+				style.bg_color = Color(0.20, 0.16, 0.08, 0.96)
+				style.border_color = Color(1.0, 0.85, 0.2, 1.0)
+				style.set_border_width_all(3)
+				tr.modulate = Color(1.1, 1.05, 0.95)
+				var act_b = Label.new()
+				act_b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				act_b.text = "АКТИВЕН"
+				act_b.anchor_left = 1.0
+				act_b.anchor_right = 1.0
+				act_b.offset_left = -58
+				act_b.offset_top = 2
+				act_b.add_theme_font_size_override("font_size", 9)
+				act_b.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
+				img_cont.add_child(act_b)
+			elif is_dead:
+				style.bg_color = Color(0.1, 0.04, 0.04, 0.9)
+				style.border_color = Color(0.5, 0.15, 0.15, 0.8)
+				style.set_border_width_all(2)
+				tr.modulate = Color(0.35, 0.35, 0.35, 0.6)
+			elif has_acted:
+				style.bg_color = Color(0.06, 0.07, 0.08, 0.9)
+				style.border_color = Color(0.45, 0.48, 0.52, 0.7)
+				style.set_border_width_all(2)
+				tr.modulate = Color(0.72, 0.72, 0.75, 0.85)
+				var acted_b = Label.new()
+				acted_b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				acted_b.text = "СХОДИЛ"
+				acted_b.anchor_left = 1.0
+				acted_b.anchor_right = 1.0
+				acted_b.offset_left = -54
+				acted_b.offset_top = 2
+				acted_b.add_theme_font_size_override("font_size", 9)
+				acted_b.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7))
+				img_cont.add_child(acted_b)
+			else:
+				style.bg_color = Color(0.07, 0.08, 0.10, 0.92)
+				style.border_color = Color(0.78, 0.48, 0.22, 1.0)
+				style.set_border_width_all(2)
+				tr.modulate = Color(1.0, 1.0, 1.0)
+			
+			if is_dead:
+				num_lbl.text = "ПАЛ"
+				num_lbl.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+				hp_bar.value = 0
+			else:
+				num_lbl.text = "%d / %d" % [maxi(0, cur_hp), max_hp]
+				hp_bar.max_value = max_hp
+				hp_bar.value = maxi(0, cur_hp)
+			
+			var click_b = Button.new()
+			click_b.flat = true
+			click_b.set_anchors_preset(Control.PRESET_FULL_RECT)
+			click_b.focus_mode = Control.FOCUS_NONE
+			click_b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			click_b.pressed.connect(_on_party_portrait_clicked.bind(i))
+			slot.add_child(click_b)
+		else:
+			nl.text = "(пусто)"
+			num_lbl.text = ""
+			hp_bar.visible = false
+			style.bg_color = Color(0.05, 0.06, 0.07, 0.5)
+			style.border_color = Color(0.35, 0.35, 0.35, 0.4)
+			style.set_border_width_all(1)
+		
+		slot.add_theme_stylebox_override("panel", style)
+		party_bar_root.add_child(slot)
+
+func _on_party_portrait_clicked(party_idx: int):
+	if busy or game_over3:
+		return
+	var u_idx = _find_unit_for_party_member(party_idx)
+	if u_idx >= 0:
+		var u = units3[u_idx]
+		if u.hp > 0:
+			_select(u_idx)
+			_refresh_party_bar()
+		else:
+			status.text = "Боец пал в бою."
 func _start_battle():
 	deploy_mode = false
 	act_max = _calc_act_max()
@@ -483,12 +893,12 @@ func _mv(u):
 func _bfs(start, rng, pass_units = false):
 	var res = []
 	bfs_parent = {}
-	var dist = {start: 0}
+	bfs_dist = {start: 0}
 	var fr = [start]
 	while fr.size() > 0:
 		var nxt = []
 		for c in fr:
-			if dist[c] >= rng:
+			if bfs_dist[c] >= rng:
 				continue
 			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 				var n = c + d
@@ -496,14 +906,14 @@ func _bfs(start, rng, pass_units = false):
 					continue
 				if terrain != null and not terrain.has_cell(n.x, n.y):
 					continue
-				if objects3.has(n) or dist.has(n):
+				if objects3.has(n) or bfs_dist.has(n):
 					continue
 				if not pass_units and _unit_at(n) >= 0:
 					continue
 				if terrain != null and not _can_step(c, n):
 					continue
 				bfs_parent[n] = c
-				dist[n] = dist[c] + 1
+				bfs_dist[n] = bfs_dist[c] + 1
 				res.append(n)
 				nxt.append(n)
 		fr = nxt
@@ -515,8 +925,14 @@ func _select(i):
 		return
 	selected = i
 	_compute_hl()
-	status.text = "Выбран %s: зелёные — ход, красные — атака." % CLASSES.get(u.cls, {}).get("name", "")
+	var c_name = str(CHARS.get(u.get("char", ""), {}).get("name", ""))
+	if c_name == "":
+		c_name = str(CLASSES.get(u.cls, {}).get("name", u.cls))
+	else:
+		c_name = "%s (%s)" % [c_name, CLASSES.get(u.cls, {}).get("name", u.cls)]
+	status.text = "Выбран: %s" % c_name
 	_upd_info()
+	_update_hover_hl()
 func _compute_hl():
 	for c in hl_root.get_children():
 		c.queue_free()
@@ -524,6 +940,8 @@ func _compute_hl():
 	attack_hl = []
 	if selected < 0 or units3[selected].hp <= 0:
 		_skills_ui()
+		_refresh_party_bar()
+		_update_hover_hl()
 		return
 	var u = units3[selected]
 	if not u.moved:
@@ -544,6 +962,8 @@ func _compute_hl():
 	if fire_btn != null:
 		fire_btn.visible = false
 	_skills_ui()
+	_refresh_party_bar()
+	_update_hover_hl()
 func _hl_quad(c, col):
 	var m = MeshInstance3D.new()
 	var st = SurfaceTool.new()
@@ -577,13 +997,14 @@ func _hl_pt(c, ix, iy, N):
 		y += terrain.sample_h(x, z)
 	y += ELEV.get(str(c.x) + "," + str(c.y), 0.0)
 	return Vector3(x, y, z)
-func _disc(c, col, rr):
+func _disc(c, col, rr, parent = null):
 	var m = MeshInstance3D.new()
 	var st = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var cx = c.x + 0.5
 	var cz = c.y + 0.5
-	var base = _h_at(cx, cz, c) + 0.05
+	var y_off = 0.06 if parent != null else 0.05
+	var base = _h_at(cx, cz, c) + y_off
 	var S = 16
 	var prev = _disc_pt(cx, cz, rr, 0.0, c)
 	for s in range(1, S + 1):
@@ -600,7 +1021,8 @@ func _disc(c, col, rr):
 	mi.cull_mode = BaseMaterial3D.CULL_DISABLED
 	st.set_material(mi)
 	m.mesh = st.commit()
-	hl_root.add_child(m)
+	var p_node = parent if parent != null else hl_root
+	p_node.add_child(m)
 func _disc_pt(cx, cz, rr, a, c):
 	var x = cx + cos(a) * rr
 	var z = cz + sin(a) * rr
@@ -938,7 +1360,6 @@ func _check_end():
 	if e == 0:
 		game_over3 = true
 		won3 = true
-		_show_end_overlay(true)
 		_on_win()
 	elif p == 0:
 		game_over3 = true
@@ -946,7 +1367,7 @@ func _check_end():
 		_show_end_overlay(false)
 		_play_dlg(LOCS.get(loc_id, {}).get("dlg", {}).get("loss", ""))
 		status.text = "ПОРАЖЕНИЕ… M — на карту."
-func _show_end_overlay(win):
+func _show_end_overlay(win, win_info = {}):
 	var old = get_node_or_null("EndUI")
 	if old != null:
 		old.queue_free()
@@ -956,12 +1377,14 @@ func _show_end_overlay(win):
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
 	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.45)
+	bg.color = Color(0, 0, 0, 0.55)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui.add_child(bg)
 	var lb = Label.new()
 	lb.set_anchors_preset(Control.PRESET_CENTER)
-	lb.add_theme_font_size_override("font_size", 48)
+	lb.offset_top = -140
+	lb.offset_bottom = -70
+	lb.add_theme_font_size_override("font_size", 44)
 	if win:
 		lb.text = "ПОБЕДА!"
 		lb.add_theme_color_override("font_color", Color(0.3, 1, 0.4))
@@ -969,10 +1392,21 @@ func _show_end_overlay(win):
 		lb.text = "ПОРАЖЕНИЕ…"
 		lb.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 	ui.add_child(lb)
+	if win and win_info.size() > 0:
+		var inf_l = Label.new()
+		inf_l.set_anchors_preset(Control.PRESET_CENTER)
+		inf_l.offset_top = -60
+		inf_l.offset_bottom = 0
+		var loot_str = ", ".join(win_info.get("loot", []))
+		if loot_str == "":
+			loot_str = "на земле / нет"
+		inf_l.text = "Получено опыта: +%d XP\nТрофеи: %s" % [int(win_info.get("xp", 0)), loot_str]
+		inf_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ui.add_child(inf_l)
 	var vbox = VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	vbox.offset_top = 60
-	vbox.offset_bottom = 140
+	vbox.offset_top = 40
+	vbox.offset_bottom = 130
 	vbox.offset_left = -160
 	vbox.offset_right = 160
 	vbox.add_theme_constant_override("separation", 8)
@@ -993,6 +1427,7 @@ func _on_win():
 	Game.flags["clear_" + loc_id] = true
 	Game.clear_hook(loc_id)
 	var got = []
+	var total_xp = 0
 	if Game.explore_return != null:
 		_drop_loot_on_deaths()
 		for u in units3:
@@ -1007,6 +1442,7 @@ func _on_win():
 		for u in units3:
 			if u.team == 1 and u.hp <= 0:
 				total += StatsTools.xp_for_kill(CLASSES.get(u.cls, {}), int(u.get("lvl", 1)))
+		total_xp = total
 		if total > 0:
 			for m in Game.party:
 				var ups = PartyTools.add_xp(m, total)
@@ -1017,6 +1453,7 @@ func _on_win():
 			if randf() * 100.0 < float(row.get("chance", 0)):
 				Game.add_item(row.get("item", ""))
 				got.append(str(row.get("item", "")))
+	_show_end_overlay(true, {"xp": total_xp, "loot": got})
 	_play_dlg(L.get("dlg", {}).get("win", ""))
 	status.text = "ПОБЕДА! Лут: %s. M — дальше." % (", ".join(got) if got.size() > 0 else "ничего")
 func _float_text(pos, txt, col):
@@ -1041,6 +1478,125 @@ func _play_dlg(dn, hook = false):
 	d.hook = hook
 	add_child(d)
 	await d.play(data)
+func _calc_attack_reach(att_i: int, tgt_i: int) -> Dictionary:
+	if att_i < 0 or att_i >= units3.size() or tgt_i < 0 or tgt_i >= units3.size():
+		return {}
+	var u = units3[att_i]
+	var t = units3[tgt_i]
+	if u.team != 0 or t.team != 1 or u.hp <= 0 or t.hp <= 0:
+		return {}
+	if u.cls == "mage":
+		return {}
+	if u.attacked:
+		return {}
+	if activations_left <= 0 and not u.get("spent", false):
+		return {}
+
+	var ar = _ar(u)
+	var cur_dist = _cheb(u.cell, t.cell)
+	if cur_dist <= ar:
+		return {"can_attack": true, "need_move": false, "target_cell": u.cell, "steps": 0}
+
+	if u.moved:
+		return {}
+
+	var mv_rng = _mv(u)
+	var reachable = _bfs(u.cell, mv_rng, u.cls == "assassin")
+	var best_cell = Vector2i(-999, -999)
+	var min_steps = 9999
+	var max_enemy_dist = -1
+
+	for c in reachable:
+		if _unit_at(c) >= 0 and c != u.cell:
+			continue
+		var d_to_enemy = _cheb(c, t.cell)
+		if d_to_enemy <= ar:
+			var steps = int(bfs_dist.get(c, 999))
+			if steps < min_steps or (steps == min_steps and d_to_enemy > max_enemy_dist):
+				min_steps = steps
+				max_enemy_dist = d_to_enemy
+				best_cell = c
+
+	if best_cell.x != -999:
+		return {
+			"can_attack": true,
+			"need_move": true,
+			"target_cell": best_cell,
+			"steps": min_steps
+		}
+
+	return {}
+
+func _execute_move_and_attack(att_i: int, tgt_i: int, dest_c: Vector2i):
+	if busy:
+		return
+	var u = units3[att_i]
+	var t = units3[tgt_i]
+	busy = true
+	_upd_info()
+	await _move_to(att_i, dest_c)
+	await get_tree().create_timer(0.26).timeout
+	if u.hp > 0 and t.hp > 0 and _cheb(u.cell, t.cell) <= _ar(u):
+		_attack(att_i, tgt_i)
+	busy = false
+	_update_hover_hl()
+	_compute_hl()
+	_upd_info()
+
+func _on_unit_mouse_entered(i: int):
+	hovered = i
+	_update_hover_hl()
+
+func _on_unit_mouse_exited(i: int):
+	if hovered == i:
+		hovered = -1
+		_update_hover_hl()
+
+func _check_cell_hover():
+	if busy or deploy_mode or selected < 0:
+		if hovered >= 0:
+			hovered = -1
+			_update_hover_hl()
+		return
+	var c = _pick_cell()
+	if c != null:
+		var u_idx = _unit_at(c)
+		if u_idx >= 0 and units3[u_idx].team == 1 and units3[u_idx].hp > 0:
+			if hovered != u_idx:
+				hovered = u_idx
+				_update_hover_hl()
+			return
+	if hovered >= 0:
+		hovered = -1
+		_update_hover_hl()
+
+func _update_hover_hl():
+	if hover_hl_root == null:
+		return
+	for c in hover_hl_root.get_children():
+		c.queue_free()
+
+	if busy or deploy_mode:
+		return
+
+	if hovered >= 0 and hovered < units3.size():
+		var t = units3[hovered]
+		if t.hp > 0 and t.team == 1 and selected >= 0 and selected < units3.size():
+			var reach = _calc_attack_reach(selected, hovered)
+			if reach.size() > 0 and reach.get("can_attack", false):
+				_disc(t.cell, Color(1.0, 0.2, 0.2, 0.8), 0.48, hover_hl_root)
+				_disc(t.cell, Color(1.0, 0.85, 0.2, 0.9), 0.32, hover_hl_root)
+				if reach.get("need_move", false):
+					var dst = reach["target_cell"]
+					_disc(dst, Color(0.2, 0.85, 1.0, 0.75), 0.42, hover_hl_root)
+					_disc(dst, Color(1.0, 1.0, 1.0, 0.9), 0.22, hover_hl_root)
+					var steps = reach.get("steps", 0)
+					var en_name = CLASSES.get(t.cls, {}).get("name", t.cls)
+					status.text = "⚔️ Нажмите: подойти (%d шаг.) и атаковать %s" % [steps, en_name]
+				else:
+					var en_name = CLASSES.get(t.cls, {}).get("name", t.cls)
+					status.text = "⚔️ Нажмите: атаковать %s (в радиусе)" % en_name
+
 func _on_area_click(_cam, ev, _p2, _n, _si, i):
 	if not (ev is InputEventMouseButton) or not ev.pressed or ev.button_index != MOUSE_BUTTON_LEFT or busy:
 		return
@@ -1062,9 +1618,20 @@ func _on_area_click(_cam, ev, _p2, _n, _si, i):
 			status.text = "Активации закончились — заверши ход."
 			return
 		_select(i)
-	elif selected >= 0 and attack_hl.has(u.cell):
-		_attack(selected, i)
-		return
+	elif selected >= 0 and u.team == 1:
+		var reach = _calc_attack_reach(selected, i)
+		if reach.size() > 0 and reach.get("can_attack", false):
+			if reach.get("need_move", false):
+				_execute_move_and_attack(selected, i, reach["target_cell"])
+			else:
+				_attack(selected, i)
+			return
+		elif attack_hl.has(u.cell):
+			_attack(selected, i)
+			return
+		else:
+			status.text = "Враг вне досягаемости хода и атаки."
+			return
 	# Если не атакуем, то для нейтралов (team=2) — диалог/лавка
 	if u.team == 2:
 		var cid = str(u.get("char", ""))
@@ -1119,11 +1686,25 @@ func _click_action():
 			status.text = "Поставлен %s (%d/4). «В БОЙ» — начать." % [CLASSES.get(cls, {}).get("name", ""), deploy_i]
 		return
 	if selected >= 0 and move_hl.has(c):
-		_move_to(selected, c)
-	elif selected >= 0 and attack_hl.has(c):
 		var j = _unit_at(c)
-		if j >= 0:
-			_attack(selected, j)
+		if j < 0:
+			_move_to(selected, c)
+	elif selected >= 0 and c != null:
+		var j = _unit_at(c)
+		if j >= 0 and units3[j].team == 1:
+			var reach = _calc_attack_reach(selected, j)
+			if reach.size() > 0 and reach.get("can_attack", false):
+				if reach.get("need_move", false):
+					_execute_move_and_attack(selected, j, reach["target_cell"])
+				else:
+					_attack(selected, j)
+				return
+			elif attack_hl.has(c):
+				_attack(selected, j)
+				return
+		if not (selected >= 0 and units3[selected].moved and not units3[selected].attacked):
+			selected = -1
+		_compute_hl()
 	else:
 		if not (selected >= 0 and units3[selected].moved and not units3[selected].attacked):
 			selected = -1
@@ -1137,6 +1718,10 @@ func _unhandled_input(ev):
 		if ev.keycode == KEY_M:
 			_leave_battle()
 			return
+		if (ev.keycode == KEY_SPACE or ev.keycode == KEY_ENTER) and not qte_on and not busy:
+			_end_turn_safe()
+			get_viewport().set_input_as_handled()
+			return
 		if selected >= 0 and not busy and not deploy_mode:
 			if ev.keycode == KEY_Q:
 				_rotate_sel(-1)
@@ -1144,6 +1729,38 @@ func _unhandled_input(ev):
 			if ev.keycode == KEY_E:
 				_rotate_sel(1)
 				return
+			if ev.keycode == KEY_1:
+				var u = units3[selected]
+				if u.cls == "swordsman":
+					shove_mode = not shove_mode
+					arrow_mode = false
+					heal_mode = false
+					casting = false
+					status.text = "Толчок: клик по врагу рядом." if shove_mode else "Толчок отменён."
+					_skills_ui()
+					return
+				elif u.cls == "archer":
+					arrow_mode = not arrow_mode
+					shove_mode = false
+					heal_mode = false
+					casting = false
+					status.text = "Огненная стрела: клик по клетке в радиусе." if arrow_mode else "Огненная стрела отменена."
+					_skills_ui()
+					return
+				elif u.cls == "mage":
+					heal_mode = not heal_mode
+					shove_mode = false
+					arrow_mode = false
+					casting = false
+					status.text = "Лечение: клик по своему в радиусе 4." if heal_mode else "Лечение отменено."
+					_skills_ui()
+					return
+			if ev.keycode == KEY_2:
+				var u = units3[selected]
+				if u.cls == "mage":
+					_toggle_cast()
+					_skills_ui()
+					return
 	if ev is InputEventMouseButton:
 		if ev.button_index == MOUSE_BUTTON_RIGHT:
 			right_drag = ev.pressed
@@ -1169,6 +1786,8 @@ func _unhandled_input(ev):
 			target -= right * ev.relative.x * k
 			target += fwd * ev.relative.y * k
 			_apply()
+		else:
+			_check_cell_hover()
 func _rotate_sel(d):
 	var u = units3[selected]
 	var a = d * PI / 4.0
@@ -1311,6 +1930,8 @@ func _set_hp_bar(u):
 	var r = clampf(float(u.hp) / float(u.maxhp), 0.0, 1.0)
 	u.bar.scale.x = maxf(0.05, r)
 	u.bar.mesh.material.albedo_color = Color(0.9, 0.2, 0.2).lerp(Color(0.2, 0.9, 0.2), r)
+	if u.team == 0:
+		_refresh_party_bar()
 
 func _apply_explore():
 	if Game.explore_start == null:
@@ -1555,56 +2176,251 @@ func _skills_ui():
 		return
 	for cch in skills_box.get_children():
 		cch.queue_free()
-	var t = Label.new()
-	t.text = "НАВЫКИ"
-	skills_box.add_child(t)
-	if selected < 0:
+
+	if selected < 0 or selected >= units3.size() or units3[selected].hp <= 0:
+		var empty_vb = VBoxContainer.new()
+		empty_vb.alignment = BoxContainer.ALIGNMENT_CENTER
+		empty_vb.add_theme_constant_override("separation", 3)
+		empty_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		empty_vb.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		skills_box.add_child(empty_vb)
+
+		var t = Label.new()
+		t.text = "⚔️ ВЫБЕРИТЕ БОЙЦА"
+		t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		t.add_theme_font_size_override("font_size", 12)
+		t.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		empty_vb.add_child(t)
+
+		var sub = Label.new()
+		sub.text = "Кликните по бойцу на поле или портрету в отряде"
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub.add_theme_font_size_override("font_size", 11)
+		sub.add_theme_color_override("font_color", Color(0.7, 0.73, 0.78))
+		empty_vb.add_child(sub)
+
+		var hnt = Label.new()
+		hnt.text = "Камера: ПКМ / Колесо • Завершить ход: [Space]"
+		hnt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hnt.add_theme_font_size_override("font_size", 10)
+		hnt.add_theme_color_override("font_color", Color(0.5, 0.55, 0.6))
+		empty_vb.add_child(hnt)
 		return
+
 	var u = units3[selected]
-	var nm = Label.new()
-	nm.text = str(CLASSES.get(u.cls, {}).get("name", ""))
-	skills_box.add_child(nm)
+	var cid = str(u.get("char", ""))
+	var c_name = str(CHARS.get(cid, {}).get("name", ""))
+	if c_name == "":
+		c_name = str(CLASSES.get(u.cls, {}).get("name", u.cls))
+	var cls_name = str(CLASSES.get(u.cls, {}).get("name", u.cls))
+
+	var head_hb = HBoxContainer.new()
+	head_hb.add_theme_constant_override("separation", 8)
+	skills_box.add_child(head_hb)
+
+	var nm_lbl = Label.new()
+	nm_lbl.text = "⚔️ %s (%s)" % [c_name, cls_name]
+	nm_lbl.add_theme_font_size_override("font_size", 12)
+	nm_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.6))
+	head_hb.add_child(nm_lbl)
+
+	var sp_spacer = Control.new()
+	sp_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head_hb.add_child(sp_spacer)
+
+	var rot_lbl = Label.new()
+	rot_lbl.text = "[Q]/[E] поворот"
+	rot_lbl.add_theme_font_size_override("font_size", 10)
+	rot_lbl.add_theme_color_override("font_color", Color(0.65, 0.68, 0.72))
+	head_hb.add_child(rot_lbl)
+
+	var mv_badge = Label.new()
+	mv_badge.text = "Шаг: %d/1" % (0 if u.moved else 1)
+	mv_badge.add_theme_font_size_override("font_size", 11)
+	mv_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if not u.moved else Color(0.6, 0.6, 0.6))
+	head_hb.add_child(mv_badge)
+
+	var atk_badge = Label.new()
+	atk_badge.text = "Атака: %d/1" % (0 if u.attacked else 1)
+	atk_badge.add_theme_font_size_override("font_size", 11)
+	atk_badge.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if not u.attacked else Color(0.6, 0.6, 0.6))
+	head_hb.add_child(atk_badge)
+
+	var cards_hb = HBoxContainer.new()
+	cards_hb.add_theme_constant_override("separation", 6)
+	skills_box.add_child(cards_hb)
+
+	var act_spent = (activations_left <= 0 and u.get("acts", 0) == 0)
+
 	if u.cls == "swordsman":
-		var b = Button.new()
-		b.text = "Толчок"
-		b.focus_mode = Control.FOCUS_NONE
-		b.pressed.connect(func():
+		cards_hb.add_child(_make_card("⚔️", "Удар мечом", "1 кл • Расбаланс", "", false, u.attacked or act_spent, func():
+			status.text = "Удар: клик по врагу на соседней клетке."
+		))
+		cards_hb.add_child(_make_card("🛡️", "Толчок", "Сдвиг врага на 1 кл", "1", shove_mode, u.attacked or act_spent, func():
 			shove_mode = not shove_mode
 			arrow_mode = false
-			status.text = "Толчок: клик по врагу рядом.")
-		skills_box.add_child(b)
+			heal_mode = false
+			casting = false
+			status.text = "Толчок: клик по врагу рядом." if shove_mode else "Толчок отменён."
+			_skills_ui()
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
 	elif u.cls == "archer":
-		var b = Button.new()
-		b.text = "Огненная стрела"
-		b.focus_mode = Control.FOCUS_NONE
-		b.pressed.connect(func():
+		cards_hb.add_child(_make_card("🏹", "Выстрел", "Дистанция: %d кл" % _ar(u), "", false, u.attacked or act_spent, func():
+			status.text = "Выстрел: клик по врагу в радиусе."
+		))
+		cards_hb.add_child(_make_card("🔥", "Огн. стрела", "Поджог клетки (2 р)", "1", arrow_mode, u.attacked, func():
 			arrow_mode = not arrow_mode
 			shove_mode = false
-			status.text = "Огненная стрела: клик по клетке в радиусе.")
-		skills_box.add_child(b)
-	elif u.cls == "assassin":
-		var l = Label.new()
-		l.text = "Проскользнуть: сквозь юнитов (QTE)"
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD
-		skills_box.add_child(l)
+			heal_mode = false
+			casting = false
+			status.text = "Огненная стрела: клик по клетке в радиусе." if arrow_mode else "Огненная стрела отменена."
+			_skills_ui()
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
 	elif u.cls == "mage":
-		var bh = Button.new()
-		bh.text = "Лечение (%d)" % u.get("heal_uses", 0)
-		bh.focus_mode = Control.FOCUS_NONE
-		bh.pressed.connect(func():
+		var h_uses = int(u.get("heal_uses", 0))
+		var f_uses = int(u.get("fire_uses", 0))
+		cards_hb.add_child(_make_card("💚", "Лечение", "Заряды: %d (дист. 4)" % h_uses, "1", heal_mode, h_uses <= 0 or act_spent, func():
 			heal_mode = not heal_mode
-			status.text = "Лечение: клик по своему в радиусе 4.")
-		skills_box.add_child(bh)
-		var bf = Button.new()
-		bf.text = "Огонь 3x3 (%d)" % u.get("fire_uses", 0)
-		bf.focus_mode = Control.FOCUS_NONE
-		bf.pressed.connect(_toggle_cast)
-		skills_box.add_child(bf)
+			shove_mode = false
+			arrow_mode = false
+			casting = false
+			status.text = "Лечение: клик по своему в радиусе 4." if heal_mode else "Лечение отменено."
+			_skills_ui()
+		))
+		cards_hb.add_child(_make_card("💥", "Огонь 3x3", "Заряды: %d (зона 3x3)" % f_uses, "2", casting, f_uses <= 0 or act_spent, func():
+			_toggle_cast()
+			_skills_ui()
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
 	elif u.cls == "halberd":
-		var l = Label.new()
-		l.text = "Дальность 2; бьёт подошедших вплотную"
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD
-		skills_box.add_child(l)
+		cards_hb.add_child(_make_card("⚔️", "Алебарда", "Дальность: 2 кл", "", false, u.attacked or act_spent, func():
+			status.text = "Удар: клик по врагу на 1-2 клетки."
+		))
+		cards_hb.add_child(_make_card("🪓", "Контроль", "Ответный удар + pin", "", false, false, func():
+			status.text = "Реакция: бьёт подошедших вплотную и сковывает."
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
+	elif u.cls == "assassin":
+		cards_hb.add_child(_make_card("🗡️", "Удар в спину", "Бонус со спины + метка", "", false, u.attacked or act_spent, func():
+			status.text = "Удар в спину: наносит метку цели."
+		))
+		cards_hb.add_child(_make_card("⚡", "Проскок", "Сквозь юнитов (QTE)", "", false, false, func():
+			status.text = "Проскользнуть: проход сквозь фигуры с QTE [Space]."
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
+	else:
+		cards_hb.add_child(_make_card("⚔️", "Атака", "Базовый удар", "", false, u.attacked or act_spent, func():
+			status.text = "Атака: клик по врагу."
+		))
+		cards_hb.add_child(_make_card("🏃", "Ход", "Дальность: %d кл" % _mv(u), "", false, u.moved or act_spent, func():
+			status.text = "Ход: клик по зелёной клетке."
+		))
+
+func _make_card(icon: String, title: String, desc: String, hotkey: String, is_active: bool, is_disabled: bool, on_click: Callable) -> Control:
+	var btn = Button.new()
+	btn.custom_minimum_size = Vector2(148, 70)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not is_disabled else Control.CURSOR_ARROW
+	btn.disabled = is_disabled
+
+	var base_style = StyleBoxFlat.new()
+	base_style.set_corner_radius_all(6)
+	base_style.content_margin_left = 6
+	base_style.content_margin_right = 6
+	base_style.content_margin_top = 4
+	base_style.content_margin_bottom = 4
+
+	if is_active:
+		base_style.bg_color = Color(0.20, 0.16, 0.06, 0.98)
+		base_style.border_color = Color(1.0, 0.85, 0.2, 1.0)
+		base_style.set_border_width_all(2)
+	elif is_disabled:
+		base_style.bg_color = Color(0.06, 0.07, 0.08, 0.6)
+		base_style.border_color = Color(0.3, 0.32, 0.35, 0.4)
+		base_style.set_border_width_all(1)
+	else:
+		base_style.bg_color = Color(0.10, 0.11, 0.14, 0.94)
+		base_style.border_color = Color(0.78, 0.48, 0.22, 0.8)
+		base_style.set_border_width_all(1)
+
+	btn.add_theme_stylebox_override("normal", base_style)
+
+	var hov_style = base_style.duplicate()
+	if not is_disabled and not is_active:
+		hov_style.bg_color = Color(0.16, 0.18, 0.22, 0.98)
+		hov_style.border_color = Color(1.0, 0.65, 0.3, 1.0)
+	btn.add_theme_stylebox_override("hover", hov_style)
+
+	var dis_style = base_style.duplicate()
+	dis_style.bg_color = Color(0.06, 0.07, 0.08, 0.6)
+	dis_style.border_color = Color(0.28, 0.30, 0.32, 0.4)
+	btn.add_theme_stylebox_override("disabled", dis_style)
+
+	var vb = VBoxContainer.new()
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_theme_constant_override("separation", 2)
+	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.add_child(vb)
+
+	var r1 = HBoxContainer.new()
+	r1.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(r1)
+
+	var l_title = Label.new()
+	l_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l_title.text = "%s %s" % [icon, title]
+	l_title.add_theme_font_size_override("font_size", 11)
+	l_title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.7) if not is_disabled else Color(0.55, 0.55, 0.55))
+	r1.add_child(l_title)
+
+	if hotkey != "":
+		var sp = Control.new()
+		sp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		r1.add_child(sp)
+
+		var hk = Label.new()
+		hk.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hk.text = "[%s]" % hotkey
+		hk.add_theme_font_size_override("font_size", 10)
+		hk.add_theme_color_override("font_color", Color(1.0, 0.8, 0.25) if not is_disabled else Color(0.45, 0.45, 0.45))
+		r1.add_child(hk)
+
+	var l_desc = Label.new()
+	l_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l_desc.text = desc
+	l_desc.add_theme_font_size_override("font_size", 10)
+	l_desc.add_theme_color_override("font_color", Color(0.75, 0.78, 0.82) if not is_disabled else Color(0.45, 0.45, 0.45))
+	vb.add_child(l_desc)
+
+	var l_st = Label.new()
+	l_st.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_active:
+		l_st.text = "● АКТИВНО"
+		l_st.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	elif is_disabled:
+		l_st.text = "Недоступно"
+		l_st.add_theme_color_override("font_color", Color(0.45, 0.45, 0.45))
+	else:
+		l_st.text = "Готово"
+		l_st.add_theme_color_override("font_color", Color(0.4, 0.85, 0.5))
+	l_st.add_theme_font_size_override("font_size", 9)
+	vb.add_child(l_st)
+
+	btn.pressed.connect(on_click)
+	return btn
 
 func _ai_fire(i, c):
 	var u = units3[i]
@@ -1952,6 +2768,21 @@ func _drop_loot_on_deaths():
 			for row in L.get("loot", []):
 				if randf() * 100.0 < float(row.get("chance", 0)):
 					Game.explore_ground.append({"item": str(row.get("item", "")), "pos": [u.cell.x + 0.5, u.cell.y + 0.5], "day": Game.day})
+func _sync_party_deaths():
+	var survivors = []
+	for m in Game.party:
+		if int(m.get("hp", 0)) <= 0:
+			if str(m.get("char", "")) == "hero":
+				m["hp"] = 1
+				survivors.append(m)
+			else:
+				Game.party_pool.append(m)
+				var nm = str(Game.resolve_char(str(m.get("char", ""))).get("name", str(m.get("char", ""))))
+				Game._notify("Тяжело ранен и выбыл: %s (ждет в таверне)" % nm)
+		else:
+			survivors.append(m)
+	Game.party = survivors
+
 func _on_stay_loc():
 	var pp = []
 	for u in units3:
@@ -1960,7 +2791,9 @@ func _on_stay_loc():
 				if str(m.get("char", "")) != "" and str(m.get("char", "")) == str(u.get("char", "")):
 					m["hp"] = u.hp
 					m["maxhp"] = u.maxhp
-			pp.append([str(u.get("char", "")), u.cell.x + 0.5, u.cell.y + 0.5])
+			if u.hp > 0:
+				pp.append([str(u.get("char", "")), u.cell.x + 0.5, u.cell.y + 0.5])
+	_sync_party_deaths()
 	Game.explore_return = {"loc": loc_id, "party_pos": pp}
 	Game.explore_ground = null
 	get_tree().change_scene_to_file("res://explore3d.tscn")
@@ -1972,6 +2805,7 @@ func _on_to_map():
 				if str(m.get("char", "")) != "" and str(m.get("char", "")) == str(u.get("char", "")):
 					m["hp"] = u.hp
 					m["maxhp"] = u.maxhp
+	_sync_party_deaths()
 	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
 

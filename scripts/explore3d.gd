@@ -47,6 +47,9 @@ var stamina_recovery: float = 28.0
 var stamina_cooldown: float = 0.0
 var is_sprinting: bool = false
 var stamina_bar: ProgressBar = null
+var airship: Node3D = null
+var airship_state: int = 0
+var deck_local_pos: Vector3 = Vector3.ZERO
 
 func _ready():
 	loc_id = Game.cur_loc
@@ -84,6 +87,8 @@ func _ready():
 			var p = ks[0].split(",")
 			sx = int(p[0]) * 8.0 + 4.0
 			sy = int(p[1]) * 8.0 + 4.0
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and airship == null:
+		_spawn_airship(sx + 4.0, sy + 1.0)
 	var ret = Game.explore_return
 	var any_alive = false
 	for m in Game.party:
@@ -217,7 +222,7 @@ func _setup_stamina_bar(ui: Control):
 	cont.add_child(stamina_bar)
 
 func _try_jump():
-	if party_n.size() == 0 or not is_grounded:
+	if party_n.size() == 0 or not is_grounded or airship_state == 2:
 		return
 	if stamina < stamina_jump_cost * 0.4:
 		return
@@ -241,8 +246,19 @@ func _setup_crosshair(ui: Control):
 func _update_hint():
 	if hint == null:
 		return
+	if airship_state == 2:
+		var spd = int(airship.get_speed_kmh()) if airship != null else 0
+		var alt = airship.get_altitude() if airship != null else 0.0
+		hint.text = "ШТУРВАЛ | %d км/ч | Выс: %.1f м | [W/S] Газ/Тормоз | [A/D] Руль | [Пробел/Shift] Высота | [E/ESC] Выйти" % [spd, alt]
+		return
 	var is_town = str(LOCS.get(loc_id, {}).get("type", "")) == "town"
 	var town_hint = " | N таверна" if is_town else ""
+	if airship_state == 1:
+		if fp_mode:
+			hint.text = "[Палуба: 1-е лицо] WASD идти | Shift бег | Пробел прыжок | V 3-е лицо | E действие%s" % town_hint
+		else:
+			hint.text = "Палуба дирижабля | WASD идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E действие%s" % town_hint
+		return
 	if fp_mode:
 		hint.text = "[1-е лицо] WASD идти | Shift бег | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
 	else:
@@ -264,10 +280,11 @@ func _set_fp_mode(enabled: bool):
 		cam_offset = Vector3.ZERO
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		
+		var target_y = 1.1 if airship_state == 2 else 1.4
 		cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		cam_tween.tween_property(self, "cam_dist", 0.0, 0.45)
 		cam_tween.tween_property(self, "pitch", 0.0, 0.45)
-		cam_tween.tween_property(self, "fp_cam_y", 1.4, 0.45)
+		cam_tween.tween_property(self, "fp_cam_y", target_y, 0.45)
 		cam_tween.finished.connect(func():
 			if fp_mode:
 				if party_n.size() > 0 and is_instance_valid(party_n[0].root):
@@ -282,8 +299,8 @@ func _set_fp_mode(enabled: bool):
 			crosshair.visible = false
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		
-		var target_dist = prev_cam_dist if prev_cam_dist > 1.5 else 4.0
-		var target_pitch = prev_pitch if prev_pitch < -0.1 else -0.9
+		var target_dist = 8.5 if airship_state == 2 else (prev_cam_dist if prev_cam_dist > 1.5 else 4.0)
+		var target_pitch = -0.32 if airship_state == 2 else (prev_pitch if prev_pitch < -0.1 else -0.9)
 		
 		cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		cam_tween.tween_property(self, "cam_dist", target_dist, 0.45)
@@ -570,7 +587,109 @@ func _interact_npc(i: int):
 	if dn != "":
 		_play_dlg(dn)
 
+func _spawn_airship(x: float, z: float):
+	if airship != null:
+		return
+	var airship_script = load("res://scripts/airship.gd")
+	if airship_script == null:
+		return
+	airship = airship_script.new()
+	airship.terrain = terrain
+	var gh = terrain.sample_h(x, z) if terrain != null else 0.0
+	airship.position = Vector3(x, gh + 1.8, z)
+	add_child(airship)
+
+func _board_airship():
+	if airship == null or party_n.size() == 0:
+		return
+	var lead = party_n[0].root
+	airship_state = 1
+	airship.current_state = airship.State.ON_DECK
+	target_point = null
+	current_path.clear()
+	var top_pos = airship.get_ladder_top_pos(lead.global_position)
+	deck_local_pos = airship.to_deck_local(top_pos)
+	deck_local_pos.x = clampf(deck_local_pos.x, airship.DECK_MIN_X, airship.DECK_MAX_X)
+	deck_local_pos.z = clampf(deck_local_pos.z, airship.DECK_MIN_Z, airship.DECK_MAX_Z)
+	deck_local_pos.y = airship.DECK_Y
+	lead.global_position = airship.to_global(deck_local_pos)
+	lead_y_offset = 0.0
+	lead_vy = 0.0
+	is_grounded = true
+	if hint != null:
+		hint.text = "Вы поднялись на борт дирижабля!"
+
+func _exit_airship_to_ground():
+	if airship == null or party_n.size() == 0:
+		return
+	if airship.get_altitude() > 1.2:
+		if hint != null:
+			hint.text = "Слишком высоко! Снизьтесь на дирижабле перед спуском."
+		return
+	var lead = party_n[0].root
+	var bot_pos = airship.get_ladder_bottom_pos(lead.global_position)
+	airship_state = 0
+	airship.current_state = airship.State.GROUNDED
+	target_point = null
+	current_path.clear()
+	var gh = terrain.sample_h(bot_pos.x, bot_pos.z) if terrain != null else 0.0
+	lead.global_position = Vector3(bot_pos.x, gh, bot_pos.z)
+	lead_y_offset = 0.0
+	lead_vy = 0.0
+	is_grounded = true
+	for k in range(1, party_n.size()):
+		var p_root = party_n[k].root
+		p_root.global_position = Vector3(bot_pos.x - 0.5 * float(k), gh, bot_pos.z)
+	_update_hint()
+
+func _enter_airship_helm():
+	if airship == null:
+		return
+	airship_state = 2
+	airship.current_state = airship.State.PILOTING
+	target_point = null
+	current_path.clear()
+	if not fp_mode:
+		cam_dist = maxf(cam_dist, 8.5)
+		pitch = -0.32
+	if hint != null:
+		hint.text = "Управление дирижаблем активировано!"
+
+func _exit_airship_helm():
+	if airship == null:
+		return
+	airship_state = 1
+	airship.current_state = airship.State.ON_DECK
+	deck_local_pos = airship.HELM_LOCAL + Vector3(0, 0, 1.0)
+	if party_n.size() > 0:
+		party_n[0].root.global_position = airship.to_global(deck_local_pos)
+	if not fp_mode:
+		cam_dist = 4.0
+		pitch = -0.7
+	if hint != null:
+		hint.text = "Вы отошли от штурвала."
+
 func _interact_ahead():
+	if airship != null:
+		if airship_state == 2:
+			_exit_airship_helm()
+			return
+		elif airship_state == 1:
+			var lead_pos = party_n[0].root.global_position if party_n.size() > 0 else Vector3.ZERO
+			var d_helm = (lead_pos - airship.get_helm_pos()).length()
+			var d_ladder = (lead_pos - airship.get_ladder_top_pos(lead_pos)).length()
+			if d_helm < 1.8:
+				_enter_airship_helm()
+				return
+			elif d_ladder < 1.8:
+				_exit_airship_to_ground()
+				return
+		elif airship_state == 0:
+			var lead_pos = party_n[0].root.global_position if party_n.size() > 0 else Vector3.ZERO
+			var d_ladder = (lead_pos - airship.get_ladder_bottom_pos(lead_pos)).length()
+			if d_ladder < 2.5:
+				_board_airship()
+				return
 	if _try_pick():
 		return
 	if party_n.size() == 0:
@@ -596,7 +715,132 @@ func _process(d):
 		return
 	var lead = party_n[0].root
 
-	# Vertical physics (Jump & Gravity)
+	if airship != null:
+		airship.process_flight(d)
+
+	if airship_state == 2:
+		# Lock leader to helm
+		var helm_p = airship.get_helm_pos()
+		lead.global_position = helm_p - airship.global_transform.basis.z * (-0.7)
+		lead.rotation.y = airship.rotation.y
+		
+		# Keep party members on deck
+		for k in range(1, party_n.size()):
+			var p_offset = Vector3(0.8 if k % 2 == 1 else -0.8, airship.DECK_Y, 0.5 + float(k) * 0.8)
+			party_n[k].root.global_position = airship.to_global(p_offset)
+			party_n[k].root.rotation.y = airship.rotation.y
+		
+		# Camera update in piloting mode
+		if cam != null:
+			if fp_mode:
+				lead.rotation.y = yaw
+				yaw_n.position = helm_p + Vector3(0, 1.1, 0)
+				yaw_n.rotation = Vector3(0, yaw, 0)
+				pitch_n.rotation = Vector3(pitch, 0, 0)
+				cam.position = Vector3(0, 0, 0)
+			else:
+				var target_cam_yaw = airship.rotation.y
+				yaw = lerp_angle(yaw, target_cam_yaw, d * 3.5)
+				yaw_n.position = airship.global_position + Vector3(0, 2.2, 0)
+				yaw_n.rotation = Vector3(0, yaw, 0)
+				pitch_n.rotation = Vector3(pitch, 0, 0)
+				cam.position = Vector3(0, 0, maxf(cam_dist, 8.5))
+		
+		if hint != null:
+			var spd = int(airship.get_speed_kmh())
+			var alt = airship.get_altitude()
+			hint.text = "ШТУРВАЛ | %d км/ч | Выс: %.1f м | [W/S] Газ/Тормоз | [A/D] Руль | [Пробел] Вверх | [Shift] Вниз | [E/ESC] Выйти" % [spd, alt]
+		return
+	elif airship_state == 1:
+		# Walking on deck mode
+		if not is_grounded:
+			lead_vy -= gravity * d
+			lead_y_offset += lead_vy * d
+			if lead_y_offset <= 0.0:
+				lead_y_offset = 0.0
+				lead_vy = 0.0
+				is_grounded = true
+
+		var mv = Vector2()
+		if not combat_lock:
+			if Input.is_key_pressed(KEY_W):
+				mv.y -= 1
+			if Input.is_key_pressed(KEY_S):
+				mv.y += 1
+			if Input.is_key_pressed(KEY_A):
+				mv.x -= 1
+			if Input.is_key_pressed(KEY_D):
+				mv.x += 1
+
+		var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not combat_lock
+		var is_moving = mv.length() > 0 and not combat_lock
+		is_sprinting = wants_sprint and is_moving and stamina > 2.0
+		var cur_speed = 6.2 if is_sprinting else 3.2
+		if is_sprinting:
+			stamina = maxf(0.0, stamina - stamina_drain * d)
+			stamina_cooldown = 0.4
+		else:
+			if stamina_cooldown > 0.0:
+				stamina_cooldown = maxf(0.0, stamina_cooldown - d)
+			elif stamina < max_stamina:
+				stamina = minf(max_stamina, stamina + stamina_recovery * d)
+
+		if stamina_bar != null:
+			stamina_bar.value = stamina
+			var parent_c = stamina_bar.get_parent() as Control
+			if parent_c != null:
+				var target_alpha = 0.0 if (stamina >= max_stamina - 0.5 and not wants_sprint) else 1.0
+				parent_c.modulate.a = move_toward(parent_c.modulate.a, target_alpha, d * 3.5)
+
+		if mv.length() > 0:
+			mv = mv.normalized()
+			var forward = Vector3(-sin(yaw), 0, -cos(yaw))
+			var right = Vector3(cos(yaw), 0, -sin(yaw))
+			var world_dir = (forward * (-mv.y) + right * mv.x).normalized()
+			var local_dir = airship.global_transform.basis.inverse() * world_dir
+			deck_local_pos.x += local_dir.x * cur_speed * d
+			deck_local_pos.z += local_dir.z * cur_speed * d
+			if not fp_mode:
+				lead.rotation.y = atan2(world_dir.x, world_dir.z)
+
+		deck_local_pos.x = clampf(deck_local_pos.x, airship.DECK_MIN_X, airship.DECK_MAX_X)
+		deck_local_pos.z = clampf(deck_local_pos.z, airship.DECK_MIN_Z, airship.DECK_MAX_Z)
+		deck_local_pos.y = airship.DECK_Y + lead_y_offset
+		lead.global_position = airship.to_global(deck_local_pos)
+		if fp_mode:
+			lead.rotation.y = yaw
+
+		for k in range(1, party_n.size()):
+			var p_offset = Vector3(0.7 if k % 2 == 1 else -0.7, airship.DECK_Y, clampf(deck_local_pos.z + 1.0 + float(k) * 0.6, airship.DECK_MIN_Z, airship.DECK_MAX_Z))
+			party_n[k].root.global_position = airship.to_global(p_offset)
+			party_n[k].root.rotation.y = lead.rotation.y
+
+		if cam != null:
+			yaw_n.position = lead.global_position + Vector3(0, fp_cam_y, 0) + cam_offset
+			yaw_n.rotation = Vector3(0, yaw, 0)
+			pitch_n.rotation = Vector3(pitch, 0, 0)
+			cam.position = Vector3(0, 0, cam_dist)
+
+		if hint != null:
+			var d_helm = (lead.global_position - airship.get_helm_pos()).length()
+			var d_ladder = (lead.global_position - airship.get_ladder_top_pos(lead.global_position)).length()
+			if d_helm < 1.8:
+				hint.text = "[E] Встать за штурвал (пилотирование) | [V] Вид"
+			elif d_ladder < 1.8:
+				if airship.get_altitude() <= 0.8:
+					hint.text = "[E] Спуститься по трапу на землю"
+				else:
+					hint.text = "Высота %.1f м! Снизьтесь на дирижабле перед спуском" % airship.get_altitude()
+			else:
+				var is_town = str(LOCS.get(loc_id, {}).get("type", "")) == "town"
+				var town_hint = " | N таверна" if is_town else ""
+				if fp_mode:
+					hint.text = "[Палуба: 1-е лицо] WASD идти | Shift бег | Пробел прыжок | V 3-е лицо%s" % town_hint
+				else:
+					hint.text = "Палуба дирижабля | WASD идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо%s" % town_hint
+		return
+
+	# Ground exploration mode (airship_state == 0)
 	if not is_grounded:
 		lead_vy -= gravity * d
 		lead_y_offset += lead_vy * d
@@ -700,6 +944,10 @@ func _process(d):
 				combat_lock = true
 				_try_combat()
 				break
+	if airship != null and not combat_lock and hint != null:
+		var d_lad = (lead.global_position - airship.get_ladder_bottom_pos(lead.global_position)).length()
+		if d_lad < 2.5:
+			hint.text = "[E] Подняться по трапу на дирижабль | " + hint.text
 
 func _can_occupy(pos: Vector3) -> bool:
 	var cx = int(floor(pos.x))
@@ -734,6 +982,8 @@ func _try_move(node, dir, step):
 		return
 
 func _try_combat():
+	if airship_state == 2 or (airship != null and airship.get_altitude() > 1.2):
+		return
 	if party_n.size() == 0:
 		return
 	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
@@ -868,6 +1118,9 @@ func _unhandled_input(ev):
 			_set_fp_mode(not fp_mode)
 			return
 		if ev.keycode == KEY_ESCAPE:
+			if airship_state == 2:
+				_exit_airship_helm()
+				return
 			if fp_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 				return
@@ -897,9 +1150,31 @@ func _unhandled_input(ev):
 			add_child(hub)
 			return
 		if ev.keycode == KEY_SPACE:
+			if airship_state == 2:
+				return
 			_try_jump()
 			return
 		if ev.keycode == KEY_E:
+			if airship != null:
+				if airship_state == 2:
+					_exit_airship_helm()
+					return
+				elif airship_state == 1:
+					var lead_pos = party_n[0].root.global_position if party_n.size() > 0 else Vector3.ZERO
+					var d_helm = (lead_pos - airship.get_helm_pos()).length()
+					var d_ladder = (lead_pos - airship.get_ladder_top_pos(lead_pos)).length()
+					if d_helm < 1.8:
+						_enter_airship_helm()
+						return
+					elif d_ladder < 1.8:
+						_exit_airship_to_ground()
+						return
+				elif airship_state == 0:
+					var lead_pos = party_n[0].root.global_position if party_n.size() > 0 else Vector3.ZERO
+					var d_ladder = (lead_pos - airship.get_ladder_bottom_pos(lead_pos)).length()
+					if d_ladder < 2.5:
+						_board_airship()
+						return
 			if fp_mode:
 				_interact_ahead()
 			else:
@@ -914,11 +1189,22 @@ func _unhandled_input(ev):
 				mid_drag = ev.pressed
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_UP:
 			if not fp_mode:
-				cam_dist = clampf(cam_dist - 0.5, 2, 8)
+				var min_d = 4.0 if airship_state == 2 else 2.0
+				var max_d = 16.0 if airship_state == 2 else 8.0
+				cam_dist = clampf(cam_dist - 0.5, min_d, max_d)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			if not fp_mode:
-				cam_dist = clampf(cam_dist + 0.5, 2, 8)
+				var min_d = 4.0 if airship_state == 2 else 2.0
+				var max_d = 16.0 if airship_state == 2 else 8.0
+				cam_dist = clampf(cam_dist + 0.5, min_d, max_d)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			if airship_state != 0:
+				if fp_mode:
+					if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+						Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+					else:
+						_interact_ahead()
+				return
 			if fp_mode:
 				if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -1001,6 +1287,9 @@ func _mat_defs():
 	return d
 
 func _obj(p, k):
+	if k == "airship":
+		_spawn_airship(p.x, p.z)
+		return
 	p.y = terrain.sample_h(p.x, p.z) if terrain != null else 0.0
 	var od = OBJ3.get(k, {})
 	var oimg = str(od.get("img", ""))

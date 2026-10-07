@@ -328,19 +328,19 @@ static func build_3d(parent: Node, terrain: Node = null) -> Node3D:
 		# Rock body
 		var m = MeshInstance3D.new()
 		var bm = BoxMesh.new()
-		bm.size = Vector3(1.0, h, 1.0)
+		bm.size = Vector3(1.0, h - 0.04, 1.0)
 		m.mesh = bm
 		m.material_override = rock_mat
-		m.position = Vector3(c.x + 0.5, gh + h * 0.5, c.y + 0.5)
+		m.position = Vector3(c.x + 0.5, gh + (h - 0.04) * 0.5, c.y + 0.5)
 		root.add_child(m)
 
 		# Top slab highlight
 		var slab = MeshInstance3D.new()
 		var sbm = BoxMesh.new()
-		sbm.size = Vector3(0.96, 0.08, 0.96)
+		sbm.size = Vector3(0.96, 0.04, 0.96)
 		slab.mesh = sbm
 		slab.material_override = plateau_mat
-		slab.position = Vector3(c.x + 0.5, gh + h + 0.04, c.y + 0.5)
+		slab.position = Vector3(c.x + 0.5, gh + h - 0.02, c.y + 0.5)
 		root.add_child(slab)
 
 	# 2. Build Stepped Ascending Columns (Square 1x1 Grid Cell Blocks)
@@ -351,19 +351,19 @@ static func build_3d(parent: Node, terrain: Node = null) -> Node3D:
 		# Stepped rock column block (1x1 grid cell pedestal)
 		var col_m = MeshInstance3D.new()
 		var bm = BoxMesh.new()
-		bm.size = Vector3(1.0, ch, 1.0)
+		bm.size = Vector3(1.0, ch - 0.04, 1.0)
 		col_m.mesh = bm
 		col_m.material_override = rock_mat
-		col_m.position = Vector3(c.x + 0.5, gh + ch * 0.5, c.y + 0.5)
+		col_m.position = Vector3(c.x + 0.5, gh + (ch - 0.04) * 0.5, c.y + 0.5)
 		root.add_child(col_m)
 
 		# Top step cell slab (identical to hill grid cells)
 		var cap = MeshInstance3D.new()
 		var sbm = BoxMesh.new()
-		sbm.size = Vector3(0.96, 0.08, 0.96)
+		sbm.size = Vector3(0.96, 0.04, 0.96)
 		cap.mesh = sbm
 		cap.material_override = plateau_mat
-		cap.position = Vector3(c.x + 0.5, gh + ch + 0.04, c.y + 0.5)
+		cap.position = Vector3(c.x + 0.5, gh + ch - 0.02, c.y + 0.5)
 		root.add_child(cap)
 
 	# 3. Build Bridge across canyon

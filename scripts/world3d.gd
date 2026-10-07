@@ -1157,13 +1157,14 @@ func _hl_quad(c, col):
 	mi.albedo_color = col
 	mi.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mi.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mi.render_priority = 3
 	st.set_material(mi)
 	m.mesh = st.commit()
 	hl_root.add_child(m)
 func _hl_pt(c, ix, iy, N):
 	var x = c.x + 0.05 + (0.9 * float(ix)) / N
 	var z = c.y + 0.05 + (0.9 * float(iy)) / N
-	var y = 0.03
+	var y = 0.045
 	if terrain != null:
 		y += terrain.sample_h(x, z)
 	y += ELEV.get(str(c.x) + "," + str(c.y), 0.0)
@@ -1174,7 +1175,7 @@ func _disc(c, col, rr, parent = null):
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var cx = c.x + 0.5
 	var cz = c.y + 0.5
-	var y_off = 0.06 if parent != null else 0.05
+	var y_off = 0.08 if parent != null else 0.06
 	var base = _h_at(cx, cz, c) + y_off
 	var S = 16
 	var prev = _disc_pt(cx, cz, rr, 0.0, c)
@@ -1190,6 +1191,7 @@ func _disc(c, col, rr, parent = null):
 	mi.albedo_color = col
 	mi.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mi.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mi.render_priority = 4
 	st.set_material(mi)
 	m.mesh = st.commit()
 	var p_node = parent if parent != null else hl_root
@@ -1197,7 +1199,7 @@ func _disc(c, col, rr, parent = null):
 func _disc_pt(cx, cz, rr, a, c):
 	var x = cx + cos(a) * rr
 	var z = cz + sin(a) * rr
-	return Vector3(x, _h_at(x, z, c) + 0.05, z)
+	return Vector3(x, _h_at(x, z, c) + 0.06, z)
 func _h_at(x, z, c):
 	var h = terrain.sample_h(x, z) if terrain != null else 0.0
 	return h + ELEV.get(str(c.x) + "," + str(c.y), 0.0)

@@ -27,6 +27,11 @@ var sun_light: DirectionalLight3D = null
 var world_env: Environment = null
 var combat_lock = false
 var npcs3 = []
+var fp_mode: bool = false
+var prev_cam_dist: float = 4.0
+var prev_pitch: float = -0.9
+var prev_cam_offset: Vector3 = Vector3.ZERO
+var crosshair: Control = null
 
 func _ready():
 	loc_id = Game.cur_loc
@@ -153,10 +158,61 @@ func _ready():
 	hint = Label.new()
 	hint.position = Vector2(10, 10)
 	ui.add_child(hint)
+	_update_hint()
+	_party_bar(ui)
+	_setup_crosshair(ui)
+
+func _exit_tree():
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+func _setup_crosshair(ui: Control):
+	crosshair = CenterContainer.new()
+	crosshair.set_anchors_preset(Control.PRESET_FULL_RECT)
+	crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crosshair.visible = false
+	ui.add_child(crosshair)
+	var dot = ColorRect.new()
+	dot.custom_minimum_size = Vector2(4, 4)
+	dot.color = Color(1.0, 1.0, 1.0, 0.75)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crosshair.add_child(dot)
+
+func _update_hint():
+	if hint == null:
+		return
 	var is_town = str(LOCS.get(loc_id, {}).get("type", "")) == "town"
 	var town_hint = " | N таверна" if is_town else ""
-	hint.text = "WASD/клик — идти | ПКМ камера | колесо зум | E подобрать | R привал | P отряд%s | M карта" % town_hint
-	_party_bar(ui)
+	if fp_mode:
+		hint.text = "[1-е лицо] WASD идти | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
+	else:
+		hint.text = "WASD/клик идти | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
+
+func _set_fp_mode(enabled: bool):
+	fp_mode = enabled
+	if fp_mode:
+		prev_cam_dist = cam_dist
+		prev_pitch = pitch
+		prev_cam_offset = cam_offset
+		cam_dist = 0.0
+		cam_offset = Vector3.ZERO
+		pitch = 0.0
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		if party_n.size() > 0 and is_instance_valid(party_n[0].root):
+			party_n[0].root.visible = false
+		if crosshair != null:
+			crosshair.visible = true
+		target_point = null
+		current_path.clear()
+	else:
+		cam_dist = prev_cam_dist if prev_cam_dist > 0.5 else 4.0
+		pitch = prev_pitch if prev_pitch < -0.1 else -0.9
+		cam_offset = prev_cam_offset
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if party_n.size() > 0 and is_instance_valid(party_n[0].root):
+			party_n[0].root.visible = true
+		if crosshair != null:
+			crosshair.visible = false
+	_update_hint()
 
 func _party_bar(ui):
 	var bar = HBoxContainer.new()
@@ -387,7 +443,12 @@ func _spawn_npc(np):
 func _on_npc_click(_cam, ev, _p2, _n, _si, i):
 	if not (ev is InputEventMouseButton) or not ev.pressed or ev.button_index != MOUSE_BUTTON_LEFT:
 		return
-	if party_n.size() == 0:
+	if fp_mode:
+		return
+	_interact_npc(i)
+
+func _interact_npc(i: int):
+	if party_n.size() == 0 or i < 0 or i >= npcs3.size():
 		return
 	var lead = party_n[0].root
 	var npc_root = npcs3[i].root
@@ -395,6 +456,7 @@ func _on_npc_click(_cam, ev, _p2, _n, _si, i):
 		if hint != null:
 			hint.text = "Слишком далеко от %s" % str(npcs3[i].cid)
 		return
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var cid = npcs3[i]["cid"]
 	var cd = CHARS.get(cid, {})
 	if cd.has("shop"):
@@ -407,6 +469,26 @@ func _on_npc_click(_cam, ev, _p2, _n, _si, i):
 		dn = str(cd.get("dlg", ""))
 	if dn != "":
 		_play_dlg(dn)
+
+func _interact_ahead():
+	if _try_pick():
+		return
+	if party_n.size() == 0:
+		return
+	var lead = party_n[0].root
+	var best_i = -1
+	var min_dist = 3.0
+	for i in npcs3.size():
+		var nr = npcs3[i].root
+		var d = (lead.position - nr.position).length()
+		if d < min_dist:
+			var to_npc = (nr.position - lead.position).normalized()
+			var fwd = Vector3(-sin(yaw), 0, -cos(yaw))
+			if fwd.dot(to_npc) > 0.2:
+				min_dist = d
+				best_i = i
+	if best_i >= 0:
+		_interact_npc(best_i)
 
 func _process(d):
 	DayNight.update(d, float(Game.hour), world_env, sun_light)
@@ -430,7 +512,8 @@ func _process(d):
 		var right = Vector3(cos(yaw), 0, -sin(yaw))
 		var dir = (forward * (-mv.y) + right * mv.x).normalized()
 		_try_move(lead, dir, speed * d)
-		lead.rotation.y = atan2(dir.x, dir.z)
+		if not fp_mode:
+			lead.rotation.y = atan2(dir.x, dir.z)
 	elif current_path.size() > 0 or target_point != null:
 		var target_pos = target_point
 		if current_path.size() > 0:
@@ -467,10 +550,17 @@ func _process(d):
 	for pn in party_n:
 		pn.root.position.y = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
 	if cam != null:
-		yaw_n.position = Vector3(lead.position.x, 0, lead.position.z) + cam_offset
-		yaw_n.rotation = Vector3(0, yaw, 0)
-		pitch_n.rotation = Vector3(pitch, 0, 0)
-		cam.position = Vector3(0, 0, cam_dist)
+		if fp_mode:
+			lead.rotation.y = yaw
+			yaw_n.position = lead.position + Vector3(0, 1.4, 0)
+			yaw_n.rotation = Vector3(0, yaw, 0)
+			pitch_n.rotation = Vector3(pitch, 0, 0)
+			cam.position = Vector3.ZERO
+		else:
+			yaw_n.position = lead.position + cam_offset
+			yaw_n.rotation = Vector3(0, yaw, 0)
+			pitch_n.rotation = Vector3(pitch, 0, 0)
+			cam.position = Vector3(0, 0, cam_dist)
 	if not combat_lock:
 		for en in enemies:
 			if (en.root.position - lead.position).length() < 1.4:
@@ -524,6 +614,7 @@ func _try_combat():
 	_start_combat()
 
 func _start_combat():
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var pts = []
 	for pn in party_n:
 		pts.append([pn.root.position.x, pn.root.position.z])
@@ -589,16 +680,16 @@ func _find_path(from: Vector2i, to: Vector2i) -> Array:
 	path.reverse()
 	return path
 
-func _try_pick():
+func _try_pick() -> bool:
 	if party_n.size() == 0:
-		return
+		return false
 	var lp = party_n[0].root.position
 	var ls = Game.loc_state_get(loc_id)
 	var arr = ls.get("ground", [])
 	for i in range(arr.size() - 1, -1, -1):
 		var gg = arr[i]
 		var gp = Vector3(float(gg["pos"][0]), 0, float(gg["pos"][1]))
-		if (gp - lp).length() < 1.2:
+		if (gp - lp).length() < 1.4:
 			Game.add_item(str(gg.get("item", "")))
 			arr.remove_at(i)
 			if i < ground.size() and is_instance_valid(ground[i].root):
@@ -607,7 +698,8 @@ func _try_pick():
 			if hint != null:
 				hint.text = "Подобрано: %s" % str(gg.get("item", ""))
 			Game.autosave()
-			return
+			return true
+	return false
 
 func _play_dlg(dn):
 	if dn == "":
@@ -615,46 +707,74 @@ func _play_dlg(dn):
 	var data = DataLoader.load_json("res://data/dialogs/%s.json" % dn, {})
 	if data.is_empty():
 		return
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS
 	add_child(d)
 	await d.play(data)
+	if fp_mode:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _unhandled_input(ev):
 	if ev is InputEventKey and ev.pressed:
+		if ev.keycode == KEY_V:
+			_set_fp_mode(not fp_mode)
+			return
+		if ev.keycode == KEY_ESCAPE:
+			if fp_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+				return
 		if ev.keycode == KEY_M:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			Game.clear_transient_state()
 			get_tree().change_scene_to_file("res://overworld3d.tscn")
 			return
 		if ev.keycode == KEY_R:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var c = load("res://scripts/camp_ui.gd").new()
 			add_child(c)
 			return
 		if ev.keycode == KEY_P:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var pu = load("res://scripts/party_ui.gd").new()
 			add_child(pu)
 			return
 		if ev.keycode == KEY_N and str(LOCS.get(loc_id, {}).get("type", "")) == "town":
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var tv = load("res://scripts/tavern.gd").new()
 			add_child(tv)
 			return
 		if ev.keycode == KEY_I:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var hub = load("res://scripts/game_hub.gd").new()
 			add_child(hub)
 			return
 		if ev.keycode == KEY_E:
-			_try_pick()
+			if fp_mode:
+				_interact_ahead()
+			else:
+				_try_pick()
 			return
 	if ev is InputEventMouseButton:
 		if ev.button_index == MOUSE_BUTTON_RIGHT:
-			right_drag = ev.pressed
+			if not fp_mode:
+				right_drag = ev.pressed
 		elif ev.button_index == MOUSE_BUTTON_MIDDLE:
-			mid_drag = ev.pressed
+			if not fp_mode:
+				mid_drag = ev.pressed
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_UP:
-			cam_dist = clampf(cam_dist - 0.5, 2, 8)
+			if not fp_mode:
+				cam_dist = clampf(cam_dist - 0.5, 2, 8)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			cam_dist = clampf(cam_dist + 0.5, 2, 8)
+			if not fp_mode:
+				cam_dist = clampf(cam_dist + 0.5, 2, 8)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			if fp_mode:
+				if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+				else:
+					_interact_ahead()
+				return
 			var p = _ray_ground(ev.position)
 			if p != null and party_n.size() > 0:
 				var lead = party_n[0].root
@@ -686,7 +806,10 @@ func _unhandled_input(ev):
 					if hint != null:
 						hint.text = "Сюда нельзя добраться!"
 	elif ev is InputEventMouseMotion:
-		if right_drag:
+		if fp_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			yaw -= ev.relative.x * 0.003
+			pitch = clampf(pitch - ev.relative.y * 0.003, -1.4, 1.4)
+		elif right_drag:
 			yaw -= ev.relative.x * 0.005
 			pitch = clampf(pitch - ev.relative.y * 0.005, -1.45, -0.15)
 		elif mid_drag:

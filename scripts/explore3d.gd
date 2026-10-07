@@ -1,4 +1,5 @@
 extends Node3D
+const CliffBridge = preload("res://scripts/cliff_bridge.gd")
 var terrain
 var LOCS = {}
 var OBJ3 = {}

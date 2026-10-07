@@ -1,4 +1,5 @@
 extends Node3D
+const CliffBridge = preload("res://scripts/cliff_bridge.gd")
 var _busy_time = 0.0
 var _enemy_phase_running = false
 var yaw_n: Node3D
@@ -170,7 +171,7 @@ func _p(c):
 func _th(c):
 	var h = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(c):
-		if selected_idx >= 0 and selected_idx < units3.size() and units3[selected_idx].root.position.y < 1.2:
+		if selected >= 0 and selected < units3.size() and units3[selected].root.position.y < 1.2:
 			return h
 	return h + ELEV.get(str(c.x) + "," + str(c.y), 0.0)
 func _mat_defs():
@@ -2220,8 +2221,8 @@ func _apply_explore():
 func _can_step(a, b):
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and (CliffBridge.is_bridge_cell(a) or CliffBridge.is_bridge_cell(b)):
 		var u_y = 0.0
-		if selected_idx >= 0 and selected_idx < units3.size():
-			u_y = units3[selected_idx].root.position.y
+		if selected >= 0 and selected < units3.size():
+			u_y = units3[selected].root.position.y
 		if not CliffBridge.combat_can_step(a, b, u_y):
 			return false
 	var ea = ELEV.get(str(a.x) + "," + str(a.y), 0.0)

@@ -169,6 +169,9 @@ func _p(c):
 	return Vector3(c.x + 0.5, 0, c.y + 0.5)
 func _th(c):
 	var h = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(c):
+		if selected_idx >= 0 and selected_idx < units3.size() and units3[selected_idx].root.position.y < 1.2:
+			return h
 	return h + ELEV.get(str(c.x) + "," + str(c.y), 0.0)
 func _mat_defs():
 	var m = DataLoader.load_json("res://data/materials.json")
@@ -192,6 +195,8 @@ func _build():
 	for ek in camp.get("elev", {}):
 		ELEV[ek] = float(camp["elev"][ek])
 	climb = {}
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		CliffBridge.setup_for_combat(self)
 	_render_elev()
 	for o in camp.get("objects", []):
 		var okk = o.get("k", "rock")
@@ -1226,7 +1231,11 @@ func _move_to(i, c):
 	u.cell = c
 	u.moved = true
 	var tw = create_tween()
-	tw.tween_property(u.root, "position", _p(c) + Vector3(0, _th(c), 0), 0.25)
+	var target_y = _th(c)
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(c):
+		if u.root.position.y < 1.2:
+			target_y = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
+	tw.tween_property(u.root, "position", _p(c) + Vector3(0, target_y, 0), 0.25)
 	if _fire_at(c):
 		u.burn = 1
 		_float_text(u.root.position, "ГОРИТ!", Color(1, 0.5, 0.1))
@@ -2209,6 +2218,12 @@ func _apply_explore():
 		t0[0].cell = c
 		t0[0].root.position = _p(c) + Vector3(0, _th(c), 0)
 func _can_step(a, b):
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and (CliffBridge.is_bridge_cell(a) or CliffBridge.is_bridge_cell(b)):
+		var u_y = 0.0
+		if selected_idx >= 0 and selected_idx < units3.size():
+			u_y = units3[selected_idx].root.position.y
+		if not CliffBridge.combat_can_step(a, b, u_y):
+			return false
 	var ea = ELEV.get(str(a.x) + "," + str(a.y), 0.0)
 	var eb = ELEV.get(str(b.x) + "," + str(b.y), 0.0)
 	if ea == 0.0 and eb == 0.0:
@@ -2230,6 +2245,8 @@ func _render_elev():
 		var parts = kk.split(",")
 		var cx = int(parts[0])
 		var cy = int(parts[1])
+		if (loc_id == "bandit_road" or loc_id == "road_bandits") and (CliffBridge.is_hill_cell(Vector2i(cx, cy)) or CliffBridge.is_bridge_cell(Vector2i(cx, cy)) or CliffBridge.is_column_cell(Vector2i(cx, cy))):
+			continue
 		var h = ELEV[kk]
 		var m = MeshInstance3D.new()
 		var bm = BoxMesh.new()

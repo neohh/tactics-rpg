@@ -87,8 +87,10 @@ func _ready():
 			var p = ks[0].split(",")
 			sx = int(p[0]) * 8.0 + 4.0
 			sy = int(p[1]) * 8.0 + 4.0
-	if (loc_id == "bandit_road" or loc_id == "road_bandits") and airship == null:
-		_spawn_airship(sx + 4.0, sy + 1.0)
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		CliffBridge.build_3d(self, terrain)
+		if airship == null:
+			_spawn_airship(13.5, 8.5)
 	var ret = Game.explore_return
 	var any_alive = false
 	for m in Game.party:
@@ -927,10 +929,18 @@ func _process(d):
 				_try_move(cur, dir2, step)
 				cur.rotation.y = atan2(dir2.x, dir2.z)
 	var ground_h = terrain.sample_h(lead.position.x, lead.position.z) if terrain != null else 0.0
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		ground_h = CliffBridge.get_surface_y(lead.position.x, lead.position.z, lead.position.y, terrain)
+		var c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
+		if CliffBridge.is_bridge_cell(c) and lead.position.y < 1.4:
+			lead_y_offset = minf(lead_y_offset, 0.7)
 	lead.position.y = ground_h + lead_y_offset
 	for k in range(1, party_n.size()):
 		var pn = party_n[k]
-		pn.root.position.y = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
+		var ph = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
+		if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+			ph = CliffBridge.get_surface_y(pn.root.position.x, pn.root.position.z, pn.root.position.y, terrain)
+		pn.root.position.y = ph
 	if cam != null:
 		if fp_mode:
 			lead.rotation.y = yaw
@@ -949,13 +959,16 @@ func _process(d):
 		if d_lad < 2.5:
 			hint.text = "[E] Подняться по трапу на дирижабль | " + hint.text
 
-func _can_occupy(pos: Vector3) -> bool:
+func _can_occupy(pos: Vector3, from_pos: Vector3 = Vector3.ZERO) -> bool:
 	var cx = int(floor(pos.x))
 	var cz = int(floor(pos.z))
 	if terrain != null and not terrain.has_cell(cx, cz):
 		return false
 	if objects3.has(Vector2i(cx, cz)):
 		return false
+	if from_pos != Vector3.ZERO and (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		if not CliffBridge.can_step_height(from_pos.x, from_pos.z, pos.x, pos.z, from_pos.y, terrain):
+			return false
 	return true
 
 func _try_move(node, dir, step):
@@ -965,19 +978,24 @@ func _try_move(node, dir, step):
 	np.x = clampf(np.x, 0.3, gw - 0.3)
 	np.z = clampf(np.z, 0.3, gh - 0.3)
 	
-	if _can_occupy(np):
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and node.position.y > 1.2:
+		var c = Vector2i(int(floor(np.x)), int(floor(np.z)))
+		if CliffBridge.is_bridge_cell(c):
+			np.z = clampf(np.z, 5.15, 5.85)
+	
+	if _can_occupy(np, node.position):
 		node.position = np
 		return
 	
 	# Sliding attempt along X
 	var npx = Vector3(np.x, node.position.y, node.position.z)
-	if _can_occupy(npx):
+	if _can_occupy(npx, node.position):
 		node.position = npx
 		return
 		
 	# Sliding attempt along Z
 	var npz = Vector3(node.position.x, node.position.y, np.z)
-	if _can_occupy(npz):
+	if _can_occupy(npz, node.position):
 		node.position = npz
 		return
 

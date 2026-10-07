@@ -37,6 +37,7 @@ var fp_cam_y: float = 0.0
 var cam_tween: Tween = null
 var lead_vy: float = 0.0
 var lead_y_offset: float = 0.0
+var lead_base_y: float = 0.0
 var is_grounded: bool = true
 var jump_force: float = 5.2
 var gravity: float = 16.0
@@ -114,7 +115,11 @@ func _ready():
 					pos = Vector2(float(pp[1]), float(pp[2]))
 		root.position = Vector3(pos.x, 0, pos.y)
 		root.position.y = terrain.sample_h(root.position.x, root.position.z) if terrain != null else 0.0
-		party_n.append({"root": root, "m": m})
+		if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+			root.position.y = CliffBridge.get_surface_y(root.position.x, root.position.z, root.position.y, terrain)
+		party_n.append({"root": root, "m": m, "base_y": root.position.y})
+		if i == 0:
+			lead_base_y = root.position.y
 		i += 1
 	var ls = Game.loc_state_get(loc_id)
 	var cd = int(ls.get("cleared_day", -999))
@@ -935,13 +940,18 @@ func _process(d):
 		var c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
 		if CliffBridge.is_bridge_cell(c) and lead.position.y < 1.4:
 			lead_y_offset = minf(lead_y_offset, 0.7)
-	lead.position.y = ground_h + lead_y_offset
+	var vert_speed = maxf(cur_speed * 1.6, 5.5)
+	lead_base_y = move_toward(lead_base_y, ground_h, vert_speed * d)
+	lead.position.y = lead_base_y + lead_y_offset
 	for k in range(1, party_n.size()):
 		var pn = party_n[k]
 		var ph = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
 		if (loc_id == "bandit_road" or loc_id == "road_bandits"):
 			ph = CliffBridge.get_surface_y(pn.root.position.x, pn.root.position.z, pn.root.position.y, terrain)
-		pn.root.position.y = ph
+		var cur_by = float(pn.get("base_y", pn.root.position.y))
+		cur_by = move_toward(cur_by, ph, vert_speed * d)
+		pn["base_y"] = cur_by
+		pn.root.position.y = cur_by
 	if cam != null:
 		if fp_mode:
 			lead.rotation.y = yaw
@@ -1062,6 +1072,12 @@ func _is_free_cell(x, y):
 func _find_path(from: Vector2i, to: Vector2i) -> Array:
 	if from == to:
 		return [to]
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		var cur_y = party_n[0].root.position.y if party_n.size() > 0 else 0.0
+		var target_y = target_point.y if target_point != null else 0.0
+		var gw = terrain.GW if terrain != null else 16
+		var gh = terrain.GH if terrain != null else 10
+		return CliffBridge.find_path_3d(from, cur_y, to, target_y, gw, gh, _is_free_cell)
 	var gw = terrain.GW if terrain != null else 8
 	var gh = terrain.GH if terrain != null else 6
 	var visited = {from: true}
@@ -1251,10 +1267,10 @@ func _unhandled_input(ev):
 					if best_adj != null:
 						dest_c = best_adj
 				
+				target_point = p
 				var path = _find_path(from_c, dest_c)
 				if path.size() > 0 or from_c == dest_c:
 					current_path = path
-					target_point = p
 				else:
 					target_point = null
 					current_path.clear()
@@ -1282,6 +1298,10 @@ func _ray_ground(m):
 	var dir = c3.project_ray_normal(m)
 	if abs(dir.y) < 0.0001:
 		return null
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		var p_surf = CliffBridge.raycast_surface(from, dir, terrain)
+		if p_surf != null:
+			return p_surf
 	var t = -from.y / dir.y
 	if t < 0:
 		return null

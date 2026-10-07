@@ -76,10 +76,222 @@ static func can_step_height(from_x: float, from_z: float, to_x: float, to_z: flo
 	# Upward step allowed up to 0.85m (allows stepping onto columns)
 	if diff > 0.85:
 		return false
-	# Downward drop allowed up to 3.0m
-	if diff < -3.0:
+	# Downward drop allowed up to 0.85m (allows stepping down columns, blocks jumping off 2.4m cliffs)
+	if diff < -0.85:
 		return false
 	return true
+
+# Raycast from camera to detect elevated surfaces (hills, columns, bridge)
+static func raycast_surface(from: Vector3, dir: Vector3, terrain: Node = null) -> Variant:
+	if abs(dir.y) < 0.0001:
+		return null
+
+	var best_t = INF
+	var best_pt = null
+
+	var surfaces = [
+		{"y": HILL_HEIGHT, "min_x": 7.0, "max_x": 9.0, "min_z": 4.0, "max_z": 7.0},
+		{"y": HILL_HEIGHT, "min_x": 11.0, "max_x": 13.0, "min_z": 4.0, "max_z": 7.0},
+		{"y": BRIDGE_HEIGHT, "min_x": 8.8, "max_x": 11.2, "min_z": 4.8, "max_z": 6.2},
+		{"y": 0.8, "min_x": 6.0, "max_x": 7.0, "min_z": 4.0, "max_z": 5.0},
+		{"y": 1.6, "min_x": 6.0, "max_x": 7.0, "min_z": 5.0, "max_z": 6.0},
+		{"y": 1.6, "min_x": 13.0, "max_x": 14.0, "min_z": 6.0, "max_z": 7.0},
+		{"y": 0.8, "min_x": 13.0, "max_x": 14.0, "min_z": 7.0, "max_z": 8.0}
+	]
+
+	for s in surfaces:
+		var t = (s["y"] - from.y) / dir.y
+		if t > 0 and t < best_t:
+			var p = from + dir * t
+			if p.x >= s["min_x"] and p.x <= s["max_x"] and p.z >= s["min_z"] and p.z <= s["max_z"]:
+				best_t = t
+				best_pt = p
+
+	# Ground plane (y = 0.0)
+	var t_ground = -from.y / dir.y
+	if t_ground > 0 and t_ground < best_t:
+		var p_ground = from + dir * t_ground
+		if terrain == null or not terrain.has_method("has_cell") or terrain.has_cell(int(floor(p_ground.x)), int(floor(p_ground.z))):
+			var c = Vector2i(int(floor(p_ground.x)), int(floor(p_ground.z)))
+			if not is_hill_cell(c) and not is_column_cell(c):
+				best_t = t_ground
+				best_pt = p_ground
+
+	return best_pt
+
+# Multi-height pathfinding: returns array of Vector2i cells from (from_c) to (to_c)
+static func find_path_3d(from_c: Vector2i, from_y: float, to_c: Vector2i, to_y: float, gw: int, gh: int, is_free_fn: Callable) -> Array:
+	if from_c == to_c:
+		return [to_c]
+
+	var start_layer = 1 if (from_y >= 1.2 or is_hill_cell(from_c) or from_c == Vector2i(6, 5) or from_c == Vector2i(13, 6)) else 0
+	var target_layer = 1 if (to_y >= 1.2 or is_hill_cell(to_c) or to_c == Vector2i(6, 5) or to_c == Vector2i(13, 6)) else 0
+
+	var start_state = Vector3i(from_c.x, from_c.y, start_layer)
+	var visited = {start_state: true}
+	var parent = {}
+	var q: Array = [start_state]
+	var found = false
+	var end_state = null
+
+	while q.size() > 0:
+		var cur = q.pop_front()
+		if cur.x == to_c.x and cur.y == to_c.y and cur.z == target_layer:
+			found = true
+			end_state = cur
+			break
+
+		for nxt in _get_neighbors_3d(cur):
+			if nxt.x < 0 or nxt.y < 0 or nxt.x >= gw or nxt.y >= gh:
+				continue
+			if visited.has(nxt):
+				continue
+			if not is_free_fn.call(nxt.x, nxt.y):
+				continue
+			visited[nxt] = true
+			parent[nxt] = cur
+			q.append(nxt)
+
+	if not found:
+		return []
+
+	var path: Array = []
+	var curr = end_state
+	while curr != start_state:
+		path.append(Vector2i(curr.x, curr.y))
+		curr = parent[curr]
+	path.reverse()
+	return path
+
+static func _get_neighbors_3d(cur: Vector3i) -> Array:
+	var res: Array = []
+	var c = Vector2i(cur.x, cur.y)
+	var layer = cur.z
+
+	if layer == 0:
+		# Layer 0 (Ground level, Y < 1.2)
+		if c == Vector2i(6, 4):
+			# Col 1: can step down to ground or step up to Col 2 (layer 1)
+			res.append(Vector3i(6, 3, 0))
+			res.append(Vector3i(5, 4, 0))
+			res.append(Vector3i(6, 5, 1))
+		elif c == Vector2i(13, 7):
+			# Col 4: can step down to ground or step up to Col 3 (layer 1)
+			res.append(Vector3i(13, 8, 0))
+			res.append(Vector3i(14, 7, 0))
+			res.append(Vector3i(13, 6, 1))
+		elif c == Vector2i(9, 5):
+			# Underpass under bridge
+			res.append(Vector3i(9, 4, 0))
+			res.append(Vector3i(9, 6, 0))
+			res.append(Vector3i(10, 5, 0))
+		elif c == Vector2i(10, 5):
+			# Underpass under bridge
+			res.append(Vector3i(10, 4, 0))
+			res.append(Vector3i(10, 6, 0))
+			res.append(Vector3i(9, 5, 0))
+		else:
+			# Open ground
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nc = c + d
+				if nc == Vector2i(6, 4):
+					if c == Vector2i(6, 3) or c == Vector2i(5, 4):
+						res.append(Vector3i(nc.x, nc.y, 0))
+				elif nc == Vector2i(13, 7):
+					if c == Vector2i(13, 8) or c == Vector2i(14, 7):
+						res.append(Vector3i(nc.x, nc.y, 0))
+				elif nc == Vector2i(9, 5):
+					if c == Vector2i(9, 4) or c == Vector2i(9, 6):
+						res.append(Vector3i(nc.x, nc.y, 0))
+				elif nc == Vector2i(10, 5):
+					if c == Vector2i(10, 4) or c == Vector2i(10, 6):
+						res.append(Vector3i(nc.x, nc.y, 0))
+				elif not is_hill_cell(nc) and not is_column_cell(nc) and not is_bridge_cell(nc):
+					res.append(Vector3i(nc.x, nc.y, 0))
+	else:
+		# Layer 1 (Elevated level, Y >= 1.2)
+		if c == Vector2i(6, 5):
+			# Col 2: can step down to Col 1 (layer 0) or step up to Hill 1 (layer 1)
+			res.append(Vector3i(6, 4, 0))
+			res.append(Vector3i(7, 5, 1))
+		elif c == Vector2i(13, 6):
+			# Col 3: can step down to Col 4 (layer 0) or step up to Hill 2 (layer 1)
+			res.append(Vector3i(13, 7, 0))
+			res.append(Vector3i(12, 6, 1))
+		elif c == Vector2i(9, 5):
+			# Bridge deck
+			res.append(Vector3i(8, 5, 1))
+			res.append(Vector3i(10, 5, 1))
+		elif c == Vector2i(10, 5):
+			# Bridge deck
+			res.append(Vector3i(9, 5, 1))
+			res.append(Vector3i(11, 5, 1))
+		elif is_hill1_cell(c):
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nc = c + d
+				if is_hill1_cell(nc):
+					res.append(Vector3i(nc.x, nc.y, 1))
+				elif c == Vector2i(7, 5) and nc == Vector2i(6, 5):
+					res.append(Vector3i(6, 5, 1))
+				elif c == Vector2i(8, 5) and nc == Vector2i(9, 5):
+					res.append(Vector3i(9, 5, 1))
+		elif is_hill2_cell(c):
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nc = c + d
+				if is_hill2_cell(nc):
+					res.append(Vector3i(nc.x, nc.y, 1))
+				elif c == Vector2i(12, 6) and nc == Vector2i(13, 6):
+					res.append(Vector3i(13, 6, 1))
+				elif c == Vector2i(11, 5) and nc == Vector2i(10, 5):
+					res.append(Vector3i(10, 5, 1))
+
+	return res
+
+# Multi-height pathfinding step validation
+static func is_valid_path_step(a: Vector2i, b: Vector2i) -> bool:
+	if abs(a.x - b.x) + abs(a.y - b.y) != 1:
+		return false
+
+	# 1. Intra-hill movements (within Hill 1 or within Hill 2)
+	if (is_hill1_cell(a) and is_hill1_cell(b)) or (is_hill2_cell(a) and is_hill2_cell(b)):
+		return true
+
+	# 2. Bridge deck span (Hill 1 <-> Bridge <-> Hill 2 at Y = 5)
+	if (a == Vector2i(8, 5) and b == Vector2i(9, 5)) or (b == Vector2i(8, 5) and a == Vector2i(9, 5)):
+		return true
+	if (a == Vector2i(9, 5) and b == Vector2i(10, 5)) or (b == Vector2i(9, 5) and a == Vector2i(10, 5)):
+		return true
+	if (a == Vector2i(10, 5) and b == Vector2i(11, 5)) or (b == Vector2i(10, 5) and a == Vector2i(11, 5)):
+		return true
+
+	# 3. Underpass under bridge (Ground road north-south at X = 9 and X = 10)
+	if (a.x == 9 and b.x == 9) and ((a.y == 4 and b.y == 5) or (a.y == 5 and b.y == 4) or (a.y == 5 and b.y == 6) or (a.y == 6 and b.y == 5)):
+		return true
+	if (a.x == 10 and b.x == 10) and ((a.y == 4 and b.y == 5) or (a.y == 5 and b.y == 4) or (a.y == 5 and b.y == 6) or (a.y == 6 and b.y == 5)):
+		return true
+
+	# 4. West Stepped Columns (Ascent):
+	if (a == Vector2i(6, 4) and (b == Vector2i(6, 3) or b == Vector2i(5, 4))) or (b == Vector2i(6, 4) and (a == Vector2i(6, 3) or a == Vector2i(5, 4))):
+		return true
+	if (a == Vector2i(6, 4) and b == Vector2i(6, 5)) or (b == Vector2i(6, 4) and a == Vector2i(6, 5)):
+		return true
+	if (a == Vector2i(6, 5) and b == Vector2i(7, 5)) or (b == Vector2i(6, 5) and a == Vector2i(7, 5)):
+		return true
+
+	# 5. East Stepped Columns (Descent):
+	if (a == Vector2i(12, 6) and b == Vector2i(13, 6)) or (b == Vector2i(12, 6) and a == Vector2i(13, 6)):
+		return true
+	if (a == Vector2i(13, 6) and b == Vector2i(13, 7)) or (b == Vector2i(13, 6) and a == Vector2i(13, 7)):
+		return true
+	if (a == Vector2i(13, 7) and (b == Vector2i(13, 8) or b == Vector2i(14, 7))) or (b == Vector2i(13, 7) and (a == Vector2i(13, 8) or a == Vector2i(14, 7))):
+		return true
+
+	# 6. Open Ground movement (neither is hill, column, or bridge)
+	if not is_hill_cell(a) and not is_column_cell(a) and not is_bridge_cell(a):
+		if not is_hill_cell(b) and not is_column_cell(b) and not is_bridge_cell(b):
+			return true
+
+	return false
 
 # Build 3D visual structures in the scene
 static func build_3d(parent: Node, terrain: Node = null) -> Node3D:

@@ -32,6 +32,19 @@ var prev_cam_dist: float = 4.0
 var prev_pitch: float = -0.9
 var prev_cam_offset: Vector3 = Vector3.ZERO
 var crosshair: Control = null
+var lead_vy: float = 0.0
+var lead_y_offset: float = 0.0
+var is_grounded: bool = true
+var jump_force: float = 5.2
+var gravity: float = 16.0
+var stamina: float = 100.0
+var max_stamina: float = 100.0
+var stamina_drain: float = 24.0
+var stamina_jump_cost: float = 18.0
+var stamina_recovery: float = 28.0
+var stamina_cooldown: float = 0.0
+var is_sprinting: bool = false
+var stamina_bar: ProgressBar = null
 
 func _ready():
 	loc_id = Game.cur_loc
@@ -160,10 +173,56 @@ func _ready():
 	ui.add_child(hint)
 	_update_hint()
 	_party_bar(ui)
+	_setup_stamina_bar(ui)
 	_setup_crosshair(ui)
 
 func _exit_tree():
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+func _setup_stamina_bar(ui: Control):
+	var cont = VBoxContainer.new()
+	cont.name = "StaminaCont"
+	cont.anchor_left = 0.5
+	cont.anchor_right = 0.5
+	cont.anchor_top = 1.0
+	cont.anchor_bottom = 1.0
+	cont.offset_left = -120
+	cont.offset_right = 120
+	cont.offset_top = -138
+	cont.offset_bottom = -128
+	cont.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cont.modulate.a = 0.0
+	ui.add_child(cont)
+	
+	stamina_bar = ProgressBar.new()
+	stamina_bar.custom_minimum_size = Vector2(240, 8)
+	stamina_bar.show_percentage = false
+	stamina_bar.max_value = max_stamina
+	stamina_bar.value = stamina
+	
+	var bg_style = StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.06, 0.1, 0.06, 0.85)
+	bg_style.border_color = Color(0.2, 0.45, 0.22, 0.7)
+	bg_style.set_border_width_all(1)
+	bg_style.set_corner_radius_all(3)
+	stamina_bar.add_theme_stylebox_override("background", bg_style)
+	
+	var fill_style = StyleBoxFlat.new()
+	fill_style.bg_color = Color(0.22, 0.85, 0.35, 0.95)
+	fill_style.set_corner_radius_all(3)
+	stamina_bar.add_theme_stylebox_override("fill", fill_style)
+	
+	cont.add_child(stamina_bar)
+
+func _try_jump():
+	if party_n.size() == 0 or not is_grounded:
+		return
+	if stamina < stamina_jump_cost * 0.4:
+		return
+	lead_vy = jump_force
+	is_grounded = false
+	stamina = maxf(0.0, stamina - stamina_jump_cost)
+	stamina_cooldown = 0.45
 
 func _setup_crosshair(ui: Control):
 	crosshair = CenterContainer.new()
@@ -183,9 +242,9 @@ func _update_hint():
 	var is_town = str(LOCS.get(loc_id, {}).get("type", "")) == "town"
 	var town_hint = " | N таверна" if is_town else ""
 	if fp_mode:
-		hint.text = "[1-е лицо] WASD идти | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
+		hint.text = "[1-е лицо] WASD идти | Shift бег | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
 	else:
-		hint.text = "WASD/клик идти | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
+		hint.text = "WASD/клик идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
 
 func _set_fp_mode(enabled: bool):
 	fp_mode = enabled
@@ -495,6 +554,16 @@ func _process(d):
 	if party_n.size() == 0:
 		return
 	var lead = party_n[0].root
+
+	# Vertical physics (Jump & Gravity)
+	if not is_grounded:
+		lead_vy -= gravity * d
+		lead_y_offset += lead_vy * d
+		if lead_y_offset <= 0.0:
+			lead_y_offset = 0.0
+			lead_vy = 0.0
+			is_grounded = true
+
 	var mv = Vector2()
 	if Input.is_key_pressed(KEY_W):
 		mv.y -= 1
@@ -504,6 +573,30 @@ func _process(d):
 		mv.x -= 1
 	if Input.is_key_pressed(KEY_D):
 		mv.x += 1
+
+	var wants_sprint = Input.is_key_pressed(KEY_SHIFT)
+	var is_moving = (mv.length() > 0 or current_path.size() > 0 or target_point != null)
+	is_sprinting = wants_sprint and is_moving and stamina > 2.0
+	
+	var cur_speed = speed
+	if is_sprinting:
+		cur_speed = 6.2
+		stamina = maxf(0.0, stamina - stamina_drain * d)
+		stamina_cooldown = 0.4
+	else:
+		cur_speed = 3.2
+		if stamina_cooldown > 0.0:
+			stamina_cooldown = maxf(0.0, stamina_cooldown - d)
+		elif stamina < max_stamina:
+			stamina = minf(max_stamina, stamina + stamina_recovery * d)
+
+	if stamina_bar != null:
+		stamina_bar.value = stamina
+		var parent_c = stamina_bar.get_parent() as Control
+		if parent_c != null:
+			var target_alpha = 0.0 if (stamina >= max_stamina - 0.5 and not wants_sprint) else 1.0
+			parent_c.modulate.a = move_toward(parent_c.modulate.a, target_alpha, d * 3.5)
+
 	if mv.length() > 0:
 		target_point = null
 		current_path.clear()
@@ -511,7 +604,7 @@ func _process(d):
 		var forward = Vector3(-sin(yaw), 0, -cos(yaw))
 		var right = Vector3(cos(yaw), 0, -sin(yaw))
 		var dir = (forward * (-mv.y) + right * mv.x).normalized()
-		_try_move(lead, dir, speed * d)
+		_try_move(lead, dir, cur_speed * d)
 		if not fp_mode:
 			lead.rotation.y = atan2(dir.x, dir.z)
 	elif current_path.size() > 0 or target_point != null:
@@ -533,7 +626,7 @@ func _process(d):
 				target_point = null
 		else:
 			var dir = to.normalized()
-			_try_move(lead, dir, min(dl, speed * d))
+			_try_move(lead, dir, min(dl, cur_speed * d))
 			lead.rotation.y = atan2(dir.x, dir.z)
 	for k in range(1, party_n.size()):
 		var prev = party_n[k - 1].root
@@ -543,11 +636,14 @@ func _process(d):
 		var dl2 = to2.length()
 		if dl2 > 0.9:
 			var dir2 = to2.normalized()
-			var step = min(dl2 - 0.7, speed * d)
+			var step = min(dl2 - 0.7, maxf(cur_speed * 1.15, 3.8) * d)
 			if step > 0:
 				_try_move(cur, dir2, step)
 				cur.rotation.y = atan2(dir2.x, dir2.z)
-	for pn in party_n:
+	var ground_h = terrain.sample_h(lead.position.x, lead.position.z) if terrain != null else 0.0
+	lead.position.y = ground_h + lead_y_offset
+	for k in range(1, party_n.size()):
+		var pn = party_n[k]
 		pn.root.position.y = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
 	if cam != null:
 		if fp_mode:
@@ -748,6 +844,9 @@ func _unhandled_input(ev):
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var hub = load("res://scripts/game_hub.gd").new()
 			add_child(hub)
+			return
+		if ev.keycode == KEY_SPACE:
+			_try_jump()
 			return
 		if ev.keycode == KEY_E:
 			if fp_mode:

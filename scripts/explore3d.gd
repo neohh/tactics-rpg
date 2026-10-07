@@ -305,8 +305,8 @@ func _flyout_to_third_person():
 	if cam_tween != null and cam_tween.is_valid():
 		cam_tween.kill()
 		
-	var target_dist = prev_cam_dist if prev_cam_dist >= 3.0 else 4.5
-	var target_pitch = prev_pitch if prev_pitch <= -0.4 else -0.85
+	var target_dist = 8.5
+	var target_pitch = -0.85
 	
 	cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	cam_tween.tween_property(self, "cam_dist", target_dist, 0.75)
@@ -766,7 +766,14 @@ func _start_combat():
 	var p0 = [0, 0]
 	if party_n.size() > 0:
 		p0 = [int(party_n[0].root.position.x), int(party_n[0].root.position.z)]
-	Game.explore_start = {"players": players, "enemies": en, "player": p0}
+	Game.explore_start = {
+		"players": players,
+		"enemies": en,
+		"player": p0,
+		"cam_yaw": yaw,
+		"cam_pitch": pitch,
+		"cam_dist": maxf(cam_dist, 8.5)
+	}
 	var pp = []
 	for pn in party_n:
 		pp.append([str(pn.m.get("char", "")), pn.root.position.x, pn.root.position.z])

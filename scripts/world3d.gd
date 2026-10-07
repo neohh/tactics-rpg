@@ -116,6 +116,8 @@ func _ready():
 			mny = mini(mny, u.cell.y)
 			mxy = maxi(mxy, u.cell.y)
 		target = Vector3((mnx + mxx) * 0.5 + 0.5, 0, (mny + mxy) * 0.5 + 0.5)
+		if terrain != null:
+			target.y = terrain.sample_h(target.x, target.z)
 	else:
 		target = Vector3(terrain.GW * 0.5, 0, terrain.GH * 0.5)
 	_apply()
@@ -2146,6 +2148,12 @@ func _apply_explore():
 		return
 	var su = Game.explore_start
 	Game.explore_start = null
+	if su.has("cam_yaw"):
+		yaw = float(su["cam_yaw"])
+	if su.has("cam_pitch"):
+		pitch = float(su["cam_pitch"])
+	if su.has("cam_dist"):
+		dist = float(su["cam_dist"])
 	var t1 = []
 	var t0 = []
 	for u in units3:
@@ -3050,4 +3058,3 @@ func _on_to_map():
 func _apply_graphics_settings():
 	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
 	DayNight.setup(world_env, sun_light, float(Game.hour))
-

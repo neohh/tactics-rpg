@@ -343,31 +343,25 @@ static func build_3d(parent: Node, terrain: Node = null) -> Node3D:
 		slab.position = Vector3(c.x + 0.5, gh + h + 0.04, c.y + 0.5)
 		root.add_child(slab)
 
-	# 2. Build Stepped Ascending Columns
+	# 2. Build Stepped Ascending Columns (Square 1x1 Grid Cell Blocks)
 	for c in STEPPED_COLUMNS:
 		var ch = STEPPED_COLUMNS[c]
 		var gh = terrain.sample_h(c.x + 0.5, c.y + 0.5) if terrain != null and terrain.has_method("sample_h") else 0.0
 		
-		# Stepped rock column pillar
+		# Stepped rock column block (1x1 grid cell pedestal)
 		var col_m = MeshInstance3D.new()
-		var cm = CylinderMesh.new()
-		cm.top_radius = 0.44
-		cm.bottom_radius = 0.48
-		cm.height = ch
-		cm.radial_segments = 8 # Faceted basalt-style rock pillar
-		col_m.mesh = cm
-		col_m.material_override = col_mat
+		var bm = BoxMesh.new()
+		bm.size = Vector3(1.0, ch, 1.0)
+		col_m.mesh = bm
+		col_m.material_override = rock_mat
 		col_m.position = Vector3(c.x + 0.5, gh + ch * 0.5, c.y + 0.5)
 		root.add_child(col_m)
 
-		# Top step cap
+		# Top step cell slab (identical to hill grid cells)
 		var cap = MeshInstance3D.new()
-		var cap_m = CylinderMesh.new()
-		cap_m.top_radius = 0.46
-		cap_m.bottom_radius = 0.46
-		cap_m.height = 0.08
-		cap_m.radial_segments = 8
-		cap.mesh = cap_m
+		var sbm = BoxMesh.new()
+		sbm.size = Vector3(0.96, 0.08, 0.96)
+		cap.mesh = sbm
 		cap.material_override = plateau_mat
 		cap.position = Vector3(c.x + 0.5, gh + ch + 0.04, c.y + 0.5)
 		root.add_child(cap)
@@ -451,6 +445,7 @@ static func setup_for_combat(w3d: Node):
 	# 4. Register Climb connections in climb
 	# West Ascent:
 	_add_climb_pair(w3d, Vector2i(6, 3), Vector2i(6, 4)) # ground -> col 1
+	_add_climb_pair(w3d, Vector2i(5, 4), Vector2i(6, 4)) # ground -> col 1
 	_add_climb_pair(w3d, Vector2i(6, 4), Vector2i(6, 5)) # col 1 -> col 2
 	_add_climb_pair(w3d, Vector2i(6, 5), Vector2i(7, 5)) # col 2 -> Hill 1
 
@@ -458,6 +453,7 @@ static func setup_for_combat(w3d: Node):
 	_add_climb_pair(w3d, Vector2i(12, 6), Vector2i(13, 6)) # Hill 2 -> col 3
 	_add_climb_pair(w3d, Vector2i(13, 6), Vector2i(13, 7)) # col 3 -> col 4
 	_add_climb_pair(w3d, Vector2i(13, 7), Vector2i(13, 8)) # col 4 -> ground
+	_add_climb_pair(w3d, Vector2i(13, 7), Vector2i(14, 7)) # col 4 -> ground
 
 	# Bridge span connections (on top):
 	_add_climb_pair(w3d, Vector2i(8, 5), Vector2i(9, 5)) # Hill 1 -> Bridge

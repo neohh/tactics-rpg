@@ -1204,10 +1204,19 @@ func _h_at(x, z, c):
 func _pick_cell():
 	var m = get_viewport().get_mouse_position()
 	var c3 = get_viewport().get_camera_3d()
+	if c3 == null:
+		return null
 	var from = c3.project_ray_origin(m)
 	var dir = c3.project_ray_normal(m)
 	if abs(dir.y) < 0.0001:
 		return null
+	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		var p_surf = CliffBridge.raycast_surface(from, dir, terrain)
+		if p_surf != null:
+			var scx = int(floor(p_surf.x))
+			var scz = int(floor(p_surf.z))
+			if scx >= 0 and scz >= 0 and (terrain == null or (scx < terrain.GW and scz < terrain.GH)):
+				return Vector2i(scx, scz)
 	var t = -from.y / dir.y
 	if t < 0:
 		return null
@@ -1232,11 +1241,19 @@ func _move_to(i, c):
 	u.cell = c
 	u.moved = true
 	var tw = create_tween()
-	var target_y = _th(c)
-	if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(c):
-		if u.root.position.y < 1.2:
-			target_y = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
-	tw.tween_property(u.root, "position", _p(c) + Vector3(0, target_y, 0), 0.25)
+	var path_cells = [c]
+	var curr = c
+	while bfs_parent.has(curr) and bfs_parent[curr] != from:
+		curr = bfs_parent[curr]
+		path_cells.append(curr)
+	path_cells.reverse()
+	var step_dur = 0.25 / float(maxi(1, path_cells.size()))
+	for step_c in path_cells:
+		var target_y = _th(step_c)
+		if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(step_c):
+			if u.root.position.y < 1.2:
+				target_y = terrain.cell_h(step_c.x, step_c.y) if terrain != null else 0.0
+		tw.tween_property(u.root, "position", _p(step_c) + Vector3(0, target_y, 0), step_dur)
 	if _fire_at(c):
 		u.burn = 1
 		_float_text(u.root.position, "ГОРИТ!", Color(1, 0.5, 0.1))
@@ -2231,6 +2248,8 @@ func _can_step(a, b):
 		return terrain.can_move(a.x, a.y, b.x, b.y) if terrain != null else true
 	var ha = _th(a)
 	var hb = _th(b)
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and abs(ha - hb) <= 0.85:
+		return true
 	if abs(ha - hb) <= 0.5:
 		return true
 	for sl in stairs_list:

@@ -33,6 +33,8 @@ var handled_click = false
 var game_over3 = false
 var won3 = false
 var status: Label
+var sun_light: DirectionalLight3D = null
+var world_env: Environment = null
 var info: Label
 var loc_id = ""
 var deploy_mode = true
@@ -153,6 +155,7 @@ func _build():
 		terrain.from_data(td)
 	else:
 		terrain.build()
+	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
 
 	var camp = LOCS.get(loc_id, {}).get("map", {})
 	ELEV = {}
@@ -279,7 +282,7 @@ func _spawn_unit(c, team, cls, dir, cid = "", stats = null):
 	var t = _tex(imgp)
 	if t != null:
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_actor_material(t)
 		sp.pixel_size = 0.004
 		sp.scale = Vector3(sc, sc, sc)
 		sp.position = Vector3(0, 0.85 * sc, 0)
@@ -370,7 +373,7 @@ func _obj(p, k):
 	if ot != null:
 		var h = 1.2 * float(od.get("scale", 1.0)) * float(od.get("mscale", 1.0))
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_tree_material(ot)
 		sp.pixel_size = h / float(ot.get_height())
 		sp.texture = ot
 		sp.position = p + Vector3(0, h * 0.5 + float(od.get("myoff", 0.0)), 0)
@@ -1973,15 +1976,11 @@ func _model_inst(path):
 
 func _lights():
 	var dl = DirectionalLight3D.new()
-	dl.rotation_degrees = Vector3(-50, 30, 0)
-	dl.light_energy = 1.1
+	sun_light = dl
 	add_child(dl)
 	var env = Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.06, 0.07, 0.09)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.55, 0.55, 0.6)
-	env.ambient_light_energy = 0.7
+	world_env = env
+	DayNight.setup(env, dl, float(Game.hour))
 	var we = WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -2736,7 +2735,7 @@ func _obj_free(fo):
 	if ot != null:
 		var h = 1.2 * float(od.get("scale", 1.0)) * float(od.get("mscale", 1.0)) * sc
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_DISABLED if tilted else BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_tree_material(ot)
 		sp.pixel_size = h / float(ot.get_height())
 		sp.scale = Vector3(sc, sc, sc)
 		sp.texture = ot
@@ -2849,7 +2848,7 @@ func _spawn_npc(np):
 	var sc = float(cd.get("scale", 1.0))
 	if t != null:
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_actor_material(t)
 		sp.pixel_size = 0.004
 		sp.scale = Vector3(sc, sc, sc)
 		sp.position = Vector3(0, 0.85 * sc, 0)
@@ -2968,6 +2967,7 @@ func _finalize_turn_safe():
 		status.text = "Твой ход: клик по своему юниту."
 	_upd_info()
 func _process(d):
+	DayNight.update(d, float(Game.hour), world_env, sun_light)
 	if busy:
 		_busy_time += d
 		if _busy_time > 10.0:
@@ -3046,3 +3046,8 @@ func _on_to_map():
 	_sync_party_deaths()
 	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
+
+func _apply_graphics_settings():
+	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
+	DayNight.setup(world_env, sun_light, float(Game.hour))
+

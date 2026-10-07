@@ -21,6 +21,76 @@ func _process(_d):
 func _unhandled_input(ev):
 	if ev is InputEventKey and ev.pressed and ev.keycode == KEY_C:
 		toggle()
+	elif ev is InputEventKey and ev.pressed and ev.keycode == KEY_F3:
+		toggle_graphics()
+
+var gfx_win = null
+func toggle_graphics():
+	if gfx_win == null or not is_instance_valid(gfx_win):
+		open_graphics_window()
+	else:
+		gfx_win.visible = not gfx_win.visible
+
+func open_graphics_window():
+	GraphicsSettings.load_settings()
+	if gfx_win != null and is_instance_valid(gfx_win):
+		gfx_win.visible = true
+		return
+	gfx_win = Window.new()
+	gfx_win.title = "Настройки графики (F3)"
+	gfx_win.size = Vector2i(380, 260)
+	gfx_win.exclusive = false
+	gfx_win.unresizable = true
+	var screen = DisplayServer.screen_get_size()
+	gfx_win.position = Vector2i(int((screen.x - 380) * 0.5), int((screen.y - 260) * 0.5))
+	gfx_win.close_requested.connect(func(): gfx_win.visible = false)
+
+	var p = Panel.new()
+	p.set_anchors_preset(Control.PRESET_FULL_RECT)
+	gfx_win.add_child(p)
+
+	var vb = VBoxContainer.new()
+	vb.position = Vector2(20, 16)
+	vb.size = Vector2(340, 220)
+	vb.add_theme_constant_override("separation", 10)
+	p.add_child(vb)
+
+	var title = Label.new()
+	title.text = "ГРАФИКА И ЭФФЕКТЫ [F3]"
+	title.add_theme_font_size_override("font_size", 16)
+	vb.add_child(title)
+
+	var chk_fog = CheckBox.new()
+	chk_fog.text = "Плотный туман по границе острова"
+	chk_fog.button_pressed = GraphicsSettings.fog_enabled
+	chk_fog.toggled.connect(func(v): GraphicsSettings.set_fog_enabled(v))
+	vb.add_child(chk_fog)
+
+	var chk_day = CheckBox.new()
+	chk_day.text = "Суточный цикл и динамическое небо"
+	chk_day.button_pressed = GraphicsSettings.day_night_enabled
+	chk_day.toggled.connect(func(v): GraphicsSettings.set_day_night_enabled(v))
+	vb.add_child(chk_day)
+
+	var chk_lit = CheckBox.new()
+	chk_lit.text = "Освещение спрайтов (шейдеры Direct Light)"
+	chk_lit.button_pressed = GraphicsSettings.sprite_lighting_enabled
+	chk_lit.toggled.connect(func(v): GraphicsSettings.set_sprite_lighting_enabled(v))
+	vb.add_child(chk_lit)
+
+	var chk_fade = CheckBox.new()
+	chk_fade.text = "Мягкие края тумана (Proximity Fade)"
+	chk_fade.button_pressed = GraphicsSettings.proximity_fade_enabled
+	chk_fade.toggled.connect(func(v): GraphicsSettings.set_proximity_fade_enabled(v))
+	vb.add_child(chk_fade)
+
+	var b_close = Button.new()
+	b_close.text = "Закрыть"
+	b_close.pressed.connect(func(): gfx_win.visible = false)
+	vb.add_child(b_close)
+
+	get_tree().root.add_child(gfx_win)
+
 func toggle():
 	if con_win == null:
 		open()

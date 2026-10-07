@@ -6,7 +6,7 @@ func _ready():
 	t.add_theme_font_size_override("font_size", 24)
 	add_child(t)
 	var i = 0
-	for name in ["ИГРАТЬ", "КОНСТРУКТОР", "3D ТЕСТ", "ТЕСТ ЛЕСТН"]:
+	for name in ["ИГРАТЬ", "КОНСТРУКТОР", "ГРАФИКА", "3D ТЕСТ", "ТЕСТ ЛЕСТН"]:
 		var b = Button.new()
 		b.text = name
 		b.position = Vector2(200, 150 + i * 50)
@@ -17,6 +17,9 @@ func _ready():
 func _go(name):
 	if name == "КОНСТРУКТОР":
 		ConHotkey.open()
+		return
+	if name == "ГРАФИКА":
+		ConHotkey.open_graphics_window()
 		return
 	if name == "ТЕСТ ЛЕСТН":
 		Game.cur_loc = "stairs_test"

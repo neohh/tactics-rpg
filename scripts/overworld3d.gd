@@ -935,15 +935,6 @@ func _type_models():
 func _build_world():
 	loc_roots = {}
 	link_nodes = []
-	var g = MeshInstance3D.new()
-	var pm = PlaneMesh.new()
-	pm.size = Vector2(200, 140)
-	var gm = StandardMaterial3D.new()
-	gm.albedo_color = Color(0.10, 0.14, 0.10)
-	pm.material = gm
-	g.mesh = pm
-	g.position = Vector3(60, -0.05, 40)
-	add_child(g)
 	var dl = DirectionalLight3D.new()
 	sun_light = dl
 	_load_sun()
@@ -960,12 +951,8 @@ func _build_world():
 	fill.shadow_enabled = false
 	add_child(fill)
 	var env = Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.04, 0.05, 0.07)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.5, 0.55, 0.65)
-	env.ambient_light_energy = amb_energy
 	world_env = env
+	DayNight.setup(env, dl, float(Game.hour))
 	var we = WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -1016,6 +1003,7 @@ func _build_world():
 				var pa = Vector3(a[0] * S, 0, a[1] * S)
 				var pb = Vector3(b[0] * S, 0, b[1] * S)
 				_link_line(pa, pb)
+	FogBorder.build_for_terrain(self, terr, terr.position if terr != null else Vector3.ZERO)
 
 func _loc_mesh(root, L):
 	var type = str(L.get("type", "field"))
@@ -1100,7 +1088,7 @@ func _decor_node(d):
 		var t = load(img)
 		if t is Texture:
 			var sp = Sprite3D.new()
-			sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+			sp.material_override = DayNight.get_tree_material(t)
 			sp.pixel_size = 0.01
 			sp.scale = Vector3(oms, oms, oms)
 			sp.position = Vector3(0, 1.2 * oms, 0)
@@ -1444,6 +1432,7 @@ func _token_height_at(x: float, z: float, is_at_loc: bool) -> float:
 	return (h + 2.4) if is_at_loc else (h + 0.6)
 
 func _process(_d):
+	DayNight.update(_d, float(Game.hour), world_env, sun_light)
 	if token != null:
 		token.rotate_y(_d * 1.8)
 		if traveling:
@@ -1925,6 +1914,7 @@ func _chunk_at_w(p, ctrl):
 			print("-> ", "ADDED" if r.ok else "FAIL")
 	_save_terrain()
 	_rebuild_links()
+	FogBorder.build_for_terrain(self, terr, terr.position if terr != null else Vector3.ZERO)
 
 func _rebuild_links():
 	for n in link_nodes:
@@ -2607,3 +2597,10 @@ func _fill_changed(v):
 	fill_energy = v
 	_apply_sun()
 	_save_sun()
+
+func _apply_graphics_settings():
+	FogBorder.build_for_terrain(self, terr, terr.position if terr != null else Vector3.ZERO)
+	DayNight.setup(world_env, sun_light, float(Game.hour))
+	for d in DECOR:
+		_decor_node(d)
+

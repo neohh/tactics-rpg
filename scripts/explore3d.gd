@@ -23,6 +23,8 @@ var target_point = null
 var current_path: Array = []
 var hint: Label
 var pre_played = false
+var sun_light: DirectionalLight3D = null
+var world_env: Environment = null
 var combat_lock = false
 var npcs3 = []
 
@@ -41,6 +43,7 @@ func _ready():
 		terrain.from_data(td)
 	else:
 		terrain.build()
+	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
 	var camp = LOCS.get(loc_id, {}).get("map", {})
 	for o in camp.get("objects", []):
 		var oc = Vector2i(int(o["cell"][0]), int(o["cell"][1]))
@@ -127,14 +130,11 @@ func _ready():
 	for np in camp.get("npcs", []):
 		_spawn_npc(np)
 	var dl = DirectionalLight3D.new()
-	dl.rotation_degrees = Vector3(-50, 30, 0)
+	sun_light = dl
 	add_child(dl)
 	var env = Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.06, 0.07, 0.09)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.55, 0.55, 0.6)
-	env.ambient_light_energy = 0.7
+	world_env = env
+	DayNight.setup(env, dl, float(Game.hour))
 	var we = WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -285,7 +285,7 @@ func _actor(cls, col, cid = ""):
 	var sc = float(cdd.get("scale", 1.0))
 	if t != null:
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_actor_material(t)
 		sp.pixel_size = 0.004
 		sp.scale = Vector3(sc, sc, sc)
 		sp.position = Vector3(0, 0.85 * sc, 0)
@@ -347,7 +347,7 @@ func _spawn_npc(np):
 	var sc = float(cd.get("scale", 1.0))
 	if t != null:
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_actor_material(t)
 		sp.pixel_size = 0.004
 		sp.scale = Vector3(sc, sc, sc)
 		sp.position = Vector3(0, 0.85 * sc, 0)
@@ -409,6 +409,7 @@ func _on_npc_click(_cam, ev, _p2, _n, _si, i):
 		_play_dlg(dn)
 
 func _process(d):
+	DayNight.update(d, float(Game.hour), world_env, sun_light)
 	if party_n.size() == 0:
 		return
 	var lead = party_n[0].root
@@ -734,7 +735,7 @@ func _obj(p, k):
 	if ot != null:
 		var h = 1.2 * float(od.get("scale", 1.0))
 		var sp = Sprite3D.new()
-		sp.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		sp.material_override = DayNight.get_tree_material(ot)
 		sp.pixel_size = h / float(ot.get_height())
 		sp.texture = ot
 		sp.position = p + Vector3(0, h * 0.5, 0)
@@ -759,3 +760,8 @@ func _obj(p, k):
 		m.mesh = bm
 		m.position = p + Vector3(0, 0.25, 0)
 	add_child(m)
+
+func _apply_graphics_settings():
+	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
+	DayNight.setup(world_env, sun_light, float(Game.hour))
+

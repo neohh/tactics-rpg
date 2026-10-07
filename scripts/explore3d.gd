@@ -32,6 +32,8 @@ var prev_cam_dist: float = 4.0
 var prev_pitch: float = -0.9
 var prev_cam_offset: Vector3 = Vector3.ZERO
 var crosshair: Control = null
+var fp_cam_y: float = 0.0
+var cam_tween: Tween = null
 var lead_vy: float = 0.0
 var lead_y_offset: float = 0.0
 var is_grounded: bool = true
@@ -247,31 +249,70 @@ func _update_hint():
 		hint.text = "WASD/клик идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
 
 func _set_fp_mode(enabled: bool):
+	if combat_lock:
+		return
 	fp_mode = enabled
+	if cam_tween != null and cam_tween.is_valid():
+		cam_tween.kill()
+	
 	if fp_mode:
 		prev_cam_dist = cam_dist
 		prev_pitch = pitch
 		prev_cam_offset = cam_offset
-		cam_dist = 0.0
-		cam_offset = Vector3.ZERO
-		pitch = 0.0
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-		if party_n.size() > 0 and is_instance_valid(party_n[0].root):
-			party_n[0].root.visible = false
-		if crosshair != null:
-			crosshair.visible = true
 		target_point = null
 		current_path.clear()
+		cam_offset = Vector3.ZERO
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		
+		cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		cam_tween.tween_property(self, "cam_dist", 0.0, 0.45)
+		cam_tween.tween_property(self, "pitch", 0.0, 0.45)
+		cam_tween.tween_property(self, "fp_cam_y", 1.4, 0.45)
+		cam_tween.finished.connect(func():
+			if fp_mode:
+				if party_n.size() > 0 and is_instance_valid(party_n[0].root):
+					party_n[0].root.visible = false
+				if crosshair != null:
+					crosshair.visible = true
+		)
 	else:
-		cam_dist = prev_cam_dist if prev_cam_dist > 0.5 else 4.0
-		pitch = prev_pitch if prev_pitch < -0.1 else -0.9
-		cam_offset = prev_cam_offset
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if party_n.size() > 0 and is_instance_valid(party_n[0].root):
 			party_n[0].root.visible = true
 		if crosshair != null:
 			crosshair.visible = false
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		
+		var target_dist = prev_cam_dist if prev_cam_dist > 1.5 else 4.0
+		var target_pitch = prev_pitch if prev_pitch < -0.1 else -0.9
+		
+		cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		cam_tween.tween_property(self, "cam_dist", target_dist, 0.45)
+		cam_tween.tween_property(self, "pitch", target_pitch, 0.45)
+		cam_tween.tween_property(self, "fp_cam_y", 0.0, 0.45)
 	_update_hint()
+
+func _flyout_to_third_person():
+	if not fp_mode and fp_cam_y <= 0.05 and cam_dist >= 2.0:
+		return
+	fp_mode = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if crosshair != null:
+		crosshair.visible = false
+	if party_n.size() > 0 and is_instance_valid(party_n[0].root):
+		party_n[0].root.visible = true
+	_update_hint()
+	
+	if cam_tween != null and cam_tween.is_valid():
+		cam_tween.kill()
+		
+	var target_dist = prev_cam_dist if prev_cam_dist >= 3.0 else 4.5
+	var target_pitch = prev_pitch if prev_pitch <= -0.4 else -0.85
+	
+	cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	cam_tween.tween_property(self, "cam_dist", target_dist, 0.75)
+	cam_tween.tween_property(self, "pitch", target_pitch, 0.75)
+	cam_tween.tween_property(self, "fp_cam_y", 0.0, 0.75)
+	await cam_tween.finished
 
 func _party_bar(ui):
 	var bar = HBoxContainer.new()
@@ -565,17 +606,18 @@ func _process(d):
 			is_grounded = true
 
 	var mv = Vector2()
-	if Input.is_key_pressed(KEY_W):
-		mv.y -= 1
-	if Input.is_key_pressed(KEY_S):
-		mv.y += 1
-	if Input.is_key_pressed(KEY_A):
-		mv.x -= 1
-	if Input.is_key_pressed(KEY_D):
-		mv.x += 1
+	if not combat_lock:
+		if Input.is_key_pressed(KEY_W):
+			mv.y -= 1
+		if Input.is_key_pressed(KEY_S):
+			mv.y += 1
+		if Input.is_key_pressed(KEY_A):
+			mv.x -= 1
+		if Input.is_key_pressed(KEY_D):
+			mv.x += 1
 
-	var wants_sprint = Input.is_key_pressed(KEY_SHIFT)
-	var is_moving = (mv.length() > 0 or current_path.size() > 0 or target_point != null)
+	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not combat_lock
+	var is_moving = (mv.length() > 0 or current_path.size() > 0 or target_point != null) and not combat_lock
 	is_sprinting = wants_sprint and is_moving and stamina > 2.0
 	
 	var cur_speed = speed
@@ -597,7 +639,7 @@ func _process(d):
 			var target_alpha = 0.0 if (stamina >= max_stamina - 0.5 and not wants_sprint) else 1.0
 			parent_c.modulate.a = move_toward(parent_c.modulate.a, target_alpha, d * 3.5)
 
-	if mv.length() > 0:
+	if not combat_lock and mv.length() > 0:
 		target_point = null
 		current_path.clear()
 		mv = mv.normalized()
@@ -607,7 +649,7 @@ func _process(d):
 		_try_move(lead, dir, cur_speed * d)
 		if not fp_mode:
 			lead.rotation.y = atan2(dir.x, dir.z)
-	elif current_path.size() > 0 or target_point != null:
+	elif not combat_lock and (current_path.size() > 0 or target_point != null):
 		var target_pos = target_point
 		if current_path.size() > 0:
 			var wp = current_path[0]
@@ -648,15 +690,10 @@ func _process(d):
 	if cam != null:
 		if fp_mode:
 			lead.rotation.y = yaw
-			yaw_n.position = lead.position + Vector3(0, 1.4, 0)
-			yaw_n.rotation = Vector3(0, yaw, 0)
-			pitch_n.rotation = Vector3(pitch, 0, 0)
-			cam.position = Vector3.ZERO
-		else:
-			yaw_n.position = lead.position + cam_offset
-			yaw_n.rotation = Vector3(0, yaw, 0)
-			pitch_n.rotation = Vector3(pitch, 0, 0)
-			cam.position = Vector3(0, 0, cam_dist)
+		yaw_n.position = lead.position + Vector3(0, fp_cam_y, 0) + cam_offset
+		yaw_n.rotation = Vector3(0, yaw, 0)
+		pitch_n.rotation = Vector3(pitch, 0, 0)
+		cam.position = Vector3(0, 0, cam_dist)
 	if not combat_lock:
 		for en in enemies:
 			if (en.root.position - lead.position).length() < 1.4:
@@ -701,6 +738,8 @@ func _try_combat():
 		return
 	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
 		return
+	if fp_mode or fp_cam_y > 0.1 or cam_dist < 2.5:
+		await _flyout_to_third_person()
 	var pre = str(LOCS.get(loc_id, {}).get("dlg", {}).get("pre", ""))
 	if pre != "" and not pre_played:
 		pre_played = true
@@ -812,6 +851,8 @@ func _play_dlg(dn):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _unhandled_input(ev):
+	if combat_lock:
+		return
 	if ev is InputEventKey and ev.pressed:
 		if ev.keycode == KEY_V:
 			_set_fp_mode(not fp_mode)

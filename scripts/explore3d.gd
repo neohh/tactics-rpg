@@ -738,8 +738,6 @@ func _try_combat():
 		return
 	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
 		return
-	if fp_mode or fp_cam_y > 0.1 or cam_dist < 2.5:
-		await _flyout_to_third_person()
 	var pre = str(LOCS.get(loc_id, {}).get("dlg", {}).get("pre", ""))
 	if pre != "" and not pre_played:
 		pre_played = true
@@ -772,13 +770,18 @@ func _start_combat():
 		"player": p0,
 		"cam_yaw": yaw,
 		"cam_pitch": pitch,
-		"cam_dist": maxf(cam_dist, 8.5)
+		"cam_dist": 0.0 if fp_mode else cam_dist,
+		"cam_offset_y": 1.4 if fp_mode else fp_cam_y,
+		"fp_mode": fp_mode
 	}
 	var pp = []
 	for pn in party_n:
 		pp.append([str(pn.m.get("char", "")), pn.root.position.x, pn.root.position.z])
 	Game.explore_return = {"loc": loc_id, "party_pos": pp}
-	get_tree().change_scene_to_file("res://world3d.tscn")
+	var w3d = preload("res://world3d.tscn").instantiate()
+	get_tree().root.add_child(w3d)
+	get_tree().current_scene = w3d
+	queue_free()
 
 func _is_free_cell(x, y):
 	if terrain != null and not terrain.has_cell(x, y):

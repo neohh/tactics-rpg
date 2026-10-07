@@ -70,6 +70,10 @@ var hint_card_toggle_btn: Button = null
 var hint_collapsed: bool = false
 var combat_round: int = 1
 const PCLS = ["assassin", "swordsman", "halberd", "archer", "mage"]
+var combat_ui_root: Control = null
+var cam_offset_y: float = 0.0
+var cam_tween: Tween = null
+var from_explore: bool = false
 
 func _calc_act_max() -> int:
 	var count = 0
@@ -122,6 +126,29 @@ func _ready():
 		target = Vector3(terrain.GW * 0.5, 0, terrain.GH * 0.5)
 	_apply()
 	_ui()
+	if from_explore:
+		_start_combat_entrance_anim()
+
+func _start_combat_entrance_anim():
+	if combat_ui_root != null:
+		combat_ui_root.modulate.a = 0.0
+	if hl_root != null:
+		hl_root.visible = false
+	
+	var target_dist = 8.5
+	var target_pitch = -0.85
+	
+	cam_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	cam_tween.tween_property(self, "dist", target_dist, 0.75)
+	cam_tween.tween_property(self, "pitch", target_pitch, 0.75)
+	cam_tween.tween_property(self, "cam_offset_y", 0.0, 0.75)
+	if combat_ui_root != null:
+		cam_tween.tween_property(combat_ui_root, "modulate:a", 1.0, 0.75)
+	cam_tween.finished.connect(func():
+		if hl_root != null:
+			hl_root.visible = true
+	)
+
 func _setup():
 	yaw_n = Node3D.new()
 	add_child(yaw_n)
@@ -130,6 +157,7 @@ func _setup():
 	cam = Camera3D.new()
 	pitch_n.add_child(cam)
 	cam.position = Vector3(0, 0, dist)
+	cam.make_current()
 func _tex(path):
 	if path == "" or not FileAccess.file_exists(path):
 		return null
@@ -402,6 +430,7 @@ func _obj(p, k):
 	add_child(m)
 func _ui():
 	var ui = Control.new()
+	combat_ui_root = ui
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ui)
@@ -1000,7 +1029,7 @@ func _start_battle():
 	status.text = "Твой ход: клик по своему юниту."
 	_upd_info()
 func _apply():
-	yaw_n.position = target
+	yaw_n.position = target + Vector3(0, cam_offset_y, 0)
 	yaw_n.rotation = Vector3(0, yaw, 0)
 	pitch_n.rotation = Vector3(pitch, 0, 0)
 	cam.position = Vector3(0, 0, dist)
@@ -2148,12 +2177,15 @@ func _apply_explore():
 		return
 	var su = Game.explore_start
 	Game.explore_start = null
+	from_explore = true
 	if su.has("cam_yaw"):
 		yaw = float(su["cam_yaw"])
 	if su.has("cam_pitch"):
 		pitch = float(su["cam_pitch"])
 	if su.has("cam_dist"):
 		dist = float(su["cam_dist"])
+	if su.has("cam_offset_y"):
+		cam_offset_y = float(su["cam_offset_y"])
 	var t1 = []
 	var t0 = []
 	for u in units3:
@@ -2976,6 +3008,11 @@ func _finalize_turn_safe():
 	_upd_info()
 func _process(d):
 	DayNight.update(d, float(Game.hour), world_env, sun_light)
+	if cam_tween != null and cam_tween.is_valid():
+		yaw_n.position = target + Vector3(0, cam_offset_y, 0)
+		yaw_n.rotation = Vector3(0, yaw, 0)
+		pitch_n.rotation = Vector3(pitch, 0, 0)
+		cam.position = Vector3(0, 0, dist)
 	if busy:
 		_busy_time += d
 		if _busy_time > 10.0:
@@ -2990,10 +3027,16 @@ func _process(d):
 		_busy_time = 0.0
 func _leave_battle():
 	if Game.explore_return != null and not game_over3:
-		get_tree().change_scene_to_file("res://explore3d.tscn")
+		var exp_scn = preload("res://explore3d.tscn").instantiate()
+		get_tree().root.add_child(exp_scn)
+		get_tree().current_scene = exp_scn
+		queue_free()
 		return
 	if Game.explore_return != null and game_over3 and won3:
-		get_tree().change_scene_to_file("res://explore3d.tscn")
+		var exp_scn = preload("res://explore3d.tscn").instantiate()
+		get_tree().root.add_child(exp_scn)
+		get_tree().current_scene = exp_scn
+		queue_free()
 		return
 	if Game.explore_return != null and game_over3 and not won3:
 		Game.clear_transient_state()

@@ -20,3 +20,4 @@ patch_version.txt
 
 # Runtime temporary folder
 locs_edit/
+.cursor/

@@ -2298,7 +2298,141 @@ func _render_stairs(c, d):
 		m.rotation.y = atan2(d.x, d.y)
 		add_child(m)
 
+const FPMeleeClass = preload("res://scripts/fp_melee.gd")
+
+func _fp_duel_qte(text: String, dur: float) -> bool:
+	if qte_on:
+		return false
+	qte_on = true
+	qte_pressed = false
+
+	var is_block = text.begins_with("ВРАГ АТАКУЕТ")
+	
+	var duel_target = target
+	if selected >= 0 and selected < units3.size():
+		var u = units3[selected]
+		if is_instance_valid(u.root):
+			duel_target = u.root.position + Vector3(0, 0.8, 0)
+	
+	var old_target = target
+	var old_dist = dist
+	var old_pitch = pitch
+	var old_offset_y = cam_offset_y
+
+	var fp_weapon = FPMeleeClass.new()
+	cam.add_child(fp_weapon)
+
+	var tw = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "dist", 0.02, 0.22)
+	tw.tween_property(self, "pitch", -0.05, 0.22)
+	tw.tween_property(self, "target", duel_target, 0.22)
+
+	var ui = Control.new()
+	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var bgc = ColorRect.new()
+	bgc.color = Color(0, 0, 0, 0.35)
+	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui.add_child(bgc)
+
+	var banner = Label.new()
+	banner.anchor_left = 0.5
+	banner.anchor_right = 0.5
+	banner.anchor_top = 0.14
+	banner.anchor_bottom = 0.14
+	banner.offset_left = -320
+	banner.offset_right = 320
+	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	banner.add_theme_font_size_override("font_size", 22)
+	if is_block:
+		banner.text = "🛡️ ВРАГ АТАКУЕТ!\n[ПКМ] БЛОК / ПАРИРОВАНИЕ или [ПРОБЕЛ]"
+		banner.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
+	else:
+		banner.text = "⚔️ УДАР ПО ВРАГУ!\n[ЛКМ] НАНЕСТИ УДАР или [ПРОБЕЛ]"
+		banner.add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
+	ui.add_child(banner)
+
+	var bar = ColorRect.new()
+	bar.color = Color(1, 0.8, 0.2)
+	bar.anchor_left = 0.5
+	bar.anchor_right = 0.5
+	bar.anchor_top = 0.82
+	bar.anchor_bottom = 0.82
+	bar.offset_left = -160
+	bar.offset_right = 160
+	bar.offset_top = 0
+	bar.offset_bottom = 8
+	ui.add_child(bar)
+
+	add_child(ui)
+
+	var fo = get_viewport().gui_get_focus_owner()
+	if fo != null:
+		fo.release_focus()
+
+	var t = 0.0
+	var success = false
+	var prev_rmb = false
+	var prev_lmb = false
+
+	while t < dur and not success and not qte_pressed:
+		await get_tree().process_frame
+		var dt = get_process_delta_time()
+		t += dt
+		_apply()
+		bar.size.x = 320 * clampf(1.0 - t / dur, 0.0, 1.0)
+
+		var cur_rmb = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		var cur_lmb = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		var just_rmb = cur_rmb and not prev_rmb
+		var released_rmb = not cur_rmb and prev_rmb
+		var just_lmb = cur_lmb and not prev_lmb
+		prev_rmb = cur_rmb
+		prev_lmb = cur_lmb
+
+		if just_rmb:
+			fp_weapon.start_block()
+			if is_block:
+				success = true
+				banner.text = "✨ УДАР ПАРИРОВАН!"
+				banner.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
+				fp_weapon._trigger_parry_recoil()
+		elif released_rmb:
+			fp_weapon.stop_block()
+		elif just_lmb:
+			fp_weapon.try_attack()
+			if not is_block:
+				success = true
+				banner.text = "⚔️ ТОЧНЫЙ УДАР!"
+				banner.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4))
+		elif Input.is_key_pressed(KEY_SPACE) or qte_pressed:
+			success = true
+			if is_block:
+				fp_weapon.start_block()
+				banner.text = "🛡️ ОТРАЖЕНО!"
+			else:
+				fp_weapon.try_attack()
+				banner.text = "⚔️ УДАР!"
+
+	if success:
+		await get_tree().create_timer(0.25).timeout
+
+	var tw_back = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw_back.tween_property(self, "dist", old_dist, 0.28)
+	tw_back.tween_property(self, "pitch", old_pitch, 0.28)
+	tw_back.tween_property(self, "target", old_target, 0.28)
+	await tw_back.finished
+	_apply()
+
+	ui.queue_free()
+	fp_weapon.queue_free()
+	qte_on = false
+	return success
+
 func _qte(text, dur):
+	if Game.combat_mode == Game.CombatMode.HYBRID_QTE and (text.begins_with("ВРАГ АТАКУЕТ") or text.begins_with("УДАР")):
+		return await _fp_duel_qte(text, dur)
 	if qte_on:
 		return false
 	qte_on = true

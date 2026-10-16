@@ -17,12 +17,60 @@ func _process(_d):
 	if mode_lab != null:
 		var n = cur.name if cur != null else "?"
 		var txt = "БОЙ" if n == "World3D" else ("МАСТЕРСКАЯ" if n == "Work3D" else ("КАРТА" if n == "Overworld3D" else "МЕНЮ"))
-		mode_lab.text = "РЕЖИМ: " + txt
+		mode_lab.text = "РЕЖИМ: %s | БОЙ [F6]: %s" % [txt, Game.get_combat_mode_short()]
 func _unhandled_input(ev):
 	if ev is InputEventKey and ev.pressed and ev.keycode == KEY_C:
 		toggle()
 	elif ev is InputEventKey and ev.pressed and ev.keycode == KEY_F3:
 		toggle_graphics()
+	elif ev is InputEventKey and ev.pressed and ev.keycode == KEY_F6:
+		var new_mode = Game.cycle_combat_mode()
+		show_toast("БОЕВОЙ РЕЖИМ [F6]:\n" + new_mode)
+
+var toast_panel: PanelContainer = null
+var toast_tween: Tween = null
+
+func show_toast(text: String):
+	if toast_panel == null or not is_instance_valid(toast_panel):
+		toast_panel = PanelContainer.new()
+		toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		toast_panel.anchor_left = 0.5
+		toast_panel.anchor_right = 0.5
+		toast_panel.anchor_top = 0.0
+		toast_panel.anchor_bottom = 0.0
+		toast_panel.offset_left = -220
+		toast_panel.offset_right = 220
+		toast_panel.offset_top = 24
+		toast_panel.offset_bottom = 84
+		
+		var sb = StyleBoxFlat.new()
+		sb.bg_color = Color(0.05, 0.08, 0.12, 0.92)
+		sb.border_color = Color(0.3, 0.75, 1.0, 0.85)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(6)
+		toast_panel.add_theme_stylebox_override("panel", sb)
+		
+		var lbl = Label.new()
+		lbl.name = "ToastLabel"
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 14)
+		lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.8))
+		toast_panel.add_child(lbl)
+		
+		get_tree().root.add_child(toast_panel)
+	
+	var label = toast_panel.get_node_or_null("ToastLabel") as Label
+	if label != null:
+		label.text = text
+	
+	if toast_tween != null and toast_tween.is_valid():
+		toast_tween.kill()
+	
+	toast_panel.modulate.a = 1.0
+	toast_tween = create_tween()
+	toast_tween.tween_interval(1.8)
+	toast_tween.tween_property(toast_panel, "modulate:a", 0.0, 0.5)
 
 var gfx_win = null
 func toggle_graphics():

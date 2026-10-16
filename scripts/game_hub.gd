@@ -507,6 +507,17 @@ func _show_settings_tab():
 		hbox.add_child(load_btn)
 
 	_add_separator()
+	_add_label("Боевая система", 20)
+	var btn_combat_mode = Button.new()
+	btn_combat_mode.text = "⚔️ Режим боя: " + Game.get_combat_mode_name() + " [F6]"
+	btn_combat_mode.custom_minimum_size = Vector2(340, 36)
+	btn_combat_mode.pressed.connect(func():
+		Game.cycle_combat_mode()
+		btn_combat_mode.text = "⚔️ Режим боя: " + Game.get_combat_mode_name() + " [F6]"
+	)
+	content_vbox.add_child(btn_combat_mode)
+
+	_add_separator()
 	_add_label("Системное меню", 20)
 
 	var btn_map = Button.new()

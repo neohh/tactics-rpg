@@ -22,16 +22,13 @@ ConHotkey="*res://scripts/con_hotkey.gd"
 
 [display]
 
-window/size/viewport_width=1152
-window/size/viewport_height=648
-window/size/resizable=true
 window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/loc_bridge/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/loc_bridge/plugin.cfg")
 
 [physics]
 

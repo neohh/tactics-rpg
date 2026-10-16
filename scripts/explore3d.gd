@@ -1,5 +1,10 @@
 extends Node3D
 const CliffBridge = preload("res://scripts/cliff_bridge.gd")
+const FPMeleeClass = preload("res://scripts/fp_melee.gd")
+var fp_melee = null
+var rt_combat_active: bool = false
+var party_hp_bars: Array = []
+var party_hp_lbls: Array = []
 var terrain
 var LOCS = {}
 var OBJ3 = {}
@@ -27,6 +32,7 @@ var pre_played = false
 var sun_light: DirectionalLight3D = null
 var world_env: Environment = null
 var combat_lock = false
+var is_defeated: bool = false
 var npcs3 = []
 var fp_mode: bool = false
 var prev_cam_dist: float = 4.0
@@ -49,9 +55,34 @@ var stamina_recovery: float = 28.0
 var stamina_cooldown: float = 0.0
 var is_sprinting: bool = false
 var stamina_bar: ProgressBar = null
+var parry_hud: Control = null
+var parry_progress_bar: ProgressBar = null
+var parry_prompt_lbl: Label = null
+var parry_zone_rect: ColorRect = null
+var test_hud: PanelContainer = null
+var test_hud_lbl: Label = null
+var screen_shake_amt: float = 0.0
+var screen_shake_timer: float = 0.0
+const ENEMY_WINDUP_TOTAL: float = 0.75
 var airship: Node3D = null
 var airship_state: int = 0
 var deck_local_pos: Vector3 = Vector3.ZERO
+var rt_projectiles: Array = []
+var test_classes: Array = ["swordsman", "halberd", "archer", "assassin", "mage"]
+var class_names_ru: Dictionary = {
+	"swordsman": "Мечник (Щит/Блок)",
+	"halberd": "Алебардист (Неблокируемый размах)",
+	"archer": "Лучник (Стрелы/Перезарядка)",
+	"assassin": "Убийца (Скорость/Серии)",
+	"mage": "Маг (Огненный шар/Каст)"
+}
+var test_spawn_class_idx: int = 0
+var is_dashing: bool = false
+var dash_timer: float = 0.0
+var dash_duration: float = 0.26
+var dash_dir: Vector3 = Vector3.ZERO
+var dash_cooldown: float = 0.0
+var dash_iframe_timer: float = 0.0
 
 func _ready():
 	loc_id = Game.cur_loc
@@ -190,9 +221,46 @@ func _ready():
 	_party_bar(ui)
 	_setup_stamina_bar(ui)
 	_setup_crosshair(ui)
+	_setup_parry_hud(ui)
+	_setup_test_hud(ui)
+	
+	Game.combat_mode_changed.connect(_on_combat_mode_changed)
+	if not Game.test_combat_options_changed.is_connected(_update_test_hud):
+		Game.test_combat_options_changed.connect(_update_test_hud)
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		_set_fp_mode(true)
+		_ensure_fp_melee()
+		if fp_melee != null:
+			fp_melee.visible = true
 
 func _exit_tree():
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if Game.combat_mode_changed.is_connected(_on_combat_mode_changed):
+		Game.combat_mode_changed.disconnect(_on_combat_mode_changed)
+	if Game.test_combat_options_changed.is_connected(_update_test_hud):
+		Game.test_combat_options_changed.disconnect(_update_test_hud)
+
+func _on_combat_mode_changed(new_mode: int):
+	if new_mode == Game.CombatMode.REALTIME_FP:
+		_set_fp_mode(true)
+		_ensure_fp_melee()
+		if fp_melee != null:
+			fp_melee.visible = true
+	else:
+		if fp_melee != null and not rt_combat_active:
+			fp_melee.visible = false
+	_update_hint()
+
+func _ensure_fp_melee():
+	if cam == null:
+		return
+	if fp_melee == null or not is_instance_valid(fp_melee):
+		fp_melee = FPMeleeClass.new()
+		cam.add_child(fp_melee)
+		fp_melee.attack_hit.connect(_on_rt_player_attack_hit)
+		fp_melee.kick_hit.connect(_on_rt_player_kick_hit)
+		fp_melee.parry_success.connect(_on_rt_player_parry)
+		fp_melee.block_hit.connect(_on_rt_player_block)
 
 func _setup_stamina_bar(ui: Control):
 	var cont = VBoxContainer.new()
@@ -230,7 +298,9 @@ func _setup_stamina_bar(ui: Control):
 	cont.add_child(stamina_bar)
 
 func _try_jump():
-	if party_n.size() == 0 or not is_grounded or airship_state == 2:
+	if is_defeated or party_n.size() == 0 or not is_grounded or airship_state == 2:
+		return
+	if int(party_n[0].m.get("hp", 0)) <= 0:
 		return
 	if stamina < stamina_jump_cost * 0.4:
 		return
@@ -238,6 +308,71 @@ func _try_jump():
 	is_grounded = false
 	stamina = maxf(0.0, stamina - stamina_jump_cost)
 	stamina_cooldown = 0.45
+
+func is_hero_invulnerable() -> bool:
+	return Game.test_player_godmode or dash_iframe_timer > 0.0
+
+func _try_dash():
+	if is_defeated or party_n.size() == 0 or airship_state == 2:
+		return
+	if int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	if is_dashing or dash_cooldown > 0.0:
+		return
+	if not Game.test_player_godmode and stamina < 10.0:
+		if hint != null:
+			hint.text = "Недостаточно выносливости для рывка!"
+		return
+	
+	if not Game.test_player_godmode:
+		stamina = maxf(0.0, stamina - 16.0)
+		stamina_cooldown = 0.5
+	
+	dash_cooldown = 0.35
+	dash_duration = 0.26
+	dash_timer = dash_duration
+	dash_iframe_timer = 0.30
+	is_dashing = true
+	
+	var forward = Vector3(-sin(yaw), 0, -cos(yaw))
+	var right = Vector3(cos(yaw), 0, -sin(yaw))
+	
+	var mv = Vector2.ZERO
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		mv.y -= 1
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		mv.y += 1
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		mv.x -= 1
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		mv.x += 1
+	
+	if mv.length_squared() > 0.01:
+		mv = mv.normalized()
+		dash_dir = (forward * (-mv.y) + right * mv.x).normalized()
+	else:
+		# If no WASD / arrows pressed, dash backwards!
+		dash_dir = -forward
+	
+	var lead = party_n[0].root
+	if not fp_mode:
+		lead.rotation.y = atan2(dash_dir.x, dash_dir.z)
+	
+	# Camera dynamic FOV pulse
+	if cam != null:
+		var tw = create_tween()
+		tw.tween_property(cam, "fov", 80.0, 0.08)
+		tw.tween_property(cam, "fov", 75.0, 0.18)
+	
+	# Weapon viewmodel recoil during dash
+	if fp_melee != null and is_instance_valid(fp_melee.weapon_node):
+		var tw_wp = create_tween()
+		tw_wp.tween_property(fp_melee.weapon_node, "position:z", fp_melee.rest_pos.z + 0.12, 0.08)
+		tw_wp.tween_property(fp_melee.weapon_node, "position:z", fp_melee.rest_pos.z, 0.18)
+	
+	_screen_shake(0.025, 0.1)
+	_float_text(lead.position, "💨 РЫВОК (УВОРОТ)!", Color(0.4, 0.9, 1.0))
+
 
 func _setup_crosshair(ui: Control):
 	crosshair = CenterContainer.new()
@@ -250,6 +385,145 @@ func _setup_crosshair(ui: Control):
 	dot.color = Color(1.0, 1.0, 1.0, 0.75)
 	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	crosshair.add_child(dot)
+
+func _screen_shake(amt: float, dur: float):
+	screen_shake_amt = amt
+	screen_shake_timer = dur
+
+func _update_screen_shake(d: float):
+	if cam == null:
+		return
+	if screen_shake_timer > 0.0:
+		screen_shake_timer -= d
+		cam.h_offset = randf_range(-screen_shake_amt, screen_shake_amt)
+		cam.v_offset = randf_range(-screen_shake_amt, screen_shake_amt)
+		if screen_shake_timer <= 0.0:
+			cam.h_offset = 0.0
+			cam.v_offset = 0.0
+
+func _setup_parry_hud(ui: Control):
+	parry_hud = Control.new()
+	parry_hud.name = "ParryHUD"
+	parry_hud.anchor_left = 0.5
+	parry_hud.anchor_right = 0.5
+	parry_hud.anchor_top = 0.5
+	parry_hud.anchor_bottom = 0.5
+	parry_hud.offset_left = -160
+	parry_hud.offset_right = 160
+	parry_hud.offset_top = 65
+	parry_hud.offset_bottom = 125
+	parry_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parry_hud.modulate.a = 0.0
+	ui.add_child(parry_hud)
+
+	var vb = VBoxContainer.new()
+	vb.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vb.alignment = BoxContainer.ALIGNMENT_CENTER
+	vb.add_theme_constant_override("separation", 4)
+	parry_hud.add_child(vb)
+
+	parry_prompt_lbl = Label.new()
+	parry_prompt_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	parry_prompt_lbl.text = "⚠️ ВРАГ АТАКУЕТ!"
+	parry_prompt_lbl.add_theme_font_size_override("font_size", 14)
+	parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	parry_prompt_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	parry_prompt_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	parry_prompt_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	vb.add_child(parry_prompt_lbl)
+
+	var bar_cont = Control.new()
+	bar_cont.custom_minimum_size = Vector2(320, 20)
+	vb.add_child(bar_cont)
+
+	var track = Panel.new()
+	track.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var track_style = StyleBoxFlat.new()
+	track_style.bg_color = Color(0.08, 0.09, 0.12, 0.9)
+	track_style.border_color = Color(0.5, 0.45, 0.35, 0.9)
+	track_style.set_border_width_all(2)
+	track_style.set_corner_radius_all(5)
+	track.add_theme_stylebox_override("panel", track_style)
+	bar_cont.add_child(track)
+
+	parry_zone_rect = ColorRect.new()
+	parry_zone_rect.anchor_left = 0.50
+	parry_zone_rect.anchor_right = 1.0
+	parry_zone_rect.anchor_top = 0.0
+	parry_zone_rect.anchor_bottom = 1.0
+	parry_zone_rect.color = Color(0.2, 0.85, 0.4, 0.45)
+	bar_cont.add_child(parry_zone_rect)
+
+	var zone_lbl = Label.new()
+	zone_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	zone_lbl.anchor_left = 0.50
+	zone_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	zone_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	zone_lbl.text = "ПАРИРОВАНИЕ [ПКМ]"
+	zone_lbl.add_theme_font_size_override("font_size", 10)
+	zone_lbl.add_theme_color_override("font_color", Color(0.65, 1.0, 0.75))
+	bar_cont.add_child(zone_lbl)
+
+	parry_progress_bar = ProgressBar.new()
+	parry_progress_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	parry_progress_bar.show_percentage = false
+	parry_progress_bar.max_value = 1.0
+	parry_progress_bar.value = 0.0
+	
+	var pb_bg = StyleBoxEmpty.new()
+	parry_progress_bar.add_theme_stylebox_override("background", pb_bg)
+	
+	var pb_fill = StyleBoxFlat.new()
+	pb_fill.bg_color = Color(1.0, 0.5, 0.2, 0.9)
+	pb_fill.set_corner_radius_all(3)
+	parry_progress_bar.add_theme_stylebox_override("fill", pb_fill)
+	bar_cont.add_child(parry_progress_bar)
+
+func _setup_test_hud(ui: Control):
+	test_hud = PanelContainer.new()
+	test_hud.name = "TestCombatHUD"
+	test_hud.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	test_hud.offset_top = 8
+	test_hud.offset_left = -340
+	test_hud.offset_right = 340
+	test_hud.offset_bottom = 42
+	test_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.06, 0.1, 0.90)
+	sb.border_color = Color(0.95, 0.6, 0.2, 0.95)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
+	test_hud.add_theme_stylebox_override("panel", sb)
+	
+	test_hud_lbl = Label.new()
+	test_hud_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	test_hud_lbl.add_theme_font_size_override("font_size", 12)
+	test_hud_lbl.add_theme_color_override("font_color", Color(1.0, 0.92, 0.75))
+	test_hud_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	test_hud_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	test_hud_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	test_hud.add_child(test_hud_lbl)
+	ui.add_child(test_hud)
+	
+	_update_test_hud()
+
+func _update_test_hud():
+	if test_hud == null or not is_instance_valid(test_hud) or test_hud_lbl == null:
+		return
+	if not Game.is_combat_test and loc_id != "bandit_road":
+		test_hud.visible = false
+		return
+	test_hud.visible = true
+	var next_cls = test_classes[test_spawn_class_idx % test_classes.size()]
+	var next_name = class_names_ru.get(next_cls, next_cls)
+	var p_god = "ВКЛ" if Game.test_player_godmode else "ВЫКЛ"
+	var e_god = "ВКЛ" if Game.test_enemy_godmode else "ВЫКЛ"
+	test_hud_lbl.text = "⚔️ ТЕСТ: [1] Спавн (%s) | [2] Бессмертие: %s | [3] Враги: %s | [4] HP/Стамина | [5] Очистить | [F] Пинок | [Alt/C/Q] Рывок" % [next_name, p_god, e_god]
 
 func _update_hint():
 	if hint == null:
@@ -266,14 +540,23 @@ func _update_hint():
 			hint.text = "[Палуба: 1-е лицо] WASD идти | Shift бег | Пробел прыжок | V 3-е лицо | E действие%s" % town_hint
 		else:
 			hint.text = "Палуба дирижабля | WASD идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E действие%s" % town_hint
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		if Game.is_combat_test or loc_id == "bandit_road":
+			hint.text = "⚔️ [1-е лицо] ЛКМ: удар | ПКМ: блок | [F] пинок | [Alt/C/Q] рывок (i-frame) | [1-5] тест | [M] карта"
+		else:
+			hint.text = "⚔️ [1-е лицо] WASD идти | ЛКМ удар | ПКМ блок | [F] пинок | [Alt/C/Q] рывок (i-frame) | [M] карта"
 		return
 	if fp_mode:
-		hint.text = "[1-е лицо] WASD идти | Shift бег | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
+		hint.text = "[1-е лицо] WASD идти | Shift бег | [Alt/Q] рывок | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
 	else:
-		hint.text = "WASD/клик идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
+		hint.text = "WASD/клик идти | Shift бег | [Alt/Q] рывок | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
 
 func _set_fp_mode(enabled: bool):
-	if combat_lock:
+	if is_defeated:
+		return
+	if combat_lock and not rt_combat_active and not enabled:
+		return
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP and not enabled:
 		return
 	fp_mode = enabled
 	if cam_tween != null and cam_tween.is_valid():
@@ -299,12 +582,17 @@ func _set_fp_mode(enabled: bool):
 					party_n[0].root.visible = false
 				if crosshair != null:
 					crosshair.visible = true
+				_ensure_fp_melee()
+				if fp_melee != null and (rt_combat_active or Game.combat_mode == Game.CombatMode.REALTIME_FP):
+					fp_melee.visible = true
 		)
 	else:
 		if party_n.size() > 0 and is_instance_valid(party_n[0].root):
 			party_n[0].root.visible = true
 		if crosshair != null:
 			crosshair.visible = false
+		if fp_melee != null:
+			fp_melee.visible = false
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		
 		var target_dist = 8.5 if airship_state == 2 else (prev_cam_dist if prev_cam_dist > 1.5 else 4.0)
@@ -317,6 +605,8 @@ func _set_fp_mode(enabled: bool):
 	_update_hint()
 
 func _flyout_to_third_person():
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		return
 	if not fp_mode and fp_cam_y <= 0.05 and cam_dist >= 2.0:
 		return
 	fp_mode = false
@@ -431,6 +721,8 @@ func _party_bar(ui):
 		
 		slot_box.add_child(hp_bar)
 		bar.add_child(slot)
+		party_hp_bars.append(hp_bar)
+		party_hp_lbls.append(num_lbl)
 		
 		if i < Game.party.size():
 			var m = Game.party[i]
@@ -452,6 +744,17 @@ func _party_bar(ui):
 			num_lbl.text = ""
 			hp_bar.visible = false
 			style.border_color = Color(0.35, 0.35, 0.35, 0.4)
+
+func _update_party_hp_bars():
+	for i in range(mini(party_hp_bars.size(), Game.party.size())):
+		var m = Game.party[i]
+		var cur_hp = int(m.get("hp", 0))
+		var max_hp = maxi(1, int(m.get("maxhp", 1)))
+		if is_instance_valid(party_hp_bars[i]):
+			party_hp_bars[i].max_value = max_hp
+			party_hp_bars[i].value = cur_hp
+		if is_instance_valid(party_hp_lbls[i]):
+			party_hp_lbls[i].text = "%d / %d" % [cur_hp, max_hp]
 
 func _actor(cls, col, cid = ""):
 	var root = Node3D.new()
@@ -719,9 +1022,15 @@ func _interact_ahead():
 
 func _process(d):
 	DayNight.update(d, float(Game.hour), world_env, sun_light)
-	if party_n.size() == 0:
+	_update_screen_shake(d)
+	if is_defeated:
+		return
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
 		return
 	var lead = party_n[0].root
+	if not is_instance_valid(lead):
+		return
+	var hero_alive = not is_defeated and party_n.size() > 0 and int(party_n[0].m.get("hp", 0)) > 0
 
 	if airship != null:
 		airship.process_flight(d)
@@ -770,7 +1079,8 @@ func _process(d):
 				is_grounded = true
 
 		var mv = Vector2()
-		if not combat_lock:
+		var can_act_deck = (not combat_lock or rt_combat_active) and hero_alive
+		if can_act_deck:
 			if Input.is_key_pressed(KEY_W):
 				mv.y -= 1
 			if Input.is_key_pressed(KEY_S):
@@ -780,8 +1090,8 @@ func _process(d):
 			if Input.is_key_pressed(KEY_D):
 				mv.x += 1
 
-		var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not combat_lock
-		var is_moving = mv.length() > 0 and not combat_lock
+		var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and can_act_deck
+		var is_moving = mv.length() > 0 and can_act_deck
 		is_sprinting = wants_sprint and is_moving and stamina > 2.0
 		var cur_speed = 6.2 if is_sprinting else 3.2
 		if is_sprinting:
@@ -858,7 +1168,8 @@ func _process(d):
 			is_grounded = true
 
 	var mv = Vector2()
-	if not combat_lock:
+	var can_act = (not combat_lock or rt_combat_active) and hero_alive
+	if can_act:
 		if Input.is_key_pressed(KEY_W):
 			mv.y -= 1
 		if Input.is_key_pressed(KEY_S):
@@ -868,8 +1179,8 @@ func _process(d):
 		if Input.is_key_pressed(KEY_D):
 			mv.x += 1
 
-	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and not combat_lock
-	var is_moving = (mv.length() > 0 or current_path.size() > 0 or target_point != null) and not combat_lock
+	var wants_sprint = Input.is_key_pressed(KEY_SHIFT) and can_act
+	var is_moving = (mv.length() > 0 or current_path.size() > 0 or target_point != null) and can_act
 	is_sprinting = wants_sprint and is_moving and stamina > 2.0
 	
 	var cur_speed = speed
@@ -883,15 +1194,29 @@ func _process(d):
 			stamina_cooldown = maxf(0.0, stamina_cooldown - d)
 		elif stamina < max_stamina:
 			stamina = minf(max_stamina, stamina + stamina_recovery * d)
+	if Game.test_player_godmode:
+		stamina = max_stamina
 
 	if stamina_bar != null:
 		stamina_bar.value = stamina
 		var parent_c = stamina_bar.get_parent() as Control
 		if parent_c != null:
-			var target_alpha = 0.0 if (stamina >= max_stamina - 0.5 and not wants_sprint) else 1.0
+			var target_alpha = 0.0 if (stamina >= max_stamina - 0.5 and not wants_sprint and not rt_combat_active) else 1.0
 			parent_c.modulate.a = move_toward(parent_c.modulate.a, target_alpha, d * 3.5)
 
-	if not combat_lock and mv.length() > 0:
+	if dash_cooldown > 0.0:
+		dash_cooldown = maxf(0.0, dash_cooldown - d)
+	if dash_iframe_timer > 0.0:
+		dash_iframe_timer = maxf(0.0, dash_iframe_timer - d)
+
+	if is_dashing:
+		dash_timer -= d
+		var progress = clampf(dash_timer / maxf(0.01, dash_duration), 0.0, 1.0)
+		var cur_dash_speed = lerpf(3.5, 12.5, progress)
+		_try_move(lead, dash_dir, cur_dash_speed * d)
+		if dash_timer <= 0.0:
+			is_dashing = false
+	elif can_act and mv.length() > 0:
 		target_point = null
 		current_path.clear()
 		mv = mv.normalized()
@@ -901,7 +1226,7 @@ func _process(d):
 		_try_move(lead, dir, cur_speed * d)
 		if not fp_mode:
 			lead.rotation.y = atan2(dir.x, dir.z)
-	elif not combat_lock and (current_path.size() > 0 or target_point != null):
+	elif can_act and (current_path.size() > 0 or target_point != null):
 		var target_pos = target_point
 		if current_path.size() > 0:
 			var wp = current_path[0]
@@ -934,6 +1259,8 @@ func _process(d):
 			if step > 0:
 				_try_move(cur, dir2, step)
 				cur.rotation.y = atan2(dir2.x, dir2.z)
+	if not is_instance_valid(lead):
+		return
 	var ground_h = terrain.sample_h(lead.position.x, lead.position.z) if terrain != null else 0.0
 	if (loc_id == "bandit_road" or loc_id == "road_bandits"):
 		ground_h = CliffBridge.get_surface_y(lead.position.x, lead.position.z, lead.position.y, terrain)
@@ -953,18 +1280,30 @@ func _process(d):
 		pn["base_y"] = cur_by
 		pn.root.position.y = cur_by
 	if cam != null:
+		if Game.combat_mode == Game.CombatMode.REALTIME_FP and not fp_mode and not is_defeated:
+			_set_fp_mode(true)
 		if fp_mode:
 			lead.rotation.y = yaw
 		yaw_n.position = lead.position + Vector3(0, fp_cam_y, 0) + cam_offset
 		yaw_n.rotation = Vector3(0, yaw, 0)
 		pitch_n.rotation = Vector3(pitch, 0, 0)
 		cam.position = Vector3(0, 0, cam_dist)
-	if not combat_lock:
-		for en in enemies:
-			if (en.root.position - lead.position).length() < 1.4:
-				combat_lock = true
-				_try_combat()
-				break
+	if not combat_lock and not rt_combat_active and not is_defeated:
+		if hero_alive:
+			for i in range(enemies.size() - 1, -1, -1):
+				var en = enemies[i]
+				if not is_instance_valid(en.get("root")) or int(en.get("hp", 1)) <= 0:
+					enemies.remove_at(i)
+					continue
+				if (en.root.position - lead.position).length() < 2.0:
+					if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+						_start_realtime_combat()
+					else:
+						combat_lock = true
+						_try_combat()
+					break
+	if rt_combat_active:
+		_process_realtime_combat(d)
 	if airship != null and not combat_lock and hint != null:
 		var d_lad = (lead.global_position - airship.get_ladder_bottom_pos(lead.global_position)).length()
 		if d_lad < 2.5:
@@ -1012,33 +1351,1173 @@ func _try_move(node, dir, step):
 
 func _try_combat():
 	if airship_state == 2 or (airship != null and airship.get_altitude() > 1.2):
+		combat_lock = false
 		return
 	if party_n.size() == 0:
+		combat_lock = false
 		return
 	if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
+		combat_lock = false
 		return
 	var pre = str(LOCS.get(loc_id, {}).get("dlg", {}).get("pre", ""))
 	if pre != "" and not pre_played:
 		pre_played = true
 		await _play_dlg(pre)
 		if Game.flags.get("peace_" + loc_id, false) or Game.flags.get("paid_bandits_" + loc_id, false):
+			combat_lock = false
 			return
-	_start_combat()
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		combat_lock = false
+		_start_realtime_combat()
+	else:
+		_start_combat()
+
+func _start_realtime_combat():
+	combat_lock = false
+	rt_combat_active = true
+	_set_fp_mode(true)
+	
+	if fp_melee == null or not is_instance_valid(fp_melee):
+		fp_melee = FPMeleeClass.new()
+		cam.add_child(fp_melee)
+		fp_melee.attack_hit.connect(_on_rt_player_attack_hit)
+		fp_melee.kick_hit.connect(_on_rt_player_kick_hit)
+		fp_melee.parry_success.connect(_on_rt_player_parry)
+		fp_melee.block_hit.connect(_on_rt_player_block)
+	fp_melee.visible = true
+	
+	# Setup all enemies with archetype stats
+	for i in range(enemies.size()):
+		_setup_realtime_enemy(enemies[i], i)
+	
+	if hint != null:
+		hint.text = "⚔️ БОЙ [1-Е ЛИЦО]: ЛКМ Удар | ПКМ Блок/Парирование | F Пинок | Alt/C/Q Рывок"
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		_float_text(party_n[0].root.position, "В БОЙ!", Color(1.0, 0.4, 0.3))
+
+func _setup_realtime_enemy(en: Dictionary, i: int = 0):
+	var cls = str(en.get("cls", "swordsman"))
+	var max_hp = 3
+	if cls == "assassin" or cls == "archer" or cls == "mage":
+		max_hp = 2
+	elif cls == "swordsman" or cls == "halberd":
+		max_hp = 3
+	
+	en["cls"] = cls
+	en["hp"] = max_hp
+	en["maxhp"] = max_hp
+	en["atk_cd"] = 0.5 + float(i) * 0.5 + randf_range(0.1, 0.3)
+	en["windup"] = 0.0
+	en["windup_total"] = 0.75
+	en["is_unblockable"] = false
+	en["is_blocking"] = false
+	en["block_timer"] = 0.0
+	en["block_cd"] = randf_range(1.5, 3.5)
+	en["stagger"] = 0.0
+	en["staggered"] = false
+	en["strafe_dir"] = 1.0 if randf() > 0.5 else -1.0
+	en["combo_step"] = 0
+	
+	if cls == "archer":
+		en["state"] = "reload"
+		en["state_timer"] = randf_range(1.4, 2.4)
+		en["state_total"] = 2.5
+	elif cls == "mage":
+		en["state"] = "cast"
+		en["state_timer"] = randf_range(1.6, 2.6)
+		en["state_total"] = 2.8
+	else:
+		en["state"] = "aggro"
+	
+	_update_enemy_hp_display(en)
+	_update_enemy_status_display(en)
+
+func _update_enemy_status_display(en: Dictionary):
+	if not is_instance_valid(en.get("root")):
+		return
+	var er = en.root
+	var s_lbl = er.get_node_or_null("EnemyStatusLbl") as Label3D
+	if s_lbl == null:
+		s_lbl = Label3D.new()
+		s_lbl.name = "EnemyStatusLbl"
+		s_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		s_lbl.pixel_size = 0.0055
+		s_lbl.position = Vector3(0, 2.15, 0)
+		er.add_child(s_lbl)
+	
+	var stagger = float(en.get("stagger", 0.0))
+	var is_blocking = bool(en.get("is_blocking", false))
+	var windup = float(en.get("windup", 0.0))
+	var state = str(en.get("state", "aggro"))
+	var state_timer = float(en.get("state_timer", 0.0))
+	var state_total = float(en.get("state_total", 2.5))
+	
+	if stagger > 0.0:
+		s_lbl.visible = true
+		s_lbl.text = "💫 ОГЛУШЁН! (%.1fc)" % stagger
+		s_lbl.modulate = Color(1.0, 0.88, 0.2)
+		_set_actor_tint(er, Color(0.4, 0.7, 1.0))
+	elif is_blocking:
+		s_lbl.visible = true
+		s_lbl.text = "🛡️ БЛОК ЩИТОМ"
+		s_lbl.modulate = Color(0.35, 0.85, 1.0)
+		_set_actor_tint(er, Color(0.5, 0.9, 1.5))
+	elif windup > 0.0:
+		s_lbl.visible = true
+		var is_unb = bool(en.get("is_unblockable", false))
+		var pulse = sin(Time.get_ticks_msec() * 0.03) * 0.35 + 0.65
+		if is_unb:
+			s_lbl.text = "💥 НЕБЛОКИРУЕМЫЙ! (%.1fc)" % windup
+			s_lbl.modulate = Color(1.0, 0.15 * pulse, 0.15 * pulse)
+			_set_actor_tint(er, Color(2.6 * pulse, 0.2, 0.2))
+		else:
+			s_lbl.text = "⚠️ ЗАМАХ! (%.1fc)" % windup
+			s_lbl.modulate = Color(1.0, 0.5 + 0.5 * pulse, 0.15)
+			_set_actor_tint(er, Color(2.2 * pulse, 1.1 * pulse, 0.3))
+	elif state == "reload":
+		s_lbl.visible = true
+		var pips_cnt = int(clampf(1.0 - state_timer / maxf(0.01, state_total), 0.0, 1.0) * 5)
+		var pips = ""
+		for p in range(5):
+			pips += "■" if p < pips_cnt else "□"
+		s_lbl.text = "🏹 ЗАРЯДКА [%s] %.1fc" % [pips, maxf(0.0, state_timer)]
+		s_lbl.modulate = Color(0.5, 0.95, 0.5)
+		_set_actor_tint(er, Color(1.0, 1.0, 1.0))
+	elif state == "aim":
+		s_lbl.visible = true
+		s_lbl.text = "⚠️ ВЫСТРЕЛ! (%.1fc)" % maxf(0.0, state_timer)
+		s_lbl.modulate = Color(1.0, 0.85, 0.2)
+		_set_actor_tint(er, Color(1.8, 1.5, 0.4))
+	elif state == "cast":
+		s_lbl.visible = true
+		var pips_cnt = int(clampf(1.0 - state_timer / maxf(0.01, state_total), 0.0, 1.0) * 5)
+		var pips = ""
+		for p in range(5):
+			pips += "■" if p < pips_cnt else "□"
+		s_lbl.text = "🔮 КАСТ [%s] %.1fc" % [pips, maxf(0.0, state_timer)]
+		s_lbl.modulate = Color(0.9, 0.45, 1.0)
+		_set_actor_tint(er, Color(1.8, 0.5, 2.0))
+	else:
+		s_lbl.visible = false
+		_set_actor_tint(er, Color(1.0, 1.0, 1.0))
+
+func _show_enemy_telegraph(en: Dictionary, _remaining_time: float):
+	_update_enemy_status_display(en)
+
+func _hide_enemy_telegraph(en: Dictionary):
+	_update_enemy_status_display(en)
+
+func _update_enemy_hp_display(en: Dictionary):
+	if not is_instance_valid(en.get("root")):
+		return
+	var er = en.root
+	var hp_lbl = er.get_node_or_null("EnemyHPLbl") as Label3D
+	if hp_lbl == null:
+		hp_lbl = Label3D.new()
+		hp_lbl.name = "EnemyHPLbl"
+		hp_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		hp_lbl.pixel_size = 0.0045
+		hp_lbl.position = Vector3(0, 1.85, 0)
+		er.add_child(hp_lbl)
+	
+	var cur_hp = int(en.get("hp", 0))
+	var max_hp = int(en.get("maxhp", 3))
+	var pips = ""
+	for i in range(max_hp):
+		pips += "■" if i < cur_hp else "□"
+	hp_lbl.text = "%s %d/%d HP" % [pips, cur_hp, max_hp]
+	hp_lbl.modulate = Color(1.0, 0.25, 0.25) if cur_hp <= 1 else Color(1.0, 0.85, 0.4)
+	hp_lbl.visible = cur_hp > 0
+
+func _spawn_archer_arrow(en: Dictionary, target_pos: Vector3):
+	if not is_instance_valid(en.get("root")):
+		return
+	var origin = en.root.position + Vector3(0, 1.25, 0)
+	var dir = (target_pos - origin).normalized()
+	
+	var node = Node3D.new()
+	var mesh_inst = MeshInstance3D.new()
+	var cm = CylinderMesh.new()
+	cm.top_radius = 0.015
+	cm.bottom_radius = 0.015
+	cm.height = 0.75
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.35, 0.22, 0.12)
+	mat.roughness = 0.8
+	mesh_inst.mesh = cm
+	mesh_inst.material_override = mat
+	mesh_inst.rotation.x = deg_to_rad(90)
+	node.add_child(mesh_inst)
+	
+	var tip = MeshInstance3D.new()
+	var tm = CylinderMesh.new()
+	tm.top_radius = 0.0
+	tm.bottom_radius = 0.035
+	tm.height = 0.12
+	var tip_mat = StandardMaterial3D.new()
+	tip_mat.albedo_color = Color(0.8, 0.8, 0.85)
+	tip_mat.metallic = 0.9
+	tip.mesh = tm
+	tip.material_override = tip_mat
+	tip.rotation.x = deg_to_rad(90)
+	tip.position = Vector3(0, 0, -0.38)
+	node.add_child(tip)
+	
+	node.position = origin
+	if dir.length_squared() > 0.001:
+		node.look_at(origin + dir, Vector3.UP)
+	add_child(node)
+	
+	rt_projectiles.append({
+		"node": node,
+		"type": "arrow",
+		"pos": origin,
+		"dir": dir,
+		"speed": 14.0,
+		"damage": 1,
+		"lifetime": 3.0
+	})
+	_float_text(origin, "🏹 ВЫСТРЕЛ!", Color(0.5, 0.9, 0.5))
+
+func _spawn_mage_fireball(en: Dictionary, target_pos: Vector3):
+	if not is_instance_valid(en.get("root")):
+		return
+	var origin = en.root.position + Vector3(0, 1.25, 0)
+	var dir = (target_pos - origin).normalized()
+	
+	var node = MeshInstance3D.new()
+	var sm = SphereMesh.new()
+	sm.radius = 0.22
+	sm.height = 0.44
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.45, 0.1)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.4, 0.1)
+	mat.emission_energy_multiplier = 3.0
+	node.mesh = sm
+	node.material_override = mat
+	node.position = origin
+	add_child(node)
+	
+	rt_projectiles.append({
+		"node": node,
+		"type": "fireball",
+		"pos": origin,
+		"dir": dir,
+		"speed": 7.0,
+		"damage": 1,
+		"lifetime": 3.5
+	})
+	_float_text(origin, "🔥 ОГНЕННЫЙ ШАР!", Color(1.0, 0.5, 0.2))
+
+func _process_projectiles(d: float):
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	var lead_pos = lead.position + Vector3(0, 1.0, 0)
+	
+	for i in range(rt_projectiles.size() - 1, -1, -1):
+		var p = rt_projectiles[i]
+		if not is_instance_valid(p.get("node")):
+			rt_projectiles.remove_at(i)
+			continue
+		
+		p["pos"] += p["dir"] * float(p["speed"]) * d
+		p["node"].position = p["pos"]
+		p["lifetime"] -= d
+		
+		var dist_to_hero = (p["pos"] - lead_pos).length()
+		if dist_to_hero < 0.85:
+			_on_hero_hit_by_projectile(p)
+			if is_instance_valid(p["node"]):
+				p["node"].queue_free()
+			rt_projectiles.remove_at(i)
+			continue
+			
+		if p["lifetime"] <= 0.0:
+			if is_instance_valid(p["node"]):
+				p["node"].queue_free()
+			rt_projectiles.remove_at(i)
+
+func _on_hero_hit_by_projectile(p: Dictionary):
+	if is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	var ptype = str(p.get("type", "arrow"))
+	var dmg = int(p.get("damage", 1))
+	
+	if is_hero_invulnerable():
+		_float_text(lead.position, "💨 УВОРОТ (I-FRAME)!", Color(0.3, 0.95, 1.0))
+		return
+	
+	if fp_melee != null and fp_melee.is_blocking():
+		stamina = maxf(0.0, stamina - (12.0 if ptype == "arrow" else 16.0))
+		stamina_cooldown = 0.5
+		_screen_shake(0.03, 0.08)
+		if ptype == "arrow":
+			_float_text(lead.position, "🛡️ СТРЕЛА ЗАБЛОКИРОВАНА!", Color(0.4, 0.85, 1.0))
+			if parry_prompt_lbl != null:
+				parry_prompt_lbl.text = "🛡️ СТРЕЛА ЗАБЛОКИРОВАНА!"
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))
+		else:
+			_float_text(lead.position, "🛡️ ОГОНЬ ЗАБЛОКИРОВАН!", Color(1.0, 0.6, 0.2))
+			if parry_prompt_lbl != null:
+				parry_prompt_lbl.text = "🛡️ ОГОНЬ ЗАБЛОКИРОВАН!"
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2))
+		return
+	
+	if Game.test_player_godmode:
+		_float_text(lead.position, "🛡️ БЕССМЕРТИЕ (0 УРОНА)", Color(0.3, 1.0, 0.5))
+		return
+	
+	var hero = party_n[0].m
+	hero["hp"] = max(0, int(hero.get("hp", 2)) - dmg)
+	_update_party_hp_bars()
+	_screen_shake(0.065, 0.14)
+	if ptype == "arrow":
+		_float_text(lead.position, "🏹 ПОПАДАНИЕ СТРЕЛЫ! -%d HP" % dmg, Color(1.0, 0.3, 0.3))
+	else:
+		_float_text(lead.position, "🔥 УДАР МАГИЕЙ! -%d HP" % dmg, Color(1.0, 0.25, 0.1))
+	if int(hero.get("hp", 0)) <= 0:
+		_handle_hero_death()
+
+func _clean_up_projectiles():
+	for p in rt_projectiles:
+		if is_instance_valid(p.get("node")):
+			p["node"].queue_free()
+	rt_projectiles.clear()
+
+
+func _try_fp_attack():
+	_start_fp_attack()
+	_release_fp_attack()
+
+func _start_fp_attack():
+	if is_defeated or party_n.size() == 0 or int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	if fp_melee == null or not fp_melee.can_attack():
+		return
+	if not Game.test_player_godmode and stamina < 8.0:
+		if hint != null:
+			hint.text = "Недостаточно выносливости для удара!"
+		return
+	fp_melee.start_charge()
+
+func _release_fp_attack():
+	if is_defeated or party_n.size() == 0 or int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	if fp_melee == null or not fp_melee.is_charging():
+		return
+	
+	var valid_enemies = []
+	for en in enemies:
+		if is_instance_valid(en.get("root")) and int(en.get("hp", 3)) > 0:
+			valid_enemies.append(en)
+	
+	var res = fp_melee.release_charge(valid_enemies)
+	var is_heavy = bool(res.get("is_heavy", false))
+	var cost = float(res.get("stamina_cost", 8.0))
+	if not Game.test_player_godmode:
+		stamina = maxf(0.0, stamina - cost)
+		stamina_cooldown = 0.4
+	
+	if hint != null:
+		hint.text = "💥 ТЯЖЁЛЫЙ УДАР!" if is_heavy else "⚔️ БЫСТРЫЙ УДАР!"
+
+func _try_fp_kick():
+	if is_defeated or party_n.size() == 0 or int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	if fp_melee == null or not fp_melee.can_kick():
+		return
+	if not Game.test_player_godmode and stamina < 10.0:
+		if hint != null:
+			hint.text = "Недостаточно выносливости для пинка!"
+		return
+	if not Game.test_player_godmode:
+		stamina = maxf(0.0, stamina - 10.0)
+		stamina_cooldown = 0.4
+	
+	var valid_enemies = []
+	for en in enemies:
+		if is_instance_valid(en.get("root")) and int(en.get("hp", 3)) > 0:
+			valid_enemies.append(en)
+	
+	fp_melee.try_kick(valid_enemies)
+
+func _on_rt_player_kick_hit(target):
+	if not rt_combat_active and not is_defeated:
+		_start_realtime_combat()
+	if target is Dictionary and target.has("hp"):
+		var was_blocking = bool(target.get("is_blocking", false))
+		target["is_blocking"] = false
+		target["windup"] = 0.0
+		
+		# Interrupt cast/aim
+		if target.get("state") == "cast":
+			target["state_timer"] = 2.8
+			if is_instance_valid(target.get("root")):
+				_float_text(target.root.position, "💥 КАСТ СБИТ!", Color(1.0, 0.4, 0.8))
+		elif target.get("state") == "aim":
+			target["state"] = "reload"
+			target["state_timer"] = 2.5
+			if is_instance_valid(target.get("root")):
+				_float_text(target.root.position, "💥 ПРИЦЕЛ СБИТ!", Color(1.0, 0.6, 0.4))
+		
+		if Game.test_enemy_godmode:
+			target["hp"] = max(1, int(target["hp"]) - 1)
+		else:
+			target["hp"] = int(target["hp"]) - 1
+		
+		target["stagger"] = 2.0 if was_blocking else 1.6
+		target["staggered"] = true
+		target["atk_cd"] = 1.5 if was_blocking else 1.2
+		
+		if is_instance_valid(target.get("root")):
+			var er = target.root
+			var kick_txt = "💥 БЛОК ПРОБИТ ПИНКОМ! [СТАН]" if was_blocking else "🦶 ПИНОК! [ОТБРОШЕН]"
+			_float_text(er.position, kick_txt, Color(1.0, 0.85, 0.2) if was_blocking else Color(1.0, 0.65, 0.2))
+			_update_enemy_hp_display(target)
+			_update_enemy_status_display(target)
+			_screen_shake(0.06 if was_blocking else 0.05, 0.16 if was_blocking else 0.14)
+			
+			_set_actor_tint(er, Color(4.0, 4.0, 4.0))
+			var tw = er.create_tween()
+			tw.tween_interval(0.07)
+			tw.tween_callback(func():
+				if is_instance_valid(er):
+					_set_actor_tint(er, Color(0.4, 0.7, 1.0))
+			)
+			
+			if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+				var push_dir = (er.position - party_n[0].root.position).normalized()
+				push_dir.y = 0
+				_try_move(er, push_dir, 1.8 if was_blocking else 1.5)
+			
+			tw.parallel().tween_property(er, "scale", Vector3(1.35, 0.65, 1.35), 0.08)
+			tw.tween_property(er, "scale", Vector3(1.0, 1.0, 1.0), 0.12)
+		
+		if not Game.test_enemy_godmode and target["hp"] <= 0:
+			_update_enemy_status_display(target)
+			_on_enemy_killed(target)
+
+func _on_rt_player_attack_hit(target, damage, is_crit, is_heavy = false):
+	if not rt_combat_active and not is_defeated:
+		_start_realtime_combat()
+	if target is Dictionary and target.has("hp"):
+		var er = target.get("root")
+		
+		# Check if enemy is blocking with shield!
+		if bool(target.get("is_blocking", false)):
+			if is_heavy:
+				# Heavy attack crushes enemy block!
+				target["is_blocking"] = false
+				target["stagger"] = 1.6
+				target["staggered"] = true
+				target["windup"] = 0.0
+				if is_instance_valid(er):
+					_float_text(er.position, "💥 БЛОК СОКРУШЁН! -%d" % int(damage), Color(1.0, 0.55, 0.15))
+			else:
+				# Fast light strike is blocked by shield!
+				if is_instance_valid(er):
+					_float_text(er.position, "🛡️ ЗАБЛОКИРОВАНО ВРАГОМ!", Color(0.4, 0.85, 1.0))
+					_screen_shake(0.035, 0.09)
+					_set_actor_tint(er, Color(0.5, 1.2, 2.5))
+					var tw = er.create_tween()
+					tw.tween_interval(0.08)
+					tw.tween_callback(func():
+						if is_instance_valid(er):
+							_update_enemy_status_display(target)
+					)
+				target["atk_cd"] = 0.3 # Enemy quick counter-attack window
+				return
+		
+		# Interrupt cast/aim upon damage
+		if target.get("state") == "cast":
+			target["state_timer"] = 2.8
+			if is_instance_valid(er):
+				_float_text(er.position, "💥 КАСТ СБИТ!", Color(1.0, 0.4, 0.8))
+		elif target.get("state") == "aim":
+			target["state"] = "reload"
+			target["state_timer"] = 2.5
+			if is_instance_valid(er):
+				_float_text(er.position, "💥 ПРИЦЕЛ СБИТ!", Color(1.0, 0.6, 0.4))
+
+		if Game.test_enemy_godmode:
+			target["hp"] = max(1, int(target["hp"]) - int(damage))
+		else:
+			target["hp"] = int(target["hp"]) - int(damage)
+		
+		var txt = ""
+		var col = Color(1.0, 0.85, 0.2)
+		if is_heavy:
+			txt = "💥 СИЛЬНЫЙ УДАР! -%d" % int(damage)
+			col = Color(1.0, 0.55, 0.15)
+			target["stagger"] = 1.4
+			target["staggered"] = true
+			target["windup"] = 0.0
+			_update_enemy_status_display(target)
+		elif is_crit:
+			txt = "✨ КРИТ! -%d" % int(damage)
+			col = Color(1.0, 0.85, 0.2)
+		else:
+			txt = "⚔️ -%d" % int(damage)
+			col = Color(1.0, 0.35, 0.35)
+			
+		if is_instance_valid(er):
+			_float_text(er.position, txt, col)
+			_update_enemy_hp_display(target)
+			_update_enemy_status_display(target)
+			_screen_shake(0.07 if is_heavy else (0.045 if is_crit else 0.025), 0.12 if is_heavy else 0.09)
+			
+			# White hit flash on enemy
+			_set_actor_tint(er, Color(4.0, 4.0, 4.0))
+			var tw = er.create_tween()
+			tw.tween_interval(0.07)
+			tw.tween_callback(func():
+				if is_instance_valid(er):
+					_set_actor_tint(er, Color(1.0, 1.0, 1.0))
+			)
+			
+			# Knockback & recoil
+			if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+				var push_dir = (er.position - party_n[0].root.position).normalized()
+				push_dir.y = 0
+				var push_dist = 0.7 if is_heavy else 0.35
+				_try_move(er, push_dir, push_dist)
+			
+			tw.parallel().tween_property(er, "scale", Vector3(1.35 if is_heavy else 1.25, 0.7 if is_heavy else 0.8, 1.35 if is_heavy else 1.25), 0.07)
+			tw.tween_property(er, "scale", Vector3(1.0, 1.0, 1.0), 0.12)
+		
+		if not Game.test_enemy_godmode and target["hp"] <= 0:
+			_update_enemy_status_display(target)
+			_on_enemy_killed(target)
+
+func _apply_parry_riposte(en: Dictionary):
+	if not is_instance_valid(en.get("root")):
+		return
+	var er = en.root
+	var now = Time.get_ticks_msec()
+	if now - int(en.get("last_riposted_time", 0)) < 450:
+		return
+	en["last_riposted_time"] = now
+	en["windup"] = 0.0
+	_hide_enemy_telegraph(en)
+	
+	# Stagger the enemy
+	en["stagger"] = 2.0
+	en["staggered"] = true
+	
+	# Counter-attack (riposte) damage!
+	var riposte_dmg = 2
+	if Game.test_enemy_godmode:
+		en["hp"] = max(1, int(en.get("hp", 3)) - riposte_dmg)
+	else:
+		en["hp"] = max(0, int(en.get("hp", 3)) - riposte_dmg)
+	
+	# White flash on enemy
+	_set_actor_tint(er, Color(4.0, 4.0, 4.0))
+	var tw = er.create_tween()
+	tw.tween_interval(0.08)
+	tw.tween_callback(func():
+		if is_instance_valid(er):
+			_set_actor_tint(er, Color(0.4, 0.7, 1.0))
+	)
+	
+	# Pushback away from hero
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		var push_dir = (er.position - party_n[0].root.position).normalized()
+		push_dir.y = 0
+		_try_move(er, push_dir, 0.6)
+	
+	_screen_shake(0.08, 0.2)
+	_float_text(er.position, "✨ ПАРИРОВАНИЕ & РИПОСТ! -%d HP" % riposte_dmg, Color(1.0, 0.88, 0.25))
+	_update_enemy_hp_display(en)
+	
+	if parry_prompt_lbl != null:
+		parry_prompt_lbl.text = "✨ ИДЕАЛЬНОЕ ПАРИРОВАНИЕ! КОНТРУДАР (-%d HP)!" % riposte_dmg
+		parry_prompt_lbl.add_theme_color_override("font_color", Color(0.3, 1.0, 0.6))
+	
+	if fp_melee != null:
+		fp_melee._trigger_riposte_anim()
+	
+	if not Game.test_enemy_godmode and int(en.get("hp", 0)) <= 0:
+		_on_enemy_killed(en)
+
+func _try_rt_active_parry():
+	if not rt_combat_active or is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	for en in enemies:
+		if not is_instance_valid(en.get("root")):
+			continue
+		var dist = (lead.position - en.root.position).length()
+		var reach = 3.6 if en.get("cls") == "halberd" else 3.2
+		if dist <= reach:
+			if bool(en.get("is_unblockable", false)):
+				continue
+			var windup = float(en.get("windup", 0.0))
+			# Enemy in active parry window (final 0.45s of windup)
+			if windup > 0.0 and windup <= 0.45:
+				_apply_parry_riposte(en)
+				break
+
+func _on_rt_player_parry(attacker):
+	if attacker is Dictionary:
+		_apply_parry_riposte(attacker)
+
+func _on_rt_player_block(_attacker, absorbed):
+	stamina = maxf(0.0, stamina - 15.0)
+	stamina_cooldown = 0.5
+	if parry_prompt_lbl != null:
+		parry_prompt_lbl.text = "🛡️ УДАР ЗАБЛОКИРОВАН (-%d)" % int(absorbed)
+		parry_prompt_lbl.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		_float_text(party_n[0].root.position, "🛡️ БЛОК! (-%d)" % int(absorbed), Color(0.4, 0.8, 1.0))
+	_screen_shake(0.03, 0.08)
+
+func _on_enemy_killed(target: Dictionary):
+	if is_instance_valid(target.get("root")):
+		_float_text(target.root.position, "💀 УБИТ!", Color(1.0, 0.2, 0.2))
+	target["hp"] = 0
+	enemies.erase(target)
+	
+	var loot_table = LOCS.get(loc_id, {}).get("loot", [])
+	for l in loot_table:
+		if randf() * 100.0 < float(l.get("chance", 35)):
+			var it = str(l.get("item", ""))
+			if it != "" and is_instance_valid(target.get("root")):
+				_spawn_ground({"pos": [target.root.position.x, target.root.position.z], "item": it, "day": Game.day})
+	for m in Game.party:
+		PartyTools.add_xp(m, 5)
+	_update_party_hp_bars()
+	
+	if is_instance_valid(target.get("root")):
+		var er = target.root
+		var tw = er.create_tween()
+		tw.tween_property(er, "scale", Vector3(0.01, 0.01, 0.01), 0.3)
+		tw.finished.connect(func():
+			if is_instance_valid(er):
+				er.queue_free()
+		)
+
+func _set_actor_tint(root: Node3D, col: Color):
+	if root == null or not is_instance_valid(root):
+		return
+	for c in root.get_children():
+		if c is Sprite3D:
+			c.modulate = col
+		elif c is MeshInstance3D and c.material_override is StandardMaterial3D:
+			c.material_override.albedo_color = col
+
+func _process_realtime_combat(d: float):
+	if is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	if int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	var lead = party_n[0].root
+	var lead_pos = lead.position
+
+	# 1. Update ranged projectiles
+	_process_projectiles(d)
+
+	# 2. Check if player is charging an attack (for enemy reactivity)
+	var is_player_charging = (fp_melee != null and fp_melee.is_charging())
+
+	# Count active windups & find imminent attacker for parry HUD
+	var active_windups = 0
+	var min_windup_enemy = null
+	var min_rem_windup = 999.0
+
+	var alive_enemies = 0
+	for i in range(enemies.size() - 1, -1, -1):
+		var en = enemies[i]
+		if not is_instance_valid(en.get("root")):
+			enemies.remove_at(i)
+			continue
+		var er = en.root
+		var hp = int(en.get("hp", 3))
+		if hp <= 0:
+			enemies.remove_at(i)
+			continue
+		alive_enemies += 1
+
+		var to_player = lead_pos - er.position
+		to_player.y = 0
+		var dist = to_player.length()
+
+		if dist > 0.05:
+			er.rotation.y = atan2(to_player.x, to_player.z)
+
+		var cls = str(en.get("cls", "swordsman"))
+
+		# Check Stagger
+		var stagger = float(en.get("stagger", 0.0))
+		if stagger > 0.0:
+			en["stagger"] = maxf(0.0, stagger - d)
+			_update_enemy_status_display(en)
+			continue
+		else:
+			en["staggered"] = false
+
+		# Check Enemy Block
+		var is_blocking = bool(en.get("is_blocking", false))
+		var block_cd = float(en.get("block_cd", 0.0))
+		if block_cd > 0.0:
+			en["block_cd"] = maxf(0.0, block_cd - d)
+
+		if is_blocking:
+			var block_timer = float(en.get("block_timer", 0.0)) - d
+			en["block_timer"] = block_timer
+			if block_timer <= 0.0:
+				en["is_blocking"] = false
+				en["block_cd"] = randf_range(2.0, 3.5)
+			else:
+				if dist > 1.4:
+					_try_move(er, to_player.normalized(), 0.8 * d)
+				_update_enemy_status_display(en)
+				continue
+
+		# Check Active Windup
+		var windup = float(en.get("windup", 0.0))
+		if windup > 0.0:
+			active_windups += 1
+			if windup < min_rem_windup:
+				min_rem_windup = windup
+				min_windup_enemy = en
+			
+			en["windup"] = maxf(0.0, windup - d)
+			_update_enemy_status_display(en)
+			if en["windup"] <= 0.0:
+				_enemy_realtime_strike(en)
+			continue
+
+		# Reaction to player charging attack (raising shield / dodge / poke)
+		if is_player_charging and dist <= 3.2:
+			if cls == "swordsman" and en.get("block_cd", 0.0) <= 0.0 and randf() < 0.7:
+				en["is_blocking"] = true
+				en["block_timer"] = randf_range(1.6, 2.4)
+				_float_text(er.position, "🛡️ БЛОК!", Color(0.4, 0.85, 1.0))
+				_update_enemy_status_display(en)
+				continue
+			elif cls == "assassin" and randf() < 0.5:
+				var back_dir = -to_player.normalized()
+				_try_move(er, back_dir, 2.2 * d * 8.0)
+			elif cls == "halberd" and en.get("atk_cd", 0.0) <= 0.0 and active_windups == 0 and randf() < 0.45:
+				en["windup"] = 0.5
+				en["windup_total"] = 0.5
+				en["is_unblockable"] = false
+				active_windups += 1
+				min_windup_enemy = en
+				min_rem_windup = 0.5
+				_update_enemy_status_display(en)
+				continue
+
+		# Attack Cooldown
+		var atk_cd = float(en.get("atk_cd", 0.0))
+		if atk_cd > 0.0:
+			en["atk_cd"] = maxf(0.0, atk_cd - d)
+
+		# Class-specific Movement & Actions
+		if cls == "archer":
+			if dist < 5.0:
+				_try_move(er, -to_player.normalized(), 3.0 * d)
+			elif dist > 9.5:
+				_try_move(er, to_player.normalized(), 2.0 * d)
+			
+			var state = str(en.get("state", "reload"))
+			var state_timer = float(en.get("state_timer", 2.0)) - d
+			en["state_timer"] = state_timer
+			
+			if state == "reload":
+				if state_timer <= 0.0:
+					en["state"] = "aim"
+					en["state_timer"] = 0.7
+					en["state_total"] = 0.7
+			elif state == "aim":
+				if state_timer <= 0.0:
+					_spawn_archer_arrow(en, lead_pos + Vector3(0, 1.1, 0))
+					en["state"] = "reload"
+					en["state_timer"] = 2.5
+					en["state_total"] = 2.5
+			else:
+				en["state"] = "reload"
+				en["state_timer"] = 2.5
+				en["state_total"] = 2.5
+			_update_enemy_status_display(en)
+
+		elif cls == "mage":
+			if dist < 4.5:
+				_try_move(er, -to_player.normalized(), 2.5 * d)
+			elif dist > 9.0:
+				_try_move(er, to_player.normalized(), 1.8 * d)
+			
+			var state = str(en.get("state", "cast"))
+			var state_timer = float(en.get("state_timer", 2.5)) - d
+			en["state_timer"] = state_timer
+			
+			if state == "cast":
+				if state_timer <= 0.0:
+					_spawn_mage_fireball(en, lead_pos + Vector3(0, 1.0, 0))
+					en["state"] = "cast"
+					en["state_timer"] = 2.8
+					en["state_total"] = 2.8
+			else:
+				en["state"] = "cast"
+				en["state_timer"] = 2.8
+				en["state_total"] = 2.8
+			_update_enemy_status_display(en)
+
+		elif cls == "assassin":
+			var fwd = to_player.normalized()
+			var side = Vector3(-fwd.z, 0, fwd.x) * float(en.get("strafe_dir", 1.0))
+			if randf() < 0.025:
+				en["strafe_dir"] = -float(en.get("strafe_dir", 1.0))
+			
+			if dist > 1.5:
+				var move_dir = (fwd * 0.7 + side * 0.75).normalized()
+				_try_move(er, move_dir, 3.6 * d)
+			elif dist <= 1.5 and atk_cd <= 0.0:
+				if active_windups == 0:
+					en["windup"] = 0.45
+					en["windup_total"] = 0.45
+					en["is_unblockable"] = false
+					en["combo_step"] = 0
+					active_windups += 1
+					min_windup_enemy = en
+					min_rem_windup = 0.45
+				else:
+					en["atk_cd"] = randf_range(0.4, 0.8)
+			_update_enemy_status_display(en)
+
+		elif cls == "halberd":
+			if dist > 2.8:
+				_try_move(er, to_player.normalized(), 2.0 * d)
+			elif dist < 2.0:
+				_try_move(er, -to_player.normalized(), 1.6 * d)
+			
+			if dist <= 3.0 and atk_cd <= 0.0:
+				if active_windups == 0:
+					var is_unb = randf() < 0.45
+					en["is_unblockable"] = is_unb
+					en["windup"] = 0.85 if is_unb else 0.65
+					en["windup_total"] = en["windup"]
+					active_windups += 1
+					min_windup_enemy = en
+					min_rem_windup = en["windup"]
+				else:
+					en["atk_cd"] = randf_range(0.6, 1.2)
+			_update_enemy_status_display(en)
+
+		else:
+			# Swordsman
+			if dist > 1.6:
+				_try_move(er, to_player.normalized(), 2.3 * d)
+			elif dist <= 1.6 and atk_cd <= 0.0:
+				if active_windups == 0:
+					en["windup"] = 0.75
+					en["windup_total"] = 0.75
+					en["is_unblockable"] = false
+					active_windups += 1
+					min_windup_enemy = en
+					min_rem_windup = 0.75
+				else:
+					en["atk_cd"] = randf_range(0.5, 1.1)
+			_update_enemy_status_display(en)
+
+		var eh = terrain.sample_h(er.position.x, er.position.z) if terrain != null else 0.0
+		er.position.y = eh
+
+	# Update Parry Timing Bar HUD
+	if parry_hud != null and is_instance_valid(parry_hud):
+		if min_windup_enemy != null and min_rem_windup < 900.0:
+			parry_hud.modulate.a = move_toward(parry_hud.modulate.a, 1.0, d * 8.0)
+			var w_total = float(min_windup_enemy.get("windup_total", 0.75))
+			var progress = clampf(1.0 - (min_rem_windup / maxf(0.01, w_total)), 0.0, 1.0)
+			parry_progress_bar.value = progress
+			var is_unb = bool(min_windup_enemy.get("is_unblockable", false))
+			if is_unb:
+				parry_prompt_lbl.text = "💥 НЕБЛОКИРУЕМЫЙ! ОТПРЫГИВАЙ [ПРОБЕЛ]!"
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+				parry_zone_rect.color = Color(1.0, 0.15, 0.15, 0.8)
+			elif progress >= 0.50:
+				parry_prompt_lbl.text = "🛡️ ЖМИ ПКМ! ОКНО ПАРИРОВАНИЯ!"
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(0.35, 1.0, 0.45))
+				parry_zone_rect.color = Color(0.3, 1.0, 0.5, 0.75)
+			else:
+				parry_prompt_lbl.text = "⚠️ ВРАГ ЗАМАХНУЛСЯ..."
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.75, 0.2))
+				parry_zone_rect.color = Color(0.2, 0.85, 0.4, 0.45)
+		else:
+			parry_hud.modulate.a = move_toward(parry_hud.modulate.a, 0.0, d * 3.5)
+
+	if alive_enemies == 0 and enemies.size() == 0:
+		_end_realtime_combat(true)
+
+func _enemy_realtime_strike(en: Dictionary):
+	_update_enemy_status_display(en)
+	if is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	if int(party_n[0].m.get("hp", 0)) <= 0:
+		return
+	if not is_instance_valid(en.get("root")):
+		return
+	var lead = party_n[0].root
+	var dist = (lead.position - en.root.position).length()
+	var reach = 3.3 if en.get("cls") == "halberd" else 2.5
+	if dist > reach:
+		_float_text(en.root.position, "💨 ПРОМАХ ВРАГА!", Color(0.8, 0.8, 0.8))
+		en["atk_cd"] = 0.8
+		return
+	
+	if is_hero_invulnerable():
+		_float_text(lead.position, "💨 УВОРОТ (I-FRAME)!", Color(0.3, 0.95, 1.0))
+		_screen_shake(0.02, 0.08)
+		en["atk_cd"] = 0.8
+		return
+	
+	var is_unb = bool(en.get("is_unblockable", false))
+	var strike_dmg = 1.0
+	
+	# Assassin backstab bonus
+	if en.get("cls") == "assassin":
+		var hero_fwd = -lead.global_transform.basis.z
+		hero_fwd.y = 0
+		var to_en = (en.root.position - lead.position).normalized()
+		to_en.y = 0
+		if hero_fwd.dot(to_en) < -0.4:
+			strike_dmg = 2.0
+			_float_text(lead.position, "🔪 УДАР В СПИНУ!", Color(1.0, 0.2, 0.2))
+
+	if fp_melee != null:
+		var res = fp_melee.receive_hit(strike_dmg, en, is_unb)
+		var result = str(res.get("result", "hit"))
+		if result == "parry":
+			_apply_parry_riposte(en)
+			return
+		elif result == "block":
+			stamina = maxf(0.0, stamina - 16.0)
+			stamina_cooldown = 0.6
+			en["atk_cd"] = 1.2
+			_float_text(lead.position, "🛡️ БЛОК!", Color(0.4, 0.8, 1.0))
+			if parry_prompt_lbl != null:
+				parry_prompt_lbl.text = "🛡️ УДАР ЗАБЛОКИРОВАН (-1)"
+				parry_prompt_lbl.add_theme_color_override("font_color", Color(0.4, 0.85, 1.0))
+			_screen_shake(0.03, 0.08)
+			return
+		elif result == "guard_break":
+			_float_text(lead.position, "❌ НЕЛЬЗЯ ЗАБЛОКИРОВАТЬ! СТАН!", Color(1.0, 0.15, 0.15))
+			_screen_shake(0.1, 0.25)
+	
+	if Game.test_player_godmode:
+		_float_text(lead.position, "🛡️ БЕССМЕРТИЕ (0 УРОНА)", Color(0.3, 1.0, 0.5))
+		en["atk_cd"] = 1.0
+		return
+
+	var hero = party_n[0].m
+	hero["hp"] = max(0, int(hero.get("hp", 2)) - int(strike_dmg))
+	_float_text(lead.position, "-%d HP" % int(strike_dmg), Color(1.0, 0.25, 0.25))
+	_update_party_hp_bars()
+	_screen_shake(0.08, 0.2)
+	if parry_prompt_lbl != null:
+		parry_prompt_lbl.text = "💥 ПОЛУЧЕН УРОН!"
+		parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+	en["atk_cd"] = 1.4
+	
+	# Assassin combo follow-up chance
+	if en.get("cls") == "assassin" and int(en.get("combo_step", 0)) == 0 and randf() < 0.55:
+		en["combo_step"] = 1
+		en["windup"] = 0.35
+		en["windup_total"] = 0.35
+		en["is_unblockable"] = false
+		_float_text(en.root.position, "⚡ СЕРИЯ УДАРОВ!", Color(1.0, 0.8, 0.3))
+		return
+	else:
+		en["combo_step"] = 0
+
+	if int(hero.get("hp", 0)) <= 0:
+		if Game.is_combat_test or loc_id == "bandit_road":
+			hero["hp"] = int(hero.get("maxhp", 3))
+			stamina = max_stamina
+			is_defeated = false
+			combat_lock = false
+			_update_party_hp_bars()
+			_float_text(lead.position, "✨ МГНОВЕННОЕ ВОЗРОЖДЕНИЕ (ТЕСТ-РЕЖИМ)!", Color(1.0, 0.9, 0.2))
+			for nearby_en in enemies:
+				nearby_en["windup"] = 0.0
+				nearby_en["atk_cd"] = 1.2
+				_update_enemy_status_display(nearby_en)
+			return
+		_handle_hero_death()
+
+func _handle_hero_death():
+	if Game.is_combat_test or loc_id == "bandit_road":
+		if party_n.size() > 0:
+			party_n[0].m["hp"] = int(party_n[0].m.get("maxhp", 3))
+		stamina = max_stamina
+		is_defeated = false
+		combat_lock = false
+		_update_party_hp_bars()
+		return
+	if party_n.size() == 0:
+		_end_realtime_combat(false)
+		return
+	
+	var fallen = party_n[0]
+	var fallen_cid = str(fallen.m.get("char", ""))
+	var fallen_name = str(CHARS.get(fallen_cid, {}).get("name", fallen.m.get("cls", "Герой")))
+	if is_instance_valid(fallen.get("root")):
+		_float_text(fallen.root.position, "💀 %s пал!" % fallen_name, Color(1.0, 0.2, 0.2))
+	
+	# Check if another living party member exists
+	var found_next = false
+	while party_n.size() > 1:
+		var dead_node = party_n.pop_front()
+		if is_instance_valid(dead_node.get("root")):
+			var tw = dead_node.root.create_tween()
+			tw.tween_property(dead_node.root, "scale", Vector3(0.05, 0.05, 0.05), 0.35)
+			tw.finished.connect(func():
+				if is_instance_valid(dead_node.root):
+					dead_node.root.queue_free()
+			)
+		
+		var next_hero = party_n[0]
+		if int(next_hero.m.get("hp", 0)) > 0:
+			found_next = true
+			var next_cid = str(next_hero.m.get("char", ""))
+			var next_name = str(CHARS.get(next_cid, {}).get("name", next_hero.m.get("cls", "Боец")))
+			if is_instance_valid(next_hero.get("root")):
+				_float_text(next_hero.root.position, "⚔️ В бой вступает %s!" % next_name, Color(1.0, 0.85, 0.3))
+			if hint != null:
+				hint.text = "Лидер пал! В бой вступает %s!" % next_name
+			if fp_mode and is_instance_valid(next_hero.root):
+				next_hero.root.visible = false
+			_update_party_hp_bars()
+			break
+	
+	if not found_next:
+		is_defeated = true
+		combat_lock = true
+		if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+			var tw = party_n[0].root.create_tween()
+			tw.tween_property(party_n[0].root, "scale", Vector3(0.05, 0.05, 0.05), 0.35)
+			# Do NOT queue_free() the leader on defeat!
+		_end_realtime_combat(false)
+
+func _end_realtime_combat(victory: bool):
+	rt_combat_active = false
+	_clean_up_projectiles()
+	if parry_hud != null:
+		parry_hud.modulate.a = 0.0
+	for en in enemies:
+		_hide_enemy_telegraph(en)
+	if victory:
+		combat_lock = false
+		Game.flags["clear_" + loc_id] = true
+		Game.clear_hook(loc_id)
+		var ls = Game.loc_state_get(loc_id)
+		ls["cleared_day"] = Game.day
+		if hint != null:
+			hint.text = "✨ ПОБЕДА! Все враги повержены."
+		if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+			_set_fp_mode(true)
+		else:
+			_flyout_to_third_person()
+	else:
+		combat_lock = true
+		is_defeated = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if fp_melee != null:
+			fp_melee.visible = false
+		if crosshair != null:
+			crosshair.visible = false
+		if hint != null:
+			hint.text = "💀 Отряд повержен! Нажмите [M] для возвращения на карту."
+		_show_defeat_overlay()
+
+func _show_defeat_overlay():
+	var old = get_node_or_null("DefeatUI")
+	if old != null:
+		old.queue_free()
+	var ui_def = Control.new()
+	ui_def.name = "DefeatUI"
+	ui_def.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_def.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(ui_def)
+	
+	var bg = ColorRect.new()
+	bg.color = Color(0.0, 0.0, 0.0, 0.65)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_def.add_child(bg)
+	
+	var center = VBoxContainer.new()
+	center.set_anchors_preset(Control.PRESET_CENTER)
+	center.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_theme_constant_override("separation", 16)
+	ui_def.add_child(center)
+	
+	var lb = Label.new()
+	lb.text = "💀 ПОРАЖЕНИЕ…"
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.add_theme_font_size_override("font_size", 42)
+	lb.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
+	center.add_child(lb)
+	
+	var sub = Label.new()
+	sub.text = "Ваш отряд пал в бою от первого лица."
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 16)
+	sub.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	center.add_child(sub)
+	
+	var btn_exit = Button.new()
+	btn_exit.text = "🗺️ Вернуться на карту [M]"
+	btn_exit.custom_minimum_size = Vector2(240, 44)
+	btn_exit.pressed.connect(_apply_defeat_and_exit)
+	center.add_child(btn_exit)
+
+func _apply_defeat_and_exit():
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if str(ConfigTools.get_val("defeat_mode", "town")) == "town":
+		for m in Game.party:
+			m["hp"] = 1
+		Game.gold = int(Game.gold * 0.8)
+	Game.clear_transient_state()
+	get_tree().change_scene_to_file("res://overworld3d.tscn")
+
+func _float_text(pos: Vector3, txt: String, col: Color):
+	var lb = Label3D.new()
+	lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lb.text = txt
+	lb.pixel_size = 0.006
+	lb.modulate = col
+	lb.position = pos + Vector3(0, 1.8, 0)
+	add_child(lb)
+	var tw = create_tween()
+	tw.tween_property(lb, "position:y", lb.position.y + 0.8, 0.8)
+	tw.parallel().tween_property(lb, "modulate:a", 0.0, 0.8)
+	tw.tween_callback(lb.queue_free)
 
 func _start_combat():
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var pts = []
 	for pn in party_n:
-		pts.append([pn.root.position.x, pn.root.position.z])
+		if is_instance_valid(pn.get("root")):
+			pts.append([pn.root.position.x, pn.root.position.z])
+	var valid_enemies = []
 	for en in enemies:
-		pts.append([en.root.position.x, en.root.position.z])
+		if is_instance_valid(en.get("root")) and int(en.get("hp", 1)) > 0:
+			valid_enemies.append(en)
+			pts.append([en.root.position.x, en.root.position.z])
+	if valid_enemies.size() == 0:
+		combat_lock = false
+		return
 	var cells = ExploreTools.snap_to_cells(pts, _is_free_cell)
 	var players = []
 	for i in party_n.size():
 		var m = party_n[i].m
 		players.append({"cell": cells[i], "cls": str(m.get("cls", "swordsman")), "char": str(m.get("char", "")), "hp": int(m.get("hp", 2)), "maxhp": int(m.get("maxhp", 2))})
 	var en = []
-	for i in enemies.size():
+	for i in valid_enemies.size():
 		en.append(cells[party_n.size() + i])
 	var p0 = [0, 0]
 	if party_n.size() > 0:
@@ -1145,13 +2624,123 @@ func _play_dlg(dn):
 	if fp_mode:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+func _spawn_test_enemy():
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	var fwd = Vector3(-sin(yaw), 0, -cos(yaw))
+	var spawn_pos = lead.position + fwd * 3.5
+	var gw = (terrain.GW if terrain != null else 12)
+	var gh = (terrain.GH if terrain != null else 12)
+	spawn_pos.x = clampf(spawn_pos.x, 1.0, gw - 1.0)
+	spawn_pos.z = clampf(spawn_pos.z, 1.0, gh - 1.0)
+	spawn_pos.y = terrain.sample_h(spawn_pos.x, spawn_pos.z) if terrain != null else 0.0
+	
+	var cls = test_classes[test_spawn_class_idx % test_classes.size()]
+	test_spawn_class_idx += 1
+	var er = _actor(cls, Color(0.9, 0.25, 0.25), "")
+	er.position = spawn_pos
+	
+	var en = {
+		"root": er,
+		"cls": cls
+	}
+	enemies.append(en)
+	_setup_realtime_enemy(en, enemies.size())
+	var name_ru = class_names_ru.get(cls, cls)
+	_float_text(spawn_pos, "✨ СПАВН: %s" % name_ru, Color(0.4, 0.85, 1.0))
+	_start_realtime_combat()
+	_update_test_hud()
+
+func _toggle_test_player_godmode():
+	Game.test_player_godmode = not Game.test_player_godmode
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		var txt = "🛡️ БЕССМЕРТИЕ ИГРОКА: " + ("ВКЛ" if Game.test_player_godmode else "ВЫКЛ")
+		var col = Color(0.3, 1.0, 0.4) if Game.test_player_godmode else Color(1.0, 0.4, 0.4)
+		_float_text(party_n[0].root.position, txt, col)
+	_update_test_hud()
+
+func _toggle_test_enemy_godmode():
+	Game.test_enemy_godmode = not Game.test_enemy_godmode
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		var txt = "👾 БЕССМЕРТИЕ ВРАГОВ: " + ("ВКЛ" if Game.test_enemy_godmode else "ВЫКЛ")
+		var col = Color(0.3, 1.0, 0.4) if Game.test_enemy_godmode else Color(1.0, 0.4, 0.4)
+		_float_text(party_n[0].root.position, txt, col)
+	_update_test_hud()
+
+func _restore_test_hero():
+	if party_n.size() > 0:
+		party_n[0].m["hp"] = int(party_n[0].m.get("maxhp", 3))
+	stamina = max_stamina
+	_update_party_hp_bars()
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		_float_text(party_n[0].root.position, "💖 ЗДОРОВЬЕ И ВЫНОСЛИВОСТЬ 100%", Color(0.2, 1.0, 0.5))
+	_update_test_hud()
+
+func _kill_all_enemies():
+	var count = enemies.size()
+	for en in enemies:
+		if is_instance_valid(en.get("root")):
+			_float_text(en.root.position, "💀 УСТРАНЁН", Color(1.0, 0.2, 0.2))
+			en.root.queue_free()
+	enemies.clear()
+	_clean_up_projectiles()
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		_float_text(party_n[0].root.position, "💀 УНИЧТОЖЕНО ВРАГОВ: %d" % count, Color(1.0, 0.7, 0.2))
+	if parry_hud != null:
+		parry_hud.modulate.a = 0.0
+	_update_test_hud()
+
 func _unhandled_input(ev):
-	if combat_lock:
+	if ev is InputEventKey and ev.pressed and ev.keycode == KEY_M:
+		if is_defeated or (party_n.size() > 0 and int(party_n[0].m.get("hp", 0)) <= 0):
+			_apply_defeat_and_exit()
+			return
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		Game.clear_transient_state()
+		get_tree().change_scene_to_file("res://overworld3d.tscn")
+		return
+	if is_defeated:
+		return
+	if combat_lock and not rt_combat_active:
+		return
+	if party_n.size() == 0 or int(party_n[0].m.get("hp", 0)) <= 0:
 		return
 	if ev is InputEventKey and ev.pressed:
 		if ev.keycode == KEY_V:
+			if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+				if hint != null:
+					hint.text = "В режиме реалтайм-боя зафиксирован вид от 1-го лица!"
+				return
 			_set_fp_mode(not fp_mode)
 			return
+		if ev.keycode == KEY_F and fp_mode:
+			_try_fp_kick()
+			return
+		if (ev.keycode == KEY_ALT or ev.keycode == KEY_Q or (ev.keycode == KEY_C and (rt_combat_active or fp_mode))) and not ev.is_echo():
+			_try_dash()
+			get_viewport().set_input_as_handled()
+			return
+		if Game.is_combat_test:
+			if ev.keycode == KEY_1:
+				_spawn_test_enemy()
+				return
+			elif ev.keycode == KEY_2:
+				_toggle_test_player_godmode()
+				return
+			elif ev.keycode == KEY_3:
+				_toggle_test_enemy_godmode()
+				return
+			elif ev.keycode == KEY_4:
+				_restore_test_hero()
+				return
+			elif ev.keycode == KEY_5:
+				_kill_all_enemies()
+				return
+			elif ev.keycode == KEY_F1:
+				if test_hud != null:
+					test_hud.visible = not test_hud.visible
+				return
 		if ev.keycode == KEY_ESCAPE:
 			if airship_state == 2:
 				_exit_airship_helm()
@@ -1159,11 +2748,6 @@ func _unhandled_input(ev):
 			if fp_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 				return
-		if ev.keycode == KEY_M:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			Game.clear_transient_state()
-			get_tree().change_scene_to_file("res://overworld3d.tscn")
-			return
 		if ev.keycode == KEY_R:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			var c = load("res://scripts/camp_ui.gd").new()
@@ -1216,8 +2800,16 @@ func _unhandled_input(ev):
 				_try_pick()
 			return
 	if ev is InputEventMouseButton:
+		if is_defeated or party_n.size() == 0 or int(party_n[0].m.get("hp", 0)) <= 0:
+			return
 		if ev.button_index == MOUSE_BUTTON_RIGHT:
-			if not fp_mode:
+			if fp_mode and fp_melee != null:
+				if ev.pressed:
+					fp_melee.start_block()
+					_try_rt_active_parry()
+				else:
+					fp_melee.stop_block()
+			elif not fp_mode:
 				right_drag = ev.pressed
 		elif ev.button_index == MOUSE_BUTTON_MIDDLE:
 			if not fp_mode:
@@ -1232,7 +2824,11 @@ func _unhandled_input(ev):
 				var min_d = 4.0 if airship_state == 2 else 2.0
 				var max_d = 16.0 if airship_state == 2 else 8.0
 				cam_dist = clampf(cam_dist + 0.5, min_d, max_d)
-		elif ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+		elif ev.button_index == MOUSE_BUTTON_LEFT:
+			if not ev.pressed:
+				if fp_mode and fp_melee != null and fp_melee.is_charging():
+					_release_fp_attack()
+				return
 			if airship_state != 0:
 				if fp_mode:
 					if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
@@ -1244,7 +2840,10 @@ func _unhandled_input(ev):
 				if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 					Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 				else:
-					_interact_ahead()
+					if fp_melee != null and fp_melee.can_attack():
+						_start_fp_attack()
+					else:
+						_interact_ahead()
 				return
 			var p = _ray_ground(ev.position)
 			if p != null and party_n.size() > 0:
@@ -1280,6 +2879,8 @@ func _unhandled_input(ev):
 		if fp_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 			yaw -= ev.relative.x * 0.003
 			pitch = clampf(pitch - ev.relative.y * 0.003, -1.4, 1.4)
+			if fp_melee != null:
+				fp_melee.set_mouse_delta(ev.relative)
 		elif right_drag:
 			yaw -= ev.relative.x * 0.005
 			pitch = clampf(pitch - ev.relative.y * 0.005, -1.45, -0.15)
@@ -1365,4 +2966,3 @@ func _obj(p, k):
 func _apply_graphics_settings():
 	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
 	DayNight.setup(world_env, sun_light, float(Game.hour))
-

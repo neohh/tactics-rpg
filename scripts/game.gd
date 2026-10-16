@@ -13,6 +13,44 @@ var party: Array = []
 var party_pool: Array = []
 var loc_state: Dictionary = {}
 
+# Combat Mode Configuration
+enum CombatMode {
+	REALTIME_FP = 0,   # Реалтайм от 1-го лица
+	HYBRID_QTE = 1,    # Пошаговый + QTE дуэль от 1-го лица
+	TURN_BASED = 2     # Классический пошаговый
+}
+var combat_mode: int = CombatMode.HYBRID_QTE
+signal combat_mode_changed(new_mode: int)
+
+# Combat Test Options
+var is_combat_test: bool = false
+var test_player_godmode: bool = false
+var test_enemy_godmode: bool = false
+signal test_combat_options_changed()
+
+func set_combat_mode(mode: int):
+	combat_mode = mode
+	combat_mode_changed.emit(combat_mode)
+
+func get_combat_mode_name() -> String:
+	match combat_mode:
+		CombatMode.REALTIME_FP: return "РЕАЛТАЙМ 1-Е ЛИЦО"
+		CombatMode.HYBRID_QTE: return "ГИБРИД (ПОШАГОВЫЙ + QTE ДУЭЛЬ)"
+		CombatMode.TURN_BASED: return "КЛАССИЧЕСКИЙ ПОШАГОВЫЙ"
+		_: return "КЛАССИЧЕСКИЙ"
+
+func get_combat_mode_short() -> String:
+	match combat_mode:
+		CombatMode.REALTIME_FP: return "Реалтайм"
+		CombatMode.HYBRID_QTE: return "Гибрид"
+		CombatMode.TURN_BASED: return "Пошаговый"
+		_: return "Пошаговый"
+
+func cycle_combat_mode() -> String:
+	combat_mode = (combat_mode + 1) % 3
+	combat_mode_changed.emit(combat_mode)
+	return get_combat_mode_name()
+
 # Transient Transition State (reset by clear_transient_state)
 var explore_start = null
 var explore_return = null

@@ -19,7 +19,7 @@ enum CombatMode {
 	HYBRID_QTE = 1,    # Пошаговый + QTE дуэль от 1-го лица
 	TURN_BASED = 2     # Классический пошаговый
 }
-var combat_mode: int = CombatMode.HYBRID_QTE
+var combat_mode: int = CombatMode.TURN_BASED
 signal combat_mode_changed(new_mode: int)
 
 # Combat Test Options
@@ -120,12 +120,19 @@ var return_scene: String:
 	get: return editor.return_scene
 	set(v): editor.return_scene = v
 
+func clear_test_state():
+	is_combat_test = false
+	test_player_godmode = false
+	test_enemy_godmode = false
+	test_combat_options_changed.emit()
+
 func clear_transient_state():
 	explore_start = null
 	explore_return = null
 	explore_ground = null
 	enc = null
 	battle_snap = null
+	clear_test_state()
 func add_item(id, n = 1):
 	inventory[id] = inventory.get(id, 0) + n
 func remove_item(id, n = 1):
@@ -206,6 +213,8 @@ func journal_text():
 	return s
 
 func save_game(slot: int = 0) -> bool:
+	if is_combat_test:
+		return false
 	if slot < 0 or slot > 9:
 		print("Неверный номер слота для сохранения: %d (допустимо 0..9)" % slot)
 		return false
@@ -278,6 +287,7 @@ func load_game(slot: int = -1) -> bool:
 	party = j.get("party", [])
 	party_pool = j.get("party_pool", [])
 	loc_state = j.get("loc_state", {})
+	clear_test_state()
 	print("Загружено из %s." % path)
 	return true
 func get_save_info(slot: int) -> Dictionary:

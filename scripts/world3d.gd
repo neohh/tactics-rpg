@@ -168,10 +168,10 @@ func _tex(path):
 	return ImageTexture.create_from_image(im)
 func _p(c):
 	return Vector3(c.x + 0.5, 0, c.y + 0.5)
-func _th(c):
+func _th(c, unit_i: int = -1):
 	var h = terrain.cell_h(c.x, c.y) if terrain != null else 0.0
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(c):
-		if selected >= 0 and selected < units3.size() and units3[selected].root.position.y < 1.2:
+		if unit_i >= 0 and unit_i < units3.size() and is_instance_valid(units3[unit_i].root) and units3[unit_i].root.position.y < 1.2:
 			return h
 	return h + ELEV.get(str(c.x) + "," + str(c.y), 0.0)
 func _mat_defs():
@@ -233,8 +233,8 @@ func _build():
 	for u in camp.get("units", []):
 		if int(u.get("team", 1)) == 0:
 			has0 = true
-	var from_explore = es != null and es.has("players") and es["players"].size() > 0
-	if from_explore:
+	var spawned_from_explore = es != null and es.has("players") and es["players"].size() > 0
+	if spawned_from_explore:
 		has0 = true
 		for pl in es["players"]:
 			var c = Vector2i(int(pl["cell"][0]), int(pl["cell"][1]))
@@ -258,10 +258,10 @@ func _build():
 			_set_hp_bar(uu)
 	for u in camp.get("units", []):
 		var tm = int(u.get("team", 1))
-		if tm == 0 and from_explore:
+		if tm == 0 and spawned_from_explore:
 			continue
 		_spawn_unit(Vector2i(u["cell"][0], u["cell"][1]), tm, u.get("cls", "swordsman"), Vector2(1, 0) if tm == 0 else Vector2(-1, 0), u.get("char", ""))
-	if not from_explore:
+	if not spawned_from_explore:
 		if Game.party.size() > 0:
 			has0 = true
 			var dmin = _calc_deploy_min_x()
@@ -1061,7 +1061,7 @@ func _mv(u):
 	if u.get("burn", 0) > 0 or u.get("pin", 0) > 0:
 		base -= 1
 	return maxi(1, base)
-func _bfs(start, rng, pass_units = false):
+func _bfs(start, rng, pass_units = false, unit_i: int = -1):
 	var res = []
 	bfs_parent = {}
 	bfs_dist = {start: 0}
@@ -1081,7 +1081,7 @@ func _bfs(start, rng, pass_units = false):
 					continue
 				if not pass_units and _unit_at(n) >= 0:
 					continue
-				if terrain != null and not _can_step(c, n):
+				if terrain != null and not _can_step(c, n, unit_i):
 					continue
 				bfs_parent[n] = c
 				bfs_dist[n] = bfs_dist[c] + 1
@@ -1116,7 +1116,7 @@ func _compute_hl():
 		return
 	var u = units3[selected]
 	if not u.moved:
-		for cc in _bfs(u.cell, _mv(u), u.cls == "assassin"):
+		for cc in _bfs(u.cell, _mv(u), u.cls == "assassin", selected):
 			if _unit_at(cc) < 0:
 				move_hl.append(cc)
 	if not u.attacked:
@@ -1251,7 +1251,7 @@ func _move_to(i, c):
 	path_cells.reverse()
 	var step_dur = 0.25 / float(maxi(1, path_cells.size()))
 	for step_c in path_cells:
-		var target_y = _th(step_c)
+		var target_y = _th(step_c, i)
 		if (loc_id == "bandit_road" or loc_id == "road_bandits") and CliffBridge.is_bridge_cell(step_c):
 			if u.root.position.y < 1.2:
 				target_y = terrain.cell_h(step_c.x, step_c.y) if terrain != null else 0.0
@@ -1385,7 +1385,7 @@ func _enemy_phase_old():
 				u.cell = st
 				if is_instance_valid(u.root):
 					var tw = create_tween()
-					tw.tween_property(u.root, "position", _p(st) + Vector3(0, _th(st), 0), 0.25)
+					tw.tween_property(u.root, "position", _p(st) + Vector3(0, _th(st, i), 0), 0.25)
 					await tw.finished
 				if _fire_at(st):
 					u.burn = 1
@@ -1470,7 +1470,7 @@ func _ai_decide(i):
 			var good = false
 			if dest.x < 0 or dest.y < 0 or dest.x >= gw or dest.y >= gh:
 				good = true
-			elif _th(t.cell) - _th(dest) > 0.5:
+			elif _th(t.cell, j) - _th(dest, j) > 0.5:
 				good = true
 			elif _fire_at(dest):
 				good = true
@@ -1495,7 +1495,7 @@ func _ai_decide(i):
 		return {}
 	var t = units3[ti]
 	var res = {}
-	var mv = _best_step(u, t)
+	var mv = _best_step(u, t, i)
 	if mv != null:
 		res["move_to"] = mv
 		if u.cls != "mage" and _cheb(mv, t.cell) <= _ar(u):
@@ -1512,10 +1512,10 @@ func _nearest_player(c):
 				bd = d
 				bi = i
 	return bi
-func _best_step(u, t):
+func _best_step(u, t, unit_i: int):
 	var best = null
 	var bs = 999
-	for c in _bfs(u.cell, _mv(u), u.cls == "assassin"):
+	for c in _bfs(u.cell, _mv(u), u.cls == "assassin", unit_i):
 		if _fire_at(c):
 			continue
 		var d = _cheb(c, t.cell)
@@ -1715,7 +1715,7 @@ func _calc_attack_reach(att_i: int, tgt_i: int) -> Dictionary:
 		return {}
 
 	var mv_rng = _mv(u)
-	var reachable = _bfs(u.cell, mv_rng, u.cls == "assassin")
+	var reachable = _bfs(u.cell, mv_rng, u.cls == "assassin", att_i)
 	var best_cell = Vector2i(-999, -999)
 	var min_steps = 9999
 	var max_enemy_dist = -1
@@ -2237,19 +2237,19 @@ func _apply_explore():
 		var c = Vector2i(int(pc[0]), int(pc[1]))
 		t0[0].cell = c
 		t0[0].root.position = _p(c) + Vector3(0, _th(c), 0)
-func _can_step(a, b):
+func _can_step(a, b, unit_i: int = -1):
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and (CliffBridge.is_bridge_cell(a) or CliffBridge.is_bridge_cell(b)):
 		var u_y = 0.0
-		if selected >= 0 and selected < units3.size():
-			u_y = units3[selected].root.position.y
+		if unit_i >= 0 and unit_i < units3.size() and is_instance_valid(units3[unit_i].root):
+			u_y = units3[unit_i].root.position.y
 		if not CliffBridge.combat_can_step(a, b, u_y):
 			return false
 	var ea = ELEV.get(str(a.x) + "," + str(a.y), 0.0)
 	var eb = ELEV.get(str(b.x) + "," + str(b.y), 0.0)
 	if ea == 0.0 and eb == 0.0:
 		return terrain.can_move(a.x, a.y, b.x, b.y) if terrain != null else true
-	var ha = _th(a)
-	var hb = _th(b)
+	var ha = _th(a, unit_i)
+	var hb = _th(b, unit_i)
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and abs(ha - hb) <= 0.85:
 		return true
 	if abs(ha - hb) <= 0.5:
@@ -2564,18 +2564,18 @@ func _do_shove(i, j):
 		t.hp -= 2
 		_set_hp_bar(t)
 		_float_text(t.root.position, "-2 сбил!", Color(1, 0.3, 0.3))
-	elif _th(t.cell) - _th(dest) > 0.5:
+	elif _th(t.cell, j) - _th(dest, j) > 0.5:
 		t.hp -= 2
 		_set_hp_bar(t)
 		_float_text(t.root.position, "-2 падение!", Color(1, 0.3, 0.3))
-	elif not _can_step(t.cell, dest) or objects3.has(dest) or _unit_at(dest) >= 0:
+	elif not _can_step(t.cell, dest, j) or objects3.has(dest) or _unit_at(dest) >= 0:
 		t.hp -= 1
 		_set_hp_bar(t)
 		_float_text(t.root.position, "-1 удар!", Color(1, 0.3, 0.3))
 	else:
 		t.cell = dest
 		var tw = create_tween()
-		tw.tween_property(t.root, "position", _p(dest) + Vector3(0, _th(dest), 0), 0.2)
+		tw.tween_property(t.root, "position", _p(dest) + Vector3(0, _th(dest, j), 0), 0.2)
 		if _fire_at(dest):
 			t.burn = 1
 	if t.hp <= 0:
@@ -3200,16 +3200,10 @@ func _process(d):
 		_busy_time = 0.0
 func _leave_battle():
 	if Game.explore_return != null and not game_over3:
-		var exp_scn = preload("res://explore3d.tscn").instantiate()
-		get_tree().root.add_child(exp_scn)
-		get_tree().current_scene = exp_scn
-		queue_free()
+		get_tree().change_scene_to_file("res://explore3d.tscn")
 		return
 	if Game.explore_return != null and game_over3 and won3:
-		var exp_scn = preload("res://explore3d.tscn").instantiate()
-		get_tree().root.add_child(exp_scn)
-		get_tree().current_scene = exp_scn
-		queue_free()
+		get_tree().change_scene_to_file("res://explore3d.tscn")
 		return
 	if Game.explore_return != null and game_over3 and not won3:
 		Game.clear_transient_state()

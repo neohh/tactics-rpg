@@ -18,9 +18,9 @@ Godot 4.7. Вход: `res://menu.tscn`. Имя в `project.godot`: «Пошаг�
 
 | Сцена | Скрипт | Роль |
 |---|---|---|
-| `menu.tscn` | `scripts/menu.gd` | Старт. «ИГРАТЬ», «КОНСТРУКТОР», «3D ТЕСТ», «ТЕСТ ЛЕСТН». |
+| `menu.tscn` | `scripts/menu.gd` | Старт. «ИГРАТЬ», «ТЕСТ БОЯ», «КОНСТРУКТОР», «ГРАФИКА», «3D ТЕСТ», «ТЕСТ ЛЕСТН». |
 | `overworld3d.tscn` | `scripts/overworld3d.gd` | Глобальная карта. Тот же файл при `Game.edit_world` строит редактор карты. |
-| `explore3d.tscn` | `scripts/explore3d.gd` | Ходьба, подбор, случайная встреча, старт боя. |
+| `explore3d.tscn` | `scripts/explore3d.gd` | Ходьба, подбор, случайная встреча, старт боя. При `Game.combat_mode == REALTIME_FP` бой от первого лица считается здесь, сцена `world3d.tscn` не грузится. |
 | `world3d.tscn` | `scripts/world3d.gd` | Пошаговый бой. Сюда же «3D ТЕСТ», «ТЕСТ ЛЕСТН» и «В БОЙ» редактора локации. |
 | `work3d.tscn` | `scripts/work3d.gd` | Мастерская локации. Открывает `ConHotkey.show_work()`. |
 | `constructor.tscn` | `scripts/constructor.gd` | Полный экран конструктора. Кнопка меню и `C` эту сцену не грузят: окно создаёт тот же скрипт. Сцена — запасной возврат из `locspace.tscn`, если `Game.return_scene` пуст. |
@@ -35,11 +35,11 @@ Godot 4.7. Вход: `res://menu.tscn`. Имя в `project.godot`: «Пошаг�
 Только два.
 
 - `Game` — `scripts/game.gd`. Живёт всё время. Группа `live`. В `_ready` читает `data/quests.json` и `data/chars.json`. Партия, квесты, флаги, сейв, переход между режимами.
-- `ConHotkey` — `scripts/con_hotkey.gd`. Подпись «РЕЖИМ: …» по имени сцены: `World3D` → «БОЙ», `Work3D` → «МАСТЕРСКАЯ», `Overworld3D` → «КАРТА», иначе «МЕНЮ». `Explore3D` поэтому тоже «МЕНЮ». Клавиша `C` открывает или прячет окно «Конструктор». `show_work()` грузит `work3d.tscn`.
+- `ConHotkey` — `scripts/con_hotkey.gd`. Подпись «РЕЖИМ: …» по имени сцены: `World3D` → «БОЙ», `Work3D` → «МАСТЕРСКАЯ», `Overworld3D` → «КАРТА», иначе «МЕНЮ». `Explore3D` поэтому тоже «МЕНЮ». В ту же строку дописывается короткий режим боя и `[F6]`. Клавиша `C` открывает или прячет окно «Конструктор». `F3` открывает окно графики. `F6` вызывает `Game.cycle_combat_mode()`. `show_work()` грузит `work3d.tscn`.
 
 ## Какие скрипты трогать
 
-Живая игра: `game.gd`, `con_hotkey.gd`, `menu.gd`, `overworld3d.gd`, `explore3d.gd`, `world3d.gd`, `dialog.gd`, `game_hub.gd`, `party_ui.gd`, `camp_ui.gd`, `tavern.gd`, `shop.gd`, `journal.gd`, `party_tools.gd`, `stats_tools.gd`, `explore_tools.gd`, `config_tools.gd`, `data_loader.gd`.
+Живая игра: `game.gd`, `con_hotkey.gd`, `menu.gd`, `overworld3d.gd`, `explore3d.gd`, `world3d.gd`, `fp_melee.gd`, `cliff_bridge.gd`, `airship.gd`, `dialog.gd`, `game_hub.gd`, `party_ui.gd`, `camp_ui.gd`, `tavern.gd`, `shop.gd`, `journal.gd`, `party_tools.gd`, `stats_tools.gd`, `explore_tools.gd`, `config_tools.gd`, `data_loader.gd`.
 
 Редакторы: `constructor.gd`, `work3d.gd`, `locspace.gd`, `loc_editor.gd`, `global_map_editor.gd`, `map_canvas.gd`, `quest_editor.gd`, `dialog_editor.gd`, `dialog_scheme.gd`, `preview.gd`. `loc_grid.gd` ни одна сцена и ни один скрипт не создают. `addons/loc_bridge/loc_bridge.gd` — плагин редактора Godot, в игровые сцены не входит.
 
@@ -59,13 +59,19 @@ Godot 4.7. Вход: `res://menu.tscn`. Имя в `project.godot`: «Пошаг�
 
 Вход в бой решает `Game.explore_start`, его пишет `explore3d.gd`. Возврат — `Game.explore_return` и `Game.explore_ground`. Случайная встреча — `Game.enc`: исследование забирает её раньше, ветка `enc` внутри `world3d.gd` выполняется только при заходе не из исследования.
 
-Спецификация: [docs/COMBAT.md](docs/COMBAT.md).
+`Game.combat_mode` по умолчанию `TURN_BASED`. Круг `F6`: `REALTIME_FP`, `HYBRID_QTE`, `TURN_BASED`. «ИГРАТЬ» ставит `TURN_BASED`. Кнопка теста «В БОЙ НА ЛОКАЦИЮ» ставит `REALTIME_FP` и грузит `explore3d.tscn` на `bandit_road`. Вторая кнопка того же окна грузит `world3d.tscn` и режим не меняет. `HYBRID_QTE` в `world3d.gd` подменяет QTE удара и блока на дуэль от первого лица. В сейв режим не пишется.
+
+Тестовые поля `is_combat_test`, `test_player_godmode`, `test_enemy_godmode` в сейв не входят. `clear_test_state()` гасит все три. Её вызывают `clear_transient_state()` и успешный `load_game`. Пока `is_combat_test`, `save_game` возвращает `false` и файл слота не пишет. Бессмертие, мгновенное возрождение и клавиши `1`–`5`, `F1` в `explore3d.gd` смотрят только этот флаг, не id локации. Рывок в исследовании — только `Alt`: без клавиш движения назад, с `WASD` или стрелками в их сторону.
+
+`fp_melee.gd` — модель оружия от первого лица: удар, пинок, блок, парирование. Его создают `explore3d.gd` и гибридный QTE в `world3d.gd`. `cliff_bridge.gd` — мост, колонны и проходимость на `bandit_road` и `road_bandits`. `airship.gd` — дирижабль; на `bandit_road` его ставит `explore3d.gd`. Запись `airship` в `objects.json` кладёт в `model` путь этого скрипта, а загрузчики модели ждут `PackedScene`, поэтому сам дирижабль из этой записи не появляется.
+
+Спецификация пошагового боя: [docs/COMBAT.md](docs/COMBAT.md).
 
 ## Куда смотреть за сейвом
 
 `Game.save_game` / `Game.load_game` в `scripts/game.gd`. Файл слота пишет и читает `scripts/data_loader.gd`. Слоты `user://save_0.json` … `user://save_9.json`. Клавиша `G` и автосейв — слот 0. Хаб — номер кнопки. Клавиша `L` — самый свежий слот.
 
-В слот входят `day`, `hour`, `cur_loc`, `gold`, `food`, `fatigue`, `inventory`, `quests`, `flags`, `party`, `party_pool`, `loc_state`. Переходные поля и редактор в слот не входят. `load_game` их не очищает.
+В слот входят `day`, `hour`, `cur_loc`, `gold`, `food`, `fatigue`, `inventory`, `quests`, `flags`, `party`, `party_pool`, `loc_state`. Переходные поля, режим боя, тестовые флаги и редактор в слот не входят. `load_game` переходные поля не очищает. Успешная загрузка вызывает `clear_test_state()`.
 
 Конфиг читает `config_tools.gd` своим `FileAccess`, не через `DataLoader`. Для партии, земли, респавна и автосейва важны `party_max`, `ground_ttl_days`, `respawn_days`, `autosave`, `defeat_mode`.
 
@@ -83,7 +89,7 @@ Godot 4.7. Вход: `res://menu.tscn`. Имя в `project.godot`: «Пошаг�
 
 ## Переходные поля Game
 
-Сбрасывает `clear_transient_state()`: `explore_start`, `explore_return`, `explore_ground`, `enc`, `battle_snap`.
+Сбрасывает `clear_transient_state()`: `explore_start`, `explore_return`, `explore_ground`, `enc`, `battle_snap`, и через `clear_test_state()` три тестовых флага.
 
 Кто вызывает очистку: меню «ИГРАТЬ» и «3D ТЕСТ»; `M` на карте и в исследовании; хаб при уходе на карту или в меню; поражение и уход из боя без возврата в исследование; кнопка «На глобальную карту».
 

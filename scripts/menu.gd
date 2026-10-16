@@ -37,6 +37,7 @@ func _go(name):
 	Game.clear_transient_state()
 	if name == "ИГРАТЬ":
 		Game.is_combat_test = false
+		Game.set_combat_mode(Game.CombatMode.TURN_BASED)
 		Game.party = []
 		Game.party_pool = []
 		Game.gold = 50
@@ -187,6 +188,7 @@ func _launch_combat_test(in_explore: bool):
 	}
 
 	if in_explore:
+		Game.set_combat_mode(Game.CombatMode.REALTIME_FP)
 		get_tree().change_scene_to_file("res://explore3d.tscn")
 	else:
 		get_tree().change_scene_to_file("res://world3d.tscn")

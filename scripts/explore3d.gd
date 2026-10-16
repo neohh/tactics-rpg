@@ -515,7 +515,7 @@ func _setup_test_hud(ui: Control):
 func _update_test_hud():
 	if test_hud == null or not is_instance_valid(test_hud) or test_hud_lbl == null:
 		return
-	if not Game.is_combat_test and loc_id != "bandit_road":
+	if not Game.is_combat_test:
 		test_hud.visible = false
 		return
 	test_hud.visible = true
@@ -523,7 +523,7 @@ func _update_test_hud():
 	var next_name = class_names_ru.get(next_cls, next_cls)
 	var p_god = "ВКЛ" if Game.test_player_godmode else "ВЫКЛ"
 	var e_god = "ВКЛ" if Game.test_enemy_godmode else "ВЫКЛ"
-	test_hud_lbl.text = "⚔️ ТЕСТ: [1] Спавн (%s) | [2] Бессмертие: %s | [3] Враги: %s | [4] HP/Стамина | [5] Очистить | [F] Пинок | [Alt/C/Q] Рывок" % [next_name, p_god, e_god]
+	test_hud_lbl.text = "⚔️ ТЕСТ: [1] Спавн (%s) | [2] Бессмертие: %s | [3] Враги: %s | [4] HP/Стамина | [5] Очистить | [F] Пинок | [Alt] Рывок" % [next_name, p_god, e_god]
 
 func _update_hint():
 	if hint == null:
@@ -541,15 +541,15 @@ func _update_hint():
 		else:
 			hint.text = "Палуба дирижабля | WASD идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E действие%s" % town_hint
 	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
-		if Game.is_combat_test or loc_id == "bandit_road":
-			hint.text = "⚔️ [1-е лицо] ЛКМ: удар | ПКМ: блок | [F] пинок | [Alt/C/Q] рывок (i-frame) | [1-5] тест | [M] карта"
+		if Game.is_combat_test:
+			hint.text = "⚔️ [1-е лицо] ЛКМ: удар | ПКМ: блок | [F] пинок | [Alt] рывок (i-frame) | [1-5] тест | [M] карта"
 		else:
-			hint.text = "⚔️ [1-е лицо] WASD идти | ЛКМ удар | ПКМ блок | [F] пинок | [Alt/C/Q] рывок (i-frame) | [M] карта"
+			hint.text = "⚔️ [1-е лицо] WASD идти | ЛКМ удар | ПКМ блок | [F] пинок | [Alt] рывок (i-frame) | [M] карта"
 		return
 	if fp_mode:
-		hint.text = "[1-е лицо] WASD идти | Shift бег | [Alt/Q] рывок | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
+		hint.text = "[1-е лицо] WASD идти | Shift бег | [Alt] рывок | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
 	else:
-		hint.text = "WASD/клик идти | Shift бег | [Alt/Q] рывок | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
+		hint.text = "WASD/клик идти | Shift бег | [Alt] рывок | Пробел прыжок | ПКМ камера | V 1-е лицо | E подобрать | R привал | P отряд%s | M карта" % town_hint
 
 func _set_fp_mode(enabled: bool):
 	if is_defeated:
@@ -1391,7 +1391,7 @@ func _start_realtime_combat():
 		_setup_realtime_enemy(enemies[i], i)
 	
 	if hint != null:
-		hint.text = "⚔️ БОЙ [1-Е ЛИЦО]: ЛКМ Удар | ПКМ Блок/Парирование | F Пинок | Alt/C/Q Рывок"
+		hint.text = "⚔️ БОЙ [1-Е ЛИЦО]: ЛКМ Удар | ПКМ Блок/Парирование | F Пинок | Alt Рывок"
 	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
 		_float_text(party_n[0].root.position, "В БОЙ!", Color(1.0, 0.4, 0.3))
 
@@ -1564,9 +1564,9 @@ func _spawn_archer_arrow(en: Dictionary, target_pos: Vector3):
 	node.add_child(tip)
 	
 	node.position = origin
+	add_child(node)
 	if dir.length_squared() > 0.001:
 		node.look_at(origin + dir, Vector3.UP)
-	add_child(node)
 	
 	rt_projectiles.append({
 		"node": node,
@@ -2335,7 +2335,7 @@ func _enemy_realtime_strike(en: Dictionary):
 		en["combo_step"] = 0
 
 	if int(hero.get("hp", 0)) <= 0:
-		if Game.is_combat_test or loc_id == "bandit_road":
+		if Game.is_combat_test:
 			hero["hp"] = int(hero.get("maxhp", 3))
 			stamina = max_stamina
 			is_defeated = false
@@ -2350,7 +2350,7 @@ func _enemy_realtime_strike(en: Dictionary):
 		_handle_hero_death()
 
 func _handle_hero_death():
-	if Game.is_combat_test or loc_id == "bandit_road":
+	if Game.is_combat_test:
 		if party_n.size() > 0:
 			party_n[0].m["hp"] = int(party_n[0].m.get("maxhp", 3))
 		stamina = max_stamina
@@ -2536,10 +2536,7 @@ func _start_combat():
 	for pn in party_n:
 		pp.append([str(pn.m.get("char", "")), pn.root.position.x, pn.root.position.z])
 	Game.explore_return = {"loc": loc_id, "party_pos": pp}
-	var w3d = preload("res://world3d.tscn").instantiate()
-	get_tree().root.add_child(w3d)
-	get_tree().current_scene = w3d
-	queue_free()
+	get_tree().change_scene_to_file("res://world3d.tscn")
 
 func _is_free_cell(x, y):
 	if terrain != null and not terrain.has_cell(x, y):
@@ -2717,7 +2714,7 @@ func _unhandled_input(ev):
 		if ev.keycode == KEY_F and fp_mode:
 			_try_fp_kick()
 			return
-		if (ev.keycode == KEY_ALT or ev.keycode == KEY_Q or (ev.keycode == KEY_C and (rt_combat_active or fp_mode))) and not ev.is_echo():
+		if ev.keycode == KEY_ALT and not ev.is_echo():
 			_try_dash()
 			get_viewport().set_input_as_handled()
 			return

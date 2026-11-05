@@ -64,6 +64,7 @@ var end_turn_btn: Button
 var pips_box: HBoxContainer
 var turn_lab: Label
 var toast_panel: PanelContainer = null
+var test_state_lbl: Label = null
 var tut_battle_banner: Label = null
 var hint_card_panel: PanelContainer = null
 var hint_card_content: VBoxContainer = null
@@ -127,8 +128,17 @@ func _ready():
 		target = Vector3(terrain.GW * 0.5, 0, terrain.GH * 0.5)
 	_apply()
 	_ui()
-	if from_explore:
+	Game.combat_mode_changed.connect(_on_combat_mode_changed)
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		if not deploy_mode:
+			_enter_battle_mode(Game.combat_mode)
+	elif from_explore:
 		_start_combat_entrance_anim()
+
+func _exit_tree():
+	if Game.combat_mode_changed.is_connected(_on_combat_mode_changed):
+		Game.combat_mode_changed.disconnect(_on_combat_mode_changed)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _start_combat_entrance_anim():
 	if combat_ui_root != null:
@@ -260,7 +270,24 @@ func _build():
 		var tm = int(u.get("team", 1))
 		if tm == 0 and spawned_from_explore:
 			continue
+		if tm == 1 and spawned_from_explore:
+			# Враги при входе из исследования спавнятся ниже из explore_start:
+			# тот же состав, что был в бою (убитые не возвращаются),
+			# их текущие клетки и текущий HP. Спавн из locations.json
+			# дал бы свежий HP и "лишних" врагов.
+			continue
 		_spawn_unit(Vector2i(u["cell"][0], u["cell"][1]), tm, u.get("cls", "swordsman"), Vector2(1, 0) if tm == 0 else Vector2(-1, 0), u.get("char", ""))
+		if tm == 1:
+			units3[units3.size() - 1]["spawn"] = [int(u["cell"][0]), int(u["cell"][1])]
+	if spawned_from_explore:
+		for erow in es.get("enemies", []):
+			var ec = Vector2i(int(erow["cell"][0]), int(erow["cell"][1]))
+			_spawn_unit(ec, 1, str(erow.get("cls", "swordsman")), Vector2(-1, 0), str(erow.get("char", "")))
+			var eu = units3[units3.size() - 1]
+			eu["spawn"] = erow.get("spawn", [ec.x, ec.y])
+			if erow.has("hp"):
+				eu.hp = int(erow["hp"])
+				_set_hp_bar(eu)
 	if not spawned_from_explore:
 		if Game.party.size() > 0:
 			has0 = true
@@ -285,6 +312,8 @@ func _build():
 					_obj(Vector3(ob["cell"][0] + 0.5, 0, ob["cell"][1] + 0.5), ob.get("k", "rock"))
 				for un in enc.get("map", {}).get("units", []):
 					_spawn_unit(Vector2i(un["cell"][0], un["cell"][1]), int(un.get("team", 1)), un.get("cls", "swordsman"), Vector2(-1, 0))
+					if int(un.get("team", 1)) == 1:
+						units3[units3.size() - 1]["spawn"] = [int(un["cell"][0]), int(un["cell"][1])]
 				Game.enc = null
 		else:
 			for i in 4:
@@ -302,6 +331,7 @@ func _build():
 		_spawn_npc(np)
 	deploy_mode = not has0
 	_log_click("BUILD loc=%s GW=%d GH=%d OX=%d OY=%d chunks=%s deploy_min_x=%d" % [loc_id, terrain.GW, terrain.GH, terrain.OX, terrain.OY, str(terrain.chunk_mask.keys()), deploy_min_x])
+	_log_units("build")
 	if deploy_mode:
 		_hl_deploy()
 func _spawn_unit(c, team, cls, dir, cid = "", stats = null):
@@ -530,6 +560,22 @@ func _ui():
 	info = Label.new()
 	info.visible = false
 	ui.add_child(info)
+
+	# Видимый индикатор тест-флагов: в exploration они на тест-HUD,
+	# здесь без индикатора было не понять, включено ли бессмертие.
+	var test_lbl = Label.new()
+	test_lbl.anchor_left = 0.0
+	test_lbl.anchor_right = 0.0
+	test_lbl.anchor_top = 0.0
+	test_lbl.anchor_bottom = 0.0
+	test_lbl.offset_left = 8
+	test_lbl.offset_right = 380
+	test_lbl.offset_top = 6
+	test_lbl.offset_bottom = 22
+	test_lbl.add_theme_font_size_override("font_size", 11)
+	test_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	ui.add_child(test_lbl)
+	test_state_lbl = test_lbl
 
 	# 2.5 RIGHT-SIDE COLLAPSIBLE TACTICAL HINT WIDGET
 	hint_card_panel = PanelContainer.new()
@@ -1034,6 +1080,8 @@ func _start_battle():
 		return
 	status.text = "Твой ход: клик по своему юниту."
 	_upd_info()
+	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
+		_enter_battle_mode(Game.combat_mode)
 func _apply():
 	yaw_n.position = target + Vector3(0, cam_offset_y, 0)
 	yaw_n.rotation = Vector3(0, yaw, 0)
@@ -1326,17 +1374,16 @@ func _attack(i, j):
 		if t.get("offbal", 0) > 0:
 			dmg += 1
 			_float_text(t.root.position, "+1 РАСБАЛАНС", Color(1, 0.5, 0.1))
-		t.hp -= dmg
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-%d" % dmg, Color(1, 0.3, 0.3))
-		if u.cls == "assassin":
-			t.mark = 2
-			_float_text(t.root.position, "МЕТКА", Color(0.8, 0.2, 0.8))
-		if u.cls == "swordsman":
-			t.offbal = 2
-		if t.hp <= 0:
-			t.root.visible = false
-			status.text = "Попадание (%s) — убит!" % z
+		if _damage_unit(t, dmg):
+			_float_text(t.root.position, "-%d" % dmg, Color(1, 0.3, 0.3))
+			if u.cls == "assassin":
+				t.mark = 2
+				_float_text(t.root.position, "МЕТКА", Color(0.8, 0.2, 0.8))
+			if u.cls == "swordsman":
+				t.offbal = 2
+			if t.hp <= 0:
+				t.root.visible = false
+				status.text = "Попадание (%s) — убит!" % z
 		else:
 			status.text = "Попадание (%s, -%d)." % [z, dmg]
 	else:
@@ -1428,11 +1475,10 @@ func _enemy_phase_old():
 		if u.get("burn", 0) > 0 and u.hp > 0:
 			u.burn -= 1
 			if u.burn > 0:
-				u.hp -= 1
-				_set_hp_bar(u)
-				_float_text(u.root.position, "-1 горение", Color(1, 0.5, 0.1))
-				if u.hp <= 0:
-					u.root.visible = false
+				if _damage_unit(u, 1):
+					_float_text(u.root.position, "-1 горение", Color(1, 0.5, 0.1))
+					if u.hp <= 0:
+						u.root.visible = false
 	act_max = _calc_act_max()
 	activations_left = act_max
 	busy = false
@@ -1923,6 +1969,10 @@ func _click_action():
 			selected = -1
 		_compute_hl()
 func _unhandled_input(ev):
+	if combat_mode_inst != null and combat_mode_inst.is_active():
+		if combat_mode_inst.input(ev):
+			get_viewport().set_input_as_handled()
+		return
 	if qte_on and ev is InputEventKey and ev.pressed and ev.keycode == KEY_SPACE:
 		qte_pressed = true
 		get_viewport().set_input_as_handled()
@@ -2087,15 +2137,14 @@ func _cast_fire1(center, caster_i = -1):
 	var target_idx = _unit_at(center)
 	if target_idx >= 0:
 		var t = units3[target_idx]
-		t.hp -= dmg
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-%d ОГОНЬ" % dmg, Color(1, 0.4, 0.1))
 		t.burn = 2
-		if t.hp <= 0:
-			t.root.visible = false
-			status.text = "Огонь 1: цель уничтожена!"
-		else:
-			status.text = "Огонь 1: попадание (-%d)!" % dmg
+		if _damage_unit(t, dmg):
+			_float_text(t.root.position, "-%d ОГОНЬ" % dmg, Color(1, 0.4, 0.1))
+			if t.hp <= 0:
+				t.root.visible = false
+				status.text = "Огонь 1: цель уничтожена!"
+			else:
+				status.text = "Огонь 1: попадание (-%d)!" % dmg
 	else:
 		status.text = "Огонь 1: клетка подожжена."
 	fires.append({"cells": [center], "left": 2, "nodes": [_fire_quad(center)], "dmg": 1})
@@ -2178,11 +2227,10 @@ func _tick_fire():
 	for f in fires:
 		for u in units3:
 			if u.hp > 0 and f.cells.has(u.cell):
-				u.hp -= int(f.get("dmg", 1))
-				_set_hp_bar(u)
-				_float_text(u.root.position, "-1 огонь", Color(1, 0.5, 0.1))
-				if u.hp <= 0:
-					u.root.visible = false
+				if _damage_unit(u, int(f.get("dmg", 1))):
+					_float_text(u.root.position, "-1 огонь", Color(1, 0.5, 0.1))
+					if u.hp <= 0:
+						u.root.visible = false
 	_check_end()
 func _age_fires():
 	var alive = []
@@ -2200,6 +2248,41 @@ func _set_hp_bar(u):
 	u.bar.mesh.material.albedo_color = Color(0.9, 0.2, 0.2).lerp(Color(0.2, 0.9, 0.2), r)
 	if u.team == 0:
 		_refresh_party_bar()
+
+# Единая точка урона в пошаговом бою: учитывает тестовое бессмертие обеих сторон
+# (реалтайм-режим проверяет то же в scripts/combat/realtime_mode.gd).
+# Возвращает true, если урон применён (false — заблокирован бессмертием).
+func _damage_unit(u, dmg: int) -> bool:
+	if u == null or u.hp <= 0:
+		return false
+	if u.team == 0 and Game.test_player_godmode:
+		if is_instance_valid(u.root):
+			_float_text(u.root.position, "🛡️ БЕССМЕРТИЕ (0 УРОНА)", Color(0.3, 1.0, 0.5))
+		return false
+	if u.team == 1 and Game.test_enemy_godmode:
+		u.hp = maxi(1, u.hp - int(dmg))
+	else:
+		u.hp -= int(dmg)
+	_set_hp_bar(u)
+	if u.team == 1 and u.hp <= 0:
+		_count_kill(u)
+	return true
+
+func _count_kill(u):
+	if u == null:
+		return
+	kill_counts[str(u.cls)] = int(kill_counts.get(str(u.cls), 0)) + 1
+
+func _kills_text() -> String:
+	var parts = []
+	for k in kill_counts:
+		parts.append("%s×%d" % [k, kill_counts[k]])
+	return "⚔ Убито: %s" % (", ".join(parts) if parts.size() > 0 else "—")
+
+func _test_text() -> String:
+	if not Game.is_combat_test:
+		return ""
+	return "  |  ТЕСТ: бессмертие %s | враги %s" % ["ВКЛ" if Game.test_player_godmode else "ВЫКЛ", "ВКЛ" if Game.test_enemy_godmode else "ВЫКЛ"]
 
 func _apply_explore():
 	if Game.explore_start == null:
@@ -2224,7 +2307,17 @@ func _apply_explore():
 			t0.append(u)
 	var ec = su.get("enemies", [])
 	for i in min(ec.size(), t1.size()):
-		var c = Vector2i(int(ec[i][0]), int(ec[i][1]))
+		var e_row = ec[i]
+		var c: Vector2i
+		if e_row is Dictionary:
+			c = Vector2i(int(e_row["cell"][0]), int(e_row["cell"][1]))
+			if e_row.has("hp"):
+				t1[i].hp = int(e_row["hp"])
+				if t1[i].hp > t1[i].maxhp:
+					t1[i].maxhp = t1[i].hp
+				_set_hp_bar(t1[i])
+		else:
+			c = Vector2i(int(e_row[0]), int(e_row[1]))
 		t1[i].cell = c
 		t1[i].root.position = _p(c) + Vector3(0, _th(c), 0)
 	var pls = su.get("players", [])
@@ -2237,6 +2330,7 @@ func _apply_explore():
 		var c = Vector2i(int(pc[0]), int(pc[1]))
 		t0[0].cell = c
 		t0[0].root.position = _p(c) + Vector3(0, _th(c), 0)
+	_log_units("after_apply_explore")
 func _can_step(a, b, unit_i: int = -1):
 	if (loc_id == "bandit_road" or loc_id == "road_bandits") and (CliffBridge.is_bridge_cell(a) or CliffBridge.is_bridge_cell(b)):
 		var u_y = 0.0
@@ -2298,7 +2392,7 @@ func _render_stairs(c, d):
 		m.rotation.y = atan2(d.x, d.y)
 		add_child(m)
 
-const FPMeleeClass = preload("res://scripts/fp_melee.gd")
+const FPMeleeClass = preload("res://scripts/combat/fp_melee.gd")
 
 func _fp_duel_qte(text: String, dur: float) -> bool:
 	if qte_on:
@@ -2495,19 +2589,17 @@ func _slip_check(i, from, to):
 		return
 	if u.team == 0:
 		if not await _qte("ПРОСКОЛЬЗНУТЬ! [SPACE]", 0.8):
-			u.hp -= 1
-			_set_hp_bar(u)
-			_float_text(u.root.position, "-1 задело!", Color(1, 0.3, 0.3))
-			if u.hp <= 0:
-				u.root.visible = false
-				_check_end()
+			if _damage_unit(u, 1):
+				_float_text(u.root.position, "-1 задело!", Color(1, 0.3, 0.3))
+				if u.hp <= 0:
+					u.root.visible = false
+					_check_end()
 	else:
 		if randf() < 0.4:
-			u.hp -= 1
-			_set_hp_bar(u)
-			_float_text(u.root.position, "-1 задело!", Color(1, 0.3, 0.3))
-			if u.hp <= 0:
-				u.root.visible = false
+			if _damage_unit(u, 1):
+				_float_text(u.root.position, "-1 задело!", Color(1, 0.3, 0.3))
+				if u.hp <= 0:
+					u.root.visible = false
 func _ao_check(mi, to):
 	var mv = units3[mi]
 	if mv.hp <= 0:
@@ -2537,11 +2629,10 @@ func _strike(i, j):
 		chance += float(u_stats["hit_bonus"])
 	if randf() < chance:
 		var dmg = 1 + int(u_stats.get("dmg_bonus", 0))
-		t.hp -= dmg
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-%d" % dmg, Color(1, 0.3, 0.3))
-		if t.hp <= 0:
-			t.root.visible = false
+		if _damage_unit(t, dmg):
+			_float_text(t.root.position, "-%d" % dmg, Color(1, 0.3, 0.3))
+			if t.hp <= 0:
+				t.root.visible = false
 	else:
 		_float_text(t.root.position, "МИМО", Color(0.8, 0.8, 0.8))
 	_check_end()
@@ -2561,17 +2652,14 @@ func _do_shove(i, j):
 	var dest = t.cell + Vector2i(roundi(dir.x), roundi(dir.y))
 	_float_text(u.root.position, "ТОЛЧОК!", Color(1, 1, 0.5))
 	if dest.x < 0 or dest.y < 0 or dest.x >= (terrain.GW if terrain != null else 8) or dest.y >= (terrain.GH if terrain != null else 6):
-		t.hp -= 2
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-2 сбил!", Color(1, 0.3, 0.3))
+		if _damage_unit(t, 2):
+			_float_text(t.root.position, "-2 сбил!", Color(1, 0.3, 0.3))
 	elif _th(t.cell, j) - _th(dest, j) > 0.5:
-		t.hp -= 2
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-2 падение!", Color(1, 0.3, 0.3))
+		if _damage_unit(t, 2):
+			_float_text(t.root.position, "-2 падение!", Color(1, 0.3, 0.3))
 	elif not _can_step(t.cell, dest, j) or objects3.has(dest) or _unit_at(dest) >= 0:
-		t.hp -= 1
-		_set_hp_bar(t)
-		_float_text(t.root.position, "-1 удар!", Color(1, 0.3, 0.3))
+		if _damage_unit(t, 1):
+			_float_text(t.root.position, "-1 удар!", Color(1, 0.3, 0.3))
 	else:
 		t.cell = dest
 		var tw = create_tween()
@@ -3032,6 +3120,22 @@ func _log_click(txt):
 		w.store_string(old + txt + "\n")
 		w.close()
 
+# Диагностика переключений режимов: полный состав юнитов в click_log.txt.
+# Убрать вместе с вызовами _log_units после разбора рассинхрона состава.
+func _log_units(tag):
+	var mid = "-1"
+	if combat_mode_inst != null:
+		mid = str(combat_mode_inst.id())
+	_log_click("[%s] mode=%s deploy=%s busy=%s game_over=%s" % [tag, mid, str(deploy_mode), str(busy), str(game_over3)])
+	for i in units3.size():
+		var u = units3[i]
+		var pos = "?"
+		var vis = "?"
+		if is_instance_valid(u.root):
+			pos = "%.1f,%.1f" % [u.root.position.x, u.root.position.z]
+			vis = str(u.root.visible)
+		_log_click("  u#%d t%d %s hp%d/%d cell%s vis%s pos(%s)" % [i, u.team, u.cls, u.hp, u.maxhp, str(u.cell), vis, pos])
+
 func _calc_deploy_min_x():
 	var mnx = 1000000
 	if terrain != null:
@@ -3181,7 +3285,13 @@ func _finalize_turn_safe():
 	_upd_info()
 func _process(d):
 	DayNight.update(d, float(Game.hour), world_env, sun_light)
-	if cam_tween != null and cam_tween.is_valid():
+	if test_state_lbl != null:
+		test_state_lbl.visible = true
+		test_state_lbl.text = _kills_text() + _test_text()
+	var mode_active = combat_mode_inst != null and combat_mode_inst.is_active()
+	if mode_active:
+		combat_mode_inst.process(d)
+	if not mode_active and cam_tween != null and cam_tween.is_valid():
 		yaw_n.position = target + Vector3(0, cam_offset_y, 0)
 		yaw_n.rotation = Vector3(0, yaw, 0)
 		pitch_n.rotation = Vector3(pitch, 0, 0)
@@ -3198,7 +3308,20 @@ func _process(d):
 				_finalize_turn_safe()
 	else:
 		_busy_time = 0.0
+# Убитые в бою враги запоминаются в состоянии локации (по точке спавна + классу),
+# чтобы исследование не воскресило их при повторном входе до истечения респавна.
+func _record_killed_enemies():
+	var ls = Game.loc_state_get(loc_id)
+	if not ls.has("killed"):
+		ls["killed"] = {}
+	for u in units3:
+		if u.team == 1 and u.hp <= 0:
+			var sp = u.get("spawn", [])
+			if sp.size() == 2:
+				ls["killed"][str(int(sp[0])) + "," + str(int(sp[1])) + ":" + str(u.cls)] = Game.day
+
 func _leave_battle():
+	_record_killed_enemies()
 	if Game.explore_return != null and not game_over3:
 		get_tree().change_scene_to_file("res://explore3d.tscn")
 		return
@@ -3249,6 +3372,7 @@ func _on_stay_loc():
 					m["maxhp"] = u.maxhp
 			if u.hp > 0:
 				pp.append([str(u.get("char", "")), u.cell.x + 0.5, u.cell.y + 0.5])
+	_record_killed_enemies()
 	_sync_party_deaths()
 	Game.explore_return = {"loc": loc_id, "party_pos": pp}
 	Game.explore_ground = null
@@ -3261,6 +3385,7 @@ func _on_to_map():
 				if str(m.get("char", "")) != "" and str(m.get("char", "")) == str(u.get("char", "")):
 					m["hp"] = u.hp
 					m["maxhp"] = u.maxhp
+	_record_killed_enemies()
 	_sync_party_deaths()
 	Game.clear_transient_state()
 	get_tree().change_scene_to_file("res://overworld3d.tscn")
@@ -3268,3 +3393,50 @@ func _on_to_map():
 func _apply_graphics_settings():
 	FogBorder.build_for_terrain(self, terrain, terrain.position if terrain != null else Vector3.ZERO)
 	DayNight.setup(world_env, sun_light, float(Game.hour))
+
+# ═══════════ ДИСПЕТЧЕР БОЕВЫХ РЕЖИМОВ (пакет scripts/combat/) ═══════════
+# Сцена владеет данными (units3, камера, terrain, UI), режим — поведением.
+# Активный режим хранится в combat_mode_inst; сцена вызывает у него process/input.
+# Пошаговая логика остаётся в самой сцене (turn_mode.gd — обёртка над её входом/выходом).
+
+const CombatModesRegistry = preload("res://scripts/combat/combat_modes.gd")
+
+var combat_mode_inst: CombatModeBase = null
+var _mode_reverting = false
+# Стамина героя в реалтайме переживает переключения режимов (хранится на сцене).
+var rt_stamina_saved = 100.0
+# Счётчик убитых врагов по классам — для сверки при переключениях режимов.
+var kill_counts = {}
+
+func _enter_battle_mode(mode_id: int) -> bool:
+	if combat_mode_inst != null and combat_mode_inst.id() == mode_id:
+		return true
+	var inst = CombatModesRegistry.make(mode_id, self)
+	if inst == null:
+		return false
+	if not inst.can_enter():
+		_log_click("ENTER %d BLOCKED: %s" % [mode_id, inst.block_reason()])
+		if status != null and inst.block_reason() != "":
+			status.text = inst.block_reason()
+		return false
+	var prev = -1
+	if combat_mode_inst != null:
+		prev = combat_mode_inst.id()
+		combat_mode_inst.exit()
+	combat_mode_inst = inst
+	inst.enter(prev)
+	_log_units("after_enter_" + str(mode_id))
+	return true
+
+func _on_combat_mode_changed(new_mode: int):
+	if _mode_reverting:
+		return
+	if _enter_battle_mode(new_mode):
+		return
+	# Вход запрещён (фаза врага, QTE, расстановка) — откатываем выбор режима.
+	_mode_reverting = true
+	var back = Game.CombatMode.TURN_BASED
+	if combat_mode_inst != null:
+		back = combat_mode_inst.id()
+	Game.set_combat_mode(back)
+	_mode_reverting = false

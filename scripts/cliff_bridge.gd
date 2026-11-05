@@ -27,6 +27,8 @@ const STEPPED_COLUMNS = {
 
 const HILL_HEIGHT = 2.4
 const BRIDGE_HEIGHT = 2.4
+const STEP_MAX = 0.85
+const BODY_MARGIN = 0.35
 
 static func is_hill1_cell(c: Vector2i) -> bool:
 	return HILL1_CELLS.has(c)
@@ -57,27 +59,74 @@ static func get_surface_y(x: float, z: float, cur_y: float, terrain: Node = null
 			# Otherwise walk underneath on ground
 			return gh
 
-	# 2. Hill cliffs
+	# 2. Hill cliffs. Top is the floor only when the body is already near it.
 	if is_hill_cell(c):
-		return gh + HILL_HEIGHT
+		var top = gh + HILL_HEIGHT
+		if cur_y >= top - 0.85:
+			return top
+		return gh
 
-	# 3. Stepped columns
+	# 3. Stepped columns. Same rule, so a 0.8 step still lifts the body.
 	if STEPPED_COLUMNS.has(c):
-		return gh + STEPPED_COLUMNS[c]
+		var top = gh + STEPPED_COLUMNS[c]
+		if cur_y >= top - 0.85:
+			return top
+		return gh
 
 	# 4. Ground terrain
 	return gh
 
+# True when this point is inside a cliff, a column, or a bridge pier.
+static func blocks_solid(x: float, z: float, feet_y: float, terrain: Node = null) -> bool:
+	var gh = terrain.sample_h(x, z) if terrain != null and terrain.has_method("sample_h") else 0.0
+	var c = Vector2i(int(floor(x)), int(floor(z)))
+	if is_hill_cell(c) and feet_y < gh + HILL_HEIGHT - STEP_MAX:
+		return true
+	if is_column_cell(c) and feet_y < gh + float(STEPPED_COLUMNS[c]) - STEP_MAX:
+		return true
+	if feet_y < gh + BRIDGE_HEIGHT - 0.25 and _in_pier(x, z):
+		return true
+	return false
+
+# True when a body at this height would be inside a cliff, a column, or a bridge pier.
+static func blocks_body(x: float, z: float, feet_y: float, terrain: Node = null) -> bool:
+	if blocks_solid(x, z, feet_y, terrain):
+		return true
+	return margin_gap(x, z, feet_y, terrain) < BODY_MARGIN
+
+# Distance to the nearest rock face the body is below the top of; 999 when above it.
+static func margin_gap(x: float, z: float, feet_y: float, terrain: Node = null) -> float:
+	var gh = terrain.sample_h(x, z) if terrain != null and terrain.has_method("sample_h") else 0.0
+	if feet_y < gh + HILL_HEIGHT - STEP_MAX:
+		return _hill_gap(x, z)
+	return 999.0
+
+static func _in_pier(x: float, z: float) -> bool:
+	if z < 5.0 or z > 6.0:
+		return false
+	return abs(x - 8.9) <= 0.12 or abs(x - 10.1) <= 0.12
+
+static func _hill_gap(x: float, z: float) -> float:
+	var best = 999.0
+	var c = Vector2i(int(floor(x)), int(floor(z)))
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			var hc = c + Vector2i(dx, dz)
+			if not is_hill_cell(hc):
+				continue
+			var nearest_x = clampf(x, float(hc.x), float(hc.x + 1))
+			var nearest_z = clampf(z, float(hc.y), float(hc.y + 1))
+			best = minf(best, Vector2(x - nearest_x, z - nearest_z).length())
+	return best
+
 # Check if vertical step from current surface to target surface is passable
-static func can_step_height(from_x: float, from_z: float, to_x: float, to_z: float, cur_y: float, terrain: Node = null) -> bool:
+static func can_step_height(from_x: float, from_z: float, to_x: float, to_z: float, cur_y: float, terrain: Node = null, allow_drop: bool = false) -> bool:
 	var from_surf = get_surface_y(from_x, from_z, cur_y, terrain)
 	var to_surf = get_surface_y(to_x, to_z, cur_y, terrain)
 	var diff = to_surf - from_surf
-	# Upward step allowed up to 0.85m (allows stepping onto columns)
-	if diff > 0.85:
+	if diff > STEP_MAX:
 		return false
-	# Downward drop allowed up to 0.85m (allows stepping down columns, blocks jumping off 2.4m cliffs)
-	if diff < -0.85:
+	if diff < -STEP_MAX and not allow_drop:
 		return false
 	return true
 
@@ -163,88 +212,33 @@ static func find_path_3d(from_c: Vector2i, from_y: float, to_c: Vector2i, to_y: 
 	path.reverse()
 	return path
 
+static func _floor_at(c: Vector2i, layer: int) -> float:
+	if is_bridge_cell(c):
+		return BRIDGE_HEIGHT if layer == 1 else 0.0
+	if is_hill_cell(c):
+		return HILL_HEIGHT
+	if is_column_cell(c):
+		return float(STEPPED_COLUMNS[c])
+	return 0.0
+
+static func _layers_at(c: Vector2i) -> Array:
+	if is_bridge_cell(c):
+		return [0, 1]
+	if is_hill_cell(c):
+		return [1]
+	if is_column_cell(c) and float(STEPPED_COLUMNS[c]) >= 1.2:
+		return [1]
+	return [0]
+
 static func _get_neighbors_3d(cur: Vector3i) -> Array:
 	var res: Array = []
 	var c = Vector2i(cur.x, cur.y)
-	var layer = cur.z
-
-	if layer == 0:
-		# Layer 0 (Ground level, Y < 1.2)
-		if c == Vector2i(6, 4):
-			# Col 1: can step down to ground or step up to Col 2 (layer 1)
-			res.append(Vector3i(6, 3, 0))
-			res.append(Vector3i(5, 4, 0))
-			res.append(Vector3i(6, 5, 1))
-		elif c == Vector2i(13, 7):
-			# Col 4: can step down to ground or step up to Col 3 (layer 1)
-			res.append(Vector3i(13, 8, 0))
-			res.append(Vector3i(14, 7, 0))
-			res.append(Vector3i(13, 6, 1))
-		elif c == Vector2i(9, 5):
-			# Underpass under bridge
-			res.append(Vector3i(9, 4, 0))
-			res.append(Vector3i(9, 6, 0))
-			res.append(Vector3i(10, 5, 0))
-		elif c == Vector2i(10, 5):
-			# Underpass under bridge
-			res.append(Vector3i(10, 4, 0))
-			res.append(Vector3i(10, 6, 0))
-			res.append(Vector3i(9, 5, 0))
-		else:
-			# Open ground
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var nc = c + d
-				if nc == Vector2i(6, 4):
-					if c == Vector2i(6, 3) or c == Vector2i(5, 4):
-						res.append(Vector3i(nc.x, nc.y, 0))
-				elif nc == Vector2i(13, 7):
-					if c == Vector2i(13, 8) or c == Vector2i(14, 7):
-						res.append(Vector3i(nc.x, nc.y, 0))
-				elif nc == Vector2i(9, 5):
-					if c == Vector2i(9, 4) or c == Vector2i(9, 6):
-						res.append(Vector3i(nc.x, nc.y, 0))
-				elif nc == Vector2i(10, 5):
-					if c == Vector2i(10, 4) or c == Vector2i(10, 6):
-						res.append(Vector3i(nc.x, nc.y, 0))
-				elif not is_hill_cell(nc) and not is_column_cell(nc) and not is_bridge_cell(nc):
-					res.append(Vector3i(nc.x, nc.y, 0))
-	else:
-		# Layer 1 (Elevated level, Y >= 1.2)
-		if c == Vector2i(6, 5):
-			# Col 2: can step down to Col 1 (layer 0) or step up to Hill 1 (layer 1)
-			res.append(Vector3i(6, 4, 0))
-			res.append(Vector3i(7, 5, 1))
-		elif c == Vector2i(13, 6):
-			# Col 3: can step down to Col 4 (layer 0) or step up to Hill 2 (layer 1)
-			res.append(Vector3i(13, 7, 0))
-			res.append(Vector3i(12, 6, 1))
-		elif c == Vector2i(9, 5):
-			# Bridge deck
-			res.append(Vector3i(8, 5, 1))
-			res.append(Vector3i(10, 5, 1))
-		elif c == Vector2i(10, 5):
-			# Bridge deck
-			res.append(Vector3i(9, 5, 1))
-			res.append(Vector3i(11, 5, 1))
-		elif is_hill1_cell(c):
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var nc = c + d
-				if is_hill1_cell(nc):
-					res.append(Vector3i(nc.x, nc.y, 1))
-				elif c == Vector2i(7, 5) and nc == Vector2i(6, 5):
-					res.append(Vector3i(6, 5, 1))
-				elif c == Vector2i(8, 5) and nc == Vector2i(9, 5):
-					res.append(Vector3i(9, 5, 1))
-		elif is_hill2_cell(c):
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var nc = c + d
-				if is_hill2_cell(nc):
-					res.append(Vector3i(nc.x, nc.y, 1))
-				elif c == Vector2i(12, 6) and nc == Vector2i(13, 6):
-					res.append(Vector3i(13, 6, 1))
-				elif c == Vector2i(11, 5) and nc == Vector2i(10, 5):
-					res.append(Vector3i(10, 5, 1))
-
+	var from_h = _floor_at(c, cur.z)
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var nc = c + d
+		for layer in _layers_at(nc):
+			if absf(_floor_at(nc, layer) - from_h) <= STEP_MAX:
+				res.append(Vector3i(nc.x, nc.y, layer))
 	return res
 
 # Multi-height pathfinding step validation
@@ -283,7 +277,7 @@ static func is_valid_path_step(a: Vector2i, b: Vector2i) -> bool:
 		return true
 	if (a == Vector2i(13, 6) and b == Vector2i(13, 7)) or (b == Vector2i(13, 6) and a == Vector2i(13, 7)):
 		return true
-	if (a == Vector2i(13, 7) and (b == Vector2i(13, 8) or b == Vector2i(14, 7))) or (b == Vector2i(13, 7) and (a == Vector2i(13, 8) or a == Vector2i(14, 7))):
+	if (a == Vector2i(13, 7) and (b == Vector2i(13, 8) or b == Vector2i(14, 7) or b == Vector2i(12, 7))) or (b == Vector2i(13, 7) and (a == Vector2i(13, 8) or a == Vector2i(14, 7) or a == Vector2i(12, 7))):
 		return true
 
 	# 6. Open Ground movement (neither is hill, column, or bridge)
@@ -454,6 +448,7 @@ static func setup_for_combat(w3d: Node):
 	_add_climb_pair(w3d, Vector2i(13, 6), Vector2i(13, 7)) # col 3 -> col 4
 	_add_climb_pair(w3d, Vector2i(13, 7), Vector2i(13, 8)) # col 4 -> ground
 	_add_climb_pair(w3d, Vector2i(13, 7), Vector2i(14, 7)) # col 4 -> ground
+	_add_climb_pair(w3d, Vector2i(13, 7), Vector2i(12, 7)) # col 4 -> ground left
 
 	# Bridge span connections (on top):
 	_add_climb_pair(w3d, Vector2i(8, 5), Vector2i(9, 5)) # Hill 1 -> Bridge

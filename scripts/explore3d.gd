@@ -1,6 +1,6 @@
 extends Node3D
 const CliffBridge = preload("res://scripts/cliff_bridge.gd")
-const FPMeleeClass = preload("res://scripts/fp_melee.gd")
+const FPMeleeClass = preload("res://scripts/combat/fp_melee.gd")
 var fp_melee = null
 var rt_combat_active: bool = false
 var party_hp_bars: Array = []
@@ -33,6 +33,7 @@ var sun_light: DirectionalLight3D = null
 var world_env: Environment = null
 var combat_lock = false
 var is_defeated: bool = false
+var dlg_open: bool = false
 var npcs3 = []
 var fp_mode: bool = false
 var prev_cam_dist: float = 4.0
@@ -45,6 +46,11 @@ var lead_vy: float = 0.0
 var lead_y_offset: float = 0.0
 var lead_base_y: float = 0.0
 var is_grounded: bool = true
+const FALL_DMG_H: float = 1.5
+var lead_st: Dictionary = {}
+var follow_drop_timer: float = 0.0
+var show_kick_arc: bool = false
+var kick_arc_root: Node3D = null
 var jump_force: float = 5.2
 var gravity: float = 16.0
 var stamina: float = 100.0
@@ -79,6 +85,18 @@ var class_names_ru: Dictionary = {
 var test_spawn_class_idx: int = 0
 var is_dashing: bool = false
 var dash_timer: float = 0.0
+
+# Диагностика переключений режимов (убрать вместе с вызовами _dbg_log после разбора).
+func _dbg_log(txt):
+	var f = FileAccess.open("res://click_log.txt", FileAccess.READ)
+	var old = ""
+	if f != null:
+		old = f.get_as_text()
+		f.close()
+	var w = FileAccess.open("res://click_log.txt", FileAccess.WRITE)
+	if w != null:
+		w.store_string(old + txt + "\n")
+		w.close()
 var dash_duration: float = 0.26
 var dash_dir: Vector3 = Vector3.ZERO
 var dash_cooldown: float = 0.0
@@ -156,12 +174,17 @@ func _ready():
 	var cd = int(ls.get("cleared_day", -999))
 	var respawn = int(ConfigTools.get_val("respawn_days", 3))
 	if Game.day - cd >= respawn:
+		var killed = ls.get("killed", {})
 		for u in camp.get("units", []):
 			if int(u.get("team", 1)) == 1:
+				var skey = str(u["cell"][0]) + "," + str(u["cell"][1]) + ":" + str(u.get("cls", ""))
+				# Убитые в прошлых боях не воскресают, пока не истечёт срок респавна локации.
+				if killed.has(skey) and Game.day - int(killed[skey]) < respawn:
+					continue
 				var er = _actor(str(u.get("cls", "swordsman")), Color(0.9, 0.25, 0.25), str(u.get("char", "")))
 				er.position = Vector3(int(u["cell"][0]) + 0.5, 0, int(u["cell"][1]) + 0.5)
 				er.position.y = terrain.sample_h(er.position.x, er.position.z) if terrain != null else 0.0
-				enemies.append({"root": er, "cls": str(u.get("cls", "swordsman"))})
+				enemies.append({"root": er, "cls": str(u.get("cls", "swordsman")), "char": str(u.get("char", "")), "spawn": [int(u["cell"][0]), int(u["cell"][1])]})
 	# Random encounter enemies
 	var enc = Game.enc
 	if enc != null:
@@ -173,7 +196,7 @@ func _ready():
 				var er = _actor(str(u.get("cls", "swordsman")), Color(0.9, 0.25, 0.25), str(u.get("char", "")))
 				er.position = Vector3(int(u["cell"][0]) + 0.5, 0, int(u["cell"][1]) + 0.5)
 				er.position.y = terrain.sample_h(er.position.x, er.position.z) if terrain != null else 0.0
-				enemies.append({"root": er, "cls": str(u.get("cls", "swordsman"))})
+				enemies.append({"root": er, "cls": str(u.get("cls", "swordsman")), "char": str(u.get("char", "")), "spawn": [int(u["cell"][0]), int(u["cell"][1])]})
 	if Game.explore_ground != null:
 		if not ls.has("ground"):
 			ls["ground"] = []
@@ -190,6 +213,7 @@ func _ready():
 	ls["ground"] = alive
 	for gg in alive:
 		_spawn_ground(gg)
+	_dbg_log("EXPLORE_READY loc=%s day=%d enemies=%d killed=%s" % [loc_id, Game.day, enemies.size(), str(ls.get("killed", {}))])
 	# NPCs (trader, etc.)
 	for np in camp.get("npcs", []):
 		_spawn_npc(np)
@@ -241,7 +265,12 @@ func _exit_tree():
 		Game.test_combat_options_changed.disconnect(_update_test_hud)
 
 func _on_combat_mode_changed(new_mode: int):
+	if rt_combat_active and new_mode != Game.CombatMode.REALTIME_FP:
+		_convert_rt_to_turnbased()
+		return
 	if new_mode == Game.CombatMode.REALTIME_FP:
+		if dlg_open:
+			return
 		_set_fp_mode(true)
 		_ensure_fp_melee()
 		if fp_melee != null:
@@ -249,7 +278,24 @@ func _on_combat_mode_changed(new_mode: int):
 	else:
 		if fp_melee != null and not rt_combat_active:
 			fp_melee.visible = false
+		if fp_mode and not rt_combat_active:
+			_flyout_to_third_person()
 	_update_hint()
+
+func _convert_rt_to_turnbased():
+	_dbg_log("CONVERT_ENTER rt_active=%s enemies_alive=%d" % [str(rt_combat_active), enemies.size()])
+	rt_combat_active = false
+	_clean_up_projectiles()
+	if parry_hud != null:
+		parry_hud.modulate.a = 0.0
+	if fp_melee != null:
+		fp_melee.visible = false
+	if crosshair != null:
+		crosshair.visible = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	fp_mode = false
+	combat_lock = true
+	_start_combat()
 
 func _ensure_fp_melee():
 	if cam == null:
@@ -299,6 +345,8 @@ func _setup_stamina_bar(ui: Control):
 
 func _try_jump():
 	if is_defeated or party_n.size() == 0 or not is_grounded or airship_state == 2:
+		return
+	if bool(lead_st.get("falling", false)):
 		return
 	if int(party_n[0].m.get("hp", 0)) <= 0:
 		return
@@ -523,7 +571,8 @@ func _update_test_hud():
 	var next_name = class_names_ru.get(next_cls, next_cls)
 	var p_god = "ВКЛ" if Game.test_player_godmode else "ВЫКЛ"
 	var e_god = "ВКЛ" if Game.test_enemy_godmode else "ВЫКЛ"
-	test_hud_lbl.text = "⚔️ ТЕСТ: [1] Спавн (%s) | [2] Бессмертие: %s | [3] Враги: %s | [4] HP/Стамина | [5] Очистить | [F] Пинок | [Alt] Рывок" % [next_name, p_god, e_god]
+	var arc = "ВКЛ" if show_kick_arc else "ВЫКЛ"
+	test_hud_lbl.text = "⚔️ ТЕСТ: [1] Спавн (%s) | [2] Бессмертие: %s | [3] Враги: %s | [4] HP/Стамина | [5] Очистить | [T] Дуга: %s | [F] Пинок | [Alt] Рывок" % [next_name, p_god, e_god, arc]
 
 func _update_hint():
 	if hint == null:
@@ -542,9 +591,9 @@ func _update_hint():
 			hint.text = "Палуба дирижабля | WASD идти | Shift бег | Пробел прыжок | ПКМ камера | V 1-е лицо | E действие%s" % town_hint
 	if Game.combat_mode == Game.CombatMode.REALTIME_FP:
 		if Game.is_combat_test:
-			hint.text = "⚔️ [1-е лицо] ЛКМ: удар | ПКМ: блок | [F] пинок | [Alt] рывок (i-frame) | [1-5] тест | [M] карта"
+			hint.text = "⚔️ [1-е лицо] ЛКМ: удар | ПКМ: блок | [F] пинок | [T] дуга | [Alt] рывок | [1-5] тест | [M] карта"
 		else:
-			hint.text = "⚔️ [1-е лицо] WASD идти | ЛКМ удар | ПКМ блок | [F] пинок | [Alt] рывок (i-frame) | [M] карта"
+			hint.text = "⚔️ [1-е лицо] WASD идти | ЛКМ удар | ПКМ блок | [F] пинок | [T] дуга | [Alt] рывок | [M] карта"
 		return
 	if fp_mode:
 		hint.text = "[1-е лицо] WASD идти | Shift бег | [Alt] рывок | Пробел прыжок | Мышь обзор | V 3-е лицо | E действие | ESC курсор%s | M карта" % town_hint
@@ -924,6 +973,7 @@ func _board_airship():
 	deck_local_pos.z = clampf(deck_local_pos.z, airship.DECK_MIN_Z, airship.DECK_MAX_Z)
 	deck_local_pos.y = airship.DECK_Y
 	lead.global_position = airship.to_global(deck_local_pos)
+	lead_st.clear()
 	lead_y_offset = 0.0
 	lead_vy = 0.0
 	is_grounded = true
@@ -945,6 +995,8 @@ func _exit_airship_to_ground():
 	current_path.clear()
 	var gh = terrain.sample_h(bot_pos.x, bot_pos.z) if terrain != null else 0.0
 	lead.global_position = Vector3(bot_pos.x, gh, bot_pos.z)
+	lead_st.clear()
+	lead_base_y = gh
 	lead_y_offset = 0.0
 	lead_vy = 0.0
 	is_grounded = true
@@ -1213,7 +1265,7 @@ func _process(d):
 		dash_timer -= d
 		var progress = clampf(dash_timer / maxf(0.01, dash_duration), 0.0, 1.0)
 		var cur_dash_speed = lerpf(3.5, 12.5, progress)
-		_try_move(lead, dash_dir, cur_dash_speed * d)
+		_try_move(lead, dash_dir, cur_dash_speed * d, true)
 		if dash_timer <= 0.0:
 			is_dashing = false
 	elif can_act and mv.length() > 0:
@@ -1223,7 +1275,7 @@ func _process(d):
 		var forward = Vector3(-sin(yaw), 0, -cos(yaw))
 		var right = Vector3(cos(yaw), 0, -sin(yaw))
 		var dir = (forward * (-mv.y) + right * mv.x).normalized()
-		_try_move(lead, dir, cur_speed * d)
+		_try_move(lead, dir, cur_speed * d, true)
 		if not fp_mode:
 			lead.rotation.y = atan2(dir.x, dir.z)
 	elif can_act and (current_path.size() > 0 or target_point != null):
@@ -1245,7 +1297,9 @@ func _process(d):
 				target_point = null
 		else:
 			var dir = to.normalized()
-			_try_move(lead, dir, min(dl, cur_speed * d))
+			var moved = _try_move(lead, dir, min(dl, cur_speed * d))
+			if not moved:
+				_drop_blocked_path(lead)
 			lead.rotation.y = atan2(dir.x, dir.z)
 	for k in range(1, party_n.size()):
 		var prev = party_n[k - 1].root
@@ -1257,7 +1311,7 @@ func _process(d):
 			var dir2 = to2.normalized()
 			var step = min(dl2 - 0.7, maxf(cur_speed * 1.15, 3.8) * d)
 			if step > 0:
-				_try_move(cur, dir2, step)
+				_try_move(cur, dir2, step, follow_drop_timer > 0.0)
 				cur.rotation.y = atan2(dir2.x, dir2.z)
 	if not is_instance_valid(lead):
 		return
@@ -1268,17 +1322,22 @@ func _process(d):
 		if CliffBridge.is_bridge_cell(c) and lead.position.y < 1.4:
 			lead_y_offset = minf(lead_y_offset, 0.7)
 	var vert_speed = maxf(cur_speed * 1.6, 5.5)
-	lead_base_y = move_toward(lead_base_y, ground_h, vert_speed * d)
+	follow_drop_timer = maxf(0.0, follow_drop_timer - d)
+	lead_base_y = _fall_step(lead_st, lead_base_y, ground_h, vert_speed, d)
 	lead.position.y = lead_base_y + lead_y_offset
+	_check_landed(lead_st, lead, "hero")
+	if not is_instance_valid(lead) or is_defeated:
+		return
 	for k in range(1, party_n.size()):
 		var pn = party_n[k]
 		var ph = terrain.sample_h(pn.root.position.x, pn.root.position.z) if terrain != null else 0.0
 		if (loc_id == "bandit_road" or loc_id == "road_bandits"):
 			ph = CliffBridge.get_surface_y(pn.root.position.x, pn.root.position.z, pn.root.position.y, terrain)
 		var cur_by = float(pn.get("base_y", pn.root.position.y))
-		cur_by = move_toward(cur_by, ph, vert_speed * d)
+		cur_by = _fall_step(pn, cur_by, ph, vert_speed, d)
 		pn["base_y"] = cur_by
 		pn.root.position.y = cur_by
+		_check_landed(pn, pn.root, "follower")
 	if cam != null:
 		if Game.combat_mode == Game.CombatMode.REALTIME_FP and not fp_mode and not is_defeated:
 			_set_fp_mode(true)
@@ -1293,61 +1352,380 @@ func _process(d):
 			for i in range(enemies.size() - 1, -1, -1):
 				var en = enemies[i]
 				if not is_instance_valid(en.get("root")) or int(en.get("hp", 1)) <= 0:
+					if is_instance_valid(en.get("root")) and not bool(en.get("dead", false)):
+						en["dead"] = true
+						en.root.queue_free()
 					enemies.remove_at(i)
 					continue
 				if (en.root.position - lead.position).length() < 2.0:
-					if Game.combat_mode == Game.CombatMode.REALTIME_FP:
-						_start_realtime_combat()
-					else:
-						combat_lock = true
-						_try_combat()
+					combat_lock = true
+					_try_combat()
 					break
 	if rt_combat_active:
 		_process_realtime_combat(d)
+	if show_kick_arc:
+		_refresh_kick_arc()
 	if airship != null and not combat_lock and hint != null:
 		var d_lad = (lead.global_position - airship.get_ladder_bottom_pos(lead.global_position)).length()
 		if d_lad < 2.5:
 			hint.text = "[E] Подняться по трапу на дирижабль | " + hint.text
 
-func _can_occupy(pos: Vector3, from_pos: Vector3 = Vector3.ZERO) -> bool:
+func _can_occupy(pos: Vector3, from_pos: Vector3 = Vector3.ZERO, allow_drop: bool = false) -> bool:
 	var cx = int(floor(pos.x))
 	var cz = int(floor(pos.z))
 	if terrain != null and not terrain.has_cell(cx, cz):
 		return false
 	if objects3.has(Vector2i(cx, cz)):
 		return false
-	if from_pos != Vector3.ZERO and (loc_id == "bandit_road" or loc_id == "road_bandits"):
-		if not CliffBridge.can_step_height(from_pos.x, from_pos.z, pos.x, pos.z, from_pos.y, terrain):
+	if loc_id == "bandit_road" or loc_id == "road_bandits":
+		var feet_y = from_pos.y if from_pos != Vector3.ZERO else 0.0
+		if CliffBridge.blocks_solid(pos.x, pos.z, feet_y, terrain):
+			return false
+		var gap = CliffBridge.margin_gap(pos.x, pos.z, feet_y, terrain)
+		if gap < CliffBridge.BODY_MARGIN:
+			# Already pressed to the rock (e.g. after a fall): allow moving away or along the face.
+			var gap0 = CliffBridge.margin_gap(from_pos.x, from_pos.z, feet_y, terrain) if from_pos != Vector3.ZERO else 999.0
+			if gap0 >= CliffBridge.BODY_MARGIN or gap < gap0 - 0.001:
+				return false
+		if from_pos != Vector3.ZERO and not CliffBridge.can_step_height(from_pos.x, from_pos.z, pos.x, pos.z, from_pos.y, terrain, allow_drop):
 			return false
 	return true
 
-func _try_move(node, dir, step):
+func _try_move(node, dir, step, allow_drop: bool = false) -> bool:
+	if step <= 0.0 or dir.length_squared() < 0.0001:
+		return false
+	if _move_clamped(node, dir, step, allow_drop):
+		return true
+	var side = Vector3(-dir.z, 0.0, dir.x)
+	if _move_clamped(node, side, step, allow_drop):
+		return true
+	if _move_clamped(node, -side, step, allow_drop):
+		return true
+	return false
+
+func _move_clamped(node, dir, step, allow_drop: bool = false) -> bool:
 	var np = node.position + dir * step
 	var gw = (terrain.GW if terrain != null else 8)
 	var gh = (terrain.GH if terrain != null else 6)
 	np.x = clampf(np.x, 0.3, gw - 0.3)
 	np.z = clampf(np.z, 0.3, gh - 0.3)
 	
-	if (loc_id == "bandit_road" or loc_id == "road_bandits") and node.position.y > 1.2:
+	if (loc_id == "bandit_road" or loc_id == "road_bandits") and node.position.y > 1.2 and not allow_drop:
 		var c = Vector2i(int(floor(np.x)), int(floor(np.z)))
 		if CliffBridge.is_bridge_cell(c):
 			np.z = clampf(np.z, 5.15, 5.85)
 	
-	if _can_occupy(np, node.position):
+	if _can_occupy(np, node.position, allow_drop):
 		node.position = np
-		return
+		return true
 	
-	# Sliding attempt along X
 	var npx = Vector3(np.x, node.position.y, node.position.z)
-	if _can_occupy(npx, node.position):
+	if _can_occupy(npx, node.position, allow_drop):
 		node.position = npx
-		return
+		return true
 		
-	# Sliding attempt along Z
 	var npz = Vector3(node.position.x, node.position.y, np.z)
-	if _can_occupy(npz, node.position):
+	if _can_occupy(npz, node.position, allow_drop):
 		node.position = npz
+		return true
+	return false
+
+# Vertical settle: small steps ease, drops over STEP_MAX become a gravity fall.
+func _fall_step(st: Dictionary, cur_y: float, target: float, rise_speed: float, d: float) -> float:
+	var falling = bool(st.get("falling", false))
+	if not falling and cur_y > target + CliffBridge.STEP_MAX + 0.05:
+		falling = true
+		st["falling"] = true
+		st["fall_vy"] = 0.0
+		st["fall_from"] = cur_y
+	if not falling:
+		return move_toward(cur_y, target, rise_speed * d)
+	var vy = float(st.get("fall_vy", 0.0)) - gravity * d
+	st["fall_vy"] = vy
+	var ny = cur_y + vy * d
+	if ny <= target:
+		st["falling"] = false
+		st["fall_vy"] = 0.0
+		st["landed_h"] = float(st.get("fall_from", cur_y)) - target
+		return target
+	return ny
+
+func _check_landed(st: Dictionary, root: Node3D, kind: String):
+	var h = float(st.get("landed_h", 0.0))
+	if h <= 0.0:
 		return
+	st["landed_h"] = 0.0
+	if not is_instance_valid(root):
+		return
+	if kind == "hero":
+		follow_drop_timer = 6.0
+	if h < FALL_DMG_H or kind == "follower":
+		return
+	_screen_shake(0.05, 0.12)
+	if kind == "hero":
+		if Game.test_player_godmode or party_n.size() == 0:
+			_float_text(root.position, "🛡️ ПРИЗЕМЛЕНИЕ (0 УРОНА)", Color(0.3, 1.0, 0.5))
+			return
+		var hero = party_n[0].m
+		hero["hp"] = max(0, int(hero.get("hp", 2)) - 1)
+		_float_text(root.position, "⬇ ПАДЕНИЕ! -1 HP", Color(1.0, 0.45, 0.2))
+		_update_party_hp_bars()
+		if int(hero.get("hp", 0)) <= 0:
+			_handle_hero_death()
+	else:
+		var en = st
+		if Game.test_enemy_godmode:
+			en["hp"] = max(1, int(en.get("hp", 3)) - 1)
+		else:
+			en["hp"] = int(en.get("hp", 3)) - 1
+		_float_text(root.position, "⬇ ПАДЕНИЕ! -1 HP", Color(1.0, 0.65, 0.2))
+		_update_enemy_hp_display(en)
+		if not Game.test_enemy_godmode and int(en["hp"]) <= 0:
+			_on_enemy_killed(en)
+
+func _predict_kick(start: Vector3, dir: Vector3, dist: float) -> Dictionary:
+	var flat = Vector3(dir.x, 0.0, dir.z)
+	var empty = {"points": [], "land": start, "drop_h": 0.0}
+	if flat.length_squared() < 0.0001 or dist <= 0.0:
+		return empty
+	flat = flat.normalized()
+	var limit = dist
+	var t = 0.25
+	var last = start
+	var landed_off = false
+	while t <= limit + 0.001:
+		var p = _clamp_to_map(start + flat * t)
+		var kind = _kick_cell_kind(start.y, p)
+		if kind == "floor":
+			if landed_off:
+				break
+			last = p
+		elif kind == "drop":
+			var clear = _clamp_to_map(p + flat * 0.45)
+			last = clear if _kick_cell_kind(start.y, clear) == "drop" else p
+			landed_off = true
+			break
+		elif kind == "step":
+			limit = maxf(limit, dist + 2.0)
+		else:
+			break
+		t += 0.25
+	var land_y = start.y
+	if loc_id == "bandit_road" or loc_id == "road_bandits":
+		land_y = CliffBridge.get_surface_y(last.x, last.z, 0.0 if landed_off else start.y, terrain)
+	elif terrain != null:
+		land_y = terrain.sample_h(last.x, last.z)
+	var land = Vector3(last.x, land_y, last.z)
+	return {"points": _build_kick_arc(start, land), "land": land, "drop_h": maxf(0.0, start.y - land_y)}
+
+func _build_kick_arc(start: Vector3, land: Vector3, steps: int = 12) -> Array:
+	var pts: Array = []
+	var rise = 0.55 + minf(1.0, maxf(0.0, start.y - land.y) * 0.2)
+	for i in range(steps + 1):
+		var u = float(i) / float(steps)
+		var xz = start.lerp(Vector3(land.x, start.y, land.z), u)
+		var y = lerpf(start.y, land.y, u) + rise * 4.0 * u * (1.0 - u)
+		pts.append(Vector3(xz.x, y, xz.z))
+	return pts
+
+func _shove_off_ledge(node: Node3D, dir: Vector3, dist: float, en: Dictionary = {}) -> void:
+	var pred = _predict_kick(node.position, dir, dist)
+	var pts: Array = pred.get("points", [])
+	var land: Vector3 = pred.get("land", node.position)
+	if pts.is_empty():
+		node.position = land
+		return
+	if not en.is_empty():
+		en["knocked"] = true
+		en["knocked_t"] = 0.8
+		en["falling"] = false
+		en["fall_vy"] = 0.0
+	var tw = node.create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	var step_t = clampf(0.28 / float(maxi(1, pts.size() - 1)), 0.02, 0.05)
+	for i in range(1, pts.size()):
+		tw.tween_property(node, "position", pts[i], step_t)
+	tw.tween_callback(func():
+		if is_instance_valid(node):
+			node.position = land
+		if en.is_empty():
+			return
+		en["knocked"] = false
+		en["landed_h"] = float(pred.get("drop_h", 0.0))
+		_check_landed(en, node, "enemy")
+		if not Game.test_enemy_godmode and int(en.get("hp", 3)) <= 0:
+			_on_enemy_killed(en)
+	)
+
+func _kick_preview_target() -> Variant:
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return null
+	var lead = party_n[0].root
+	var fwd = Vector3(-sin(yaw), 0.0, -cos(yaw))
+	var best = null
+	var best_d = 2.8
+	for en in enemies:
+		if not is_instance_valid(en.get("root")) or int(en.get("hp", 3)) <= 0:
+			continue
+		var to = en.root.position - lead.position
+		to.y = 0.0
+		var d = to.length()
+		if d > best_d or d < 0.05:
+			continue
+		if fwd.dot(to.normalized()) < 0.35:
+			continue
+		best_d = d
+		best = en
+	return best
+
+func _refresh_kick_arc():
+	if kick_arc_root == null or not is_instance_valid(kick_arc_root):
+		kick_arc_root = Node3D.new()
+		kick_arc_root.name = "KickArcViz"
+		add_child(kick_arc_root)
+	for c in kick_arc_root.get_children():
+		c.queue_free()
+	if not show_kick_arc:
+		return
+	var en = _kick_preview_target()
+	if en == null or party_n.size() == 0:
+		return
+	var lead = party_n[0].root
+	var push = en.root.position - lead.position
+	push.y = 0.0
+	var pred = _predict_kick(en.root.position, push.normalized(), 2.2)
+	var pts: Array = pred.get("points", [])
+	if pts.is_empty():
+		return
+	var im = ImmediateMesh.new()
+	im.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
+	for p in pts:
+		im.surface_add_vertex(p + Vector3(0, 0.15, 0))
+	im.surface_end()
+	var mi = MeshInstance3D.new()
+	mi.mesh = im
+	var mat = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.85, 0.2, 0.95)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mi.material_override = mat
+	kick_arc_root.add_child(mi)
+	var land: Vector3 = pred.get("land", pts[pts.size() - 1])
+	var ring = MeshInstance3D.new()
+	var tor = TorusMesh.new()
+	tor.inner_radius = 0.28
+	tor.outer_radius = 0.38
+	ring.mesh = tor
+	ring.position = land + Vector3(0, 0.08, 0)
+	var rmat = StandardMaterial3D.new()
+	rmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rmat.albedo_color = Color(1.0, 0.35, 0.15, 0.9)
+	rmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ring.material_override = rmat
+	kick_arc_root.add_child(ring)
+
+func _toggle_kick_arc():
+	show_kick_arc = not show_kick_arc
+	if not show_kick_arc and kick_arc_root != null and is_instance_valid(kick_arc_root):
+		for c in kick_arc_root.get_children():
+			c.queue_free()
+	_update_test_hud()
+	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
+		var txt = "📐 ДУГА ПИНКА: " + ("ВКЛ" if show_kick_arc else "ВЫКЛ")
+		_float_text(party_n[0].root.position, txt, Color(1.0, 0.85, 0.3) if show_kick_arc else Color(0.7, 0.7, 0.7))
+
+func _clamp_to_map(p: Vector3) -> Vector3:
+	var gw = (terrain.GW if terrain != null else 8)
+	var gh = (terrain.GH if terrain != null else 6)
+	p.x = clampf(p.x, 0.3, gw - 0.3)
+	p.z = clampf(p.z, 0.3, gh - 0.3)
+	return p
+
+func _kick_cell_kind(from_y: float, p: Vector3) -> String:
+	var c = Vector2i(int(floor(p.x)), int(floor(p.z)))
+	if terrain != null and not terrain.has_cell(c.x, c.y):
+		return "block"
+	if objects3.has(c):
+		return "block"
+	if not (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		return "floor"
+	if CliffBridge.blocks_solid(p.x, p.z, from_y, terrain):
+		return "block"
+	if CliffBridge.is_hill_cell(c) or CliffBridge.is_column_cell(c):
+		var top = CliffBridge.get_surface_y(p.x, p.z, from_y + CliffBridge.HILL_HEIGHT, terrain)
+		if absf(from_y - top) <= 0.2:
+			return "floor"
+		if from_y > top + 0.2:
+			return "step"
+		return "block"
+	var surf = CliffBridge.get_surface_y(p.x, p.z, from_y, terrain)
+	if surf > from_y + CliffBridge.STEP_MAX:
+		return "block"
+	if surf < from_y - 0.2:
+		return "drop"
+	return "floor"
+
+func _drop_blocked_path(lead: Node3D):
+	var goal = target_point
+	var goal_c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
+	if current_path.size() > 0:
+		var last = current_path[current_path.size() - 1]
+		goal_c = Vector2i(int(last.x), int(last.y))
+	elif goal != null:
+		goal_c = Vector2i(int(floor(goal.x)), int(floor(goal.z)))
+	var blocked = current_path[0] if current_path.size() > 0 else Vector2i(-999, -999)
+	var from_c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
+	var path = _find_path(from_c, goal_c)
+	if path.is_empty() or path[0] == blocked or path[0] == from_c:
+		current_path.clear()
+		target_point = null
+		return
+	current_path = path
+	target_point = goal
+
+func _rt_melee_reach(cls: String) -> float:
+	return 3.3 if cls == "halberd" else 2.5
+
+func _rt_can_melee(en: Dictionary, lead: Node3D) -> bool:
+	if not is_instance_valid(en.get("root")) or not is_instance_valid(lead):
+		return false
+	return (en.root.position - lead.position).length() <= _rt_melee_reach(str(en.get("cls", "")))
+
+func _enemy_chase(er: Node3D, dir: Vector3, step: float):
+	if step <= 0.0:
+		return
+	# Погоне разрешено спрыгивать с уступов: иначе враги, заспавненные на
+	# высотах (холмы, мост bandit_road), застревают там на весь бой.
+	if not (loc_id == "bandit_road" or loc_id == "road_bandits"):
+		_try_move(er, dir, step, true)
+		return
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		_try_move(er, dir, step, true)
+		return
+	var lead = party_n[0].root
+	var enemy_high = er.position.y >= 1.2
+	var hero_high = lead.position.y >= 1.2
+	if enemy_high == hero_high:
+		_try_move(er, dir, step, true)
+		return
+	var from_c = Vector2i(int(floor(er.position.x)), int(floor(er.position.z)))
+	var goal_c = Vector2i(int(floor(lead.position.x)), int(floor(lead.position.z)))
+	if from_c == goal_c:
+		if hero_high:
+			goal_c = Vector2i(8, 5) if from_c.x <= 9 else Vector2i(11, 5)
+		else:
+			goal_c = Vector2i(from_c.x, 4)
+	var gw = terrain.GW if terrain != null else 16
+	var gh = terrain.GH if terrain != null else 10
+	var path = CliffBridge.find_path_3d(from_c, er.position.y, goal_c, lead.position.y, gw, gh, _is_free_cell)
+	if path.is_empty():
+		_try_move(er, dir, step, true)
+		return
+	var wp = path[0]
+	var to = Vector3(float(wp.x) + 0.5, 0.0, float(wp.y) + 0.5) - er.position
+	to.y = 0.0
+	if to.length_squared() < 0.0001:
+		return
+	_try_move(er, to.normalized(), step, true)
 
 func _try_combat():
 	if airship_state == 2 or (airship != null and airship.get_altitude() > 1.2):
@@ -1373,6 +1751,9 @@ func _try_combat():
 		_start_combat()
 
 func _start_realtime_combat():
+	_dbg_log("RT_START enemies=%d" % enemies.size())
+	if rt_combat_active:
+		return
 	combat_lock = false
 	rt_combat_active = true
 	_set_fp_mode(true)
@@ -1395,7 +1776,14 @@ func _start_realtime_combat():
 	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
 		_float_text(party_n[0].root.position, "В БОЙ!", Color(1.0, 0.4, 0.3))
 
+func _free_rt_enemy_nodes():
+	for n in get_tree().get_nodes_in_group("rt_enemy"):
+		if is_instance_valid(n):
+			n.queue_free()
+
 func _setup_realtime_enemy(en: Dictionary, i: int = 0):
+	if is_instance_valid(en.get("root")):
+		en.root.add_to_group("rt_enemy")
 	var cls = str(en.get("cls", "swordsman"))
 	var max_hp = 3
 	if cls == "assassin" or cls == "archer" or cls == "mage":
@@ -1791,14 +2179,42 @@ func _on_rt_player_kick_hit(target):
 			if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
 				var push_dir = (er.position - party_n[0].root.position).normalized()
 				push_dir.y = 0
-				_try_move(er, push_dir, 1.8 if was_blocking else 1.5)
+				_shove_off_ledge(er, push_dir, 2.6 if was_blocking else 2.2, target)
 			
 			tw.parallel().tween_property(er, "scale", Vector3(1.35, 0.65, 1.35), 0.08)
 			tw.tween_property(er, "scale", Vector3(1.0, 1.0, 1.0), 0.12)
 		
-		if not Game.test_enemy_godmode and target["hp"] <= 0:
+		# Death after arc: _check_landed / land callback handles HP-zero kill when drop_h>0;
+		# flat ground kill happens once knock ends via next combat tick if still 0.
+		if not Game.test_enemy_godmode and int(target["hp"]) <= 0 and not bool(target.get("knocked", false)):
 			_update_enemy_status_display(target)
 			_on_enemy_killed(target)
+
+func _rt_assassin_parry():
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	if Game.test_player_godmode:
+		_float_text(lead.position, "🛡️ БЕССМЕРТИЕ (0 УРОНА)", Color(0.3, 1.0, 0.5))
+		return
+	var hero = party_n[0].m
+	hero["hp"] = max(0, int(hero.get("hp", 2)) - 1)
+	_float_text(lead.position, "🗡️ ПАРИРОВАНИЕ! -1 HP", Color(1.0, 0.45, 0.2))
+	_update_party_hp_bars()
+	_screen_shake(0.06, 0.12)
+	if int(hero.get("hp", 0)) <= 0:
+		_handle_hero_death()
+
+func _rt_halberd_push(from_pos: Vector3):
+	if party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
+		return
+	var lead = party_n[0].root
+	var push_dir = lead.position - from_pos
+	push_dir.y = 0.0
+	if push_dir.length_squared() < 0.0001:
+		push_dir = Vector3(0.0, 0.0, 1.0)
+	_try_move(lead, push_dir.normalized(), 1.5)
+	_float_text(lead.position, "💨 ТОЛЧОК!", Color(0.7, 0.85, 1.0))
 
 func _on_rt_player_attack_hit(target, damage, is_crit, is_heavy = false):
 	if not rt_combat_active and not is_defeated:
@@ -1806,30 +2222,26 @@ func _on_rt_player_attack_hit(target, damage, is_crit, is_heavy = false):
 	if target is Dictionary and target.has("hp"):
 		var er = target.get("root")
 		
-		# Check if enemy is blocking with shield!
 		if bool(target.get("is_blocking", false)):
-			if is_heavy:
-				# Heavy attack crushes enemy block!
-				target["is_blocking"] = false
-				target["stagger"] = 1.6
-				target["staggered"] = true
-				target["windup"] = 0.0
-				if is_instance_valid(er):
-					_float_text(er.position, "💥 БЛОК СОКРУШЁН! -%d" % int(damage), Color(1.0, 0.55, 0.15))
+			var bcls = str(target.get("cls", ""))
+			if is_instance_valid(er):
+				_screen_shake(0.035, 0.09)
+				_set_actor_tint(er, Color(0.5, 1.2, 2.5))
+				var tw = er.create_tween()
+				tw.tween_interval(0.08)
+				tw.tween_callback(func():
+					if is_instance_valid(er):
+						_update_enemy_status_display(target)
+				)
+			if bcls == "assassin":
+				_rt_assassin_parry()
+			elif bcls == "halberd" and is_instance_valid(er):
+				_rt_halberd_push(er.position)
 			else:
-				# Fast light strike is blocked by shield!
 				if is_instance_valid(er):
 					_float_text(er.position, "🛡️ ЗАБЛОКИРОВАНО ВРАГОМ!", Color(0.4, 0.85, 1.0))
-					_screen_shake(0.035, 0.09)
-					_set_actor_tint(er, Color(0.5, 1.2, 2.5))
-					var tw = er.create_tween()
-					tw.tween_interval(0.08)
-					tw.tween_callback(func():
-						if is_instance_valid(er):
-							_update_enemy_status_display(target)
-					)
-				target["atk_cd"] = 0.3 # Enemy quick counter-attack window
-				return
+				target["atk_cd"] = 0.3
+			return
 		
 		# Interrupt cast/aim upon damage
 		if target.get("state") == "cast":
@@ -1976,10 +2388,22 @@ func _on_rt_player_block(_attacker, absorbed):
 	_screen_shake(0.03, 0.08)
 
 func _on_enemy_killed(target: Dictionary):
+	if bool(target.get("dead", false)):
+		return
+	target["dead"] = true
 	if is_instance_valid(target.get("root")):
 		_float_text(target.root.position, "💀 УБИТ!", Color(1.0, 0.2, 0.2))
 	target["hp"] = 0
 	enemies.erase(target)
+	_dbg_log("RT_KILL cls=%s spawn=%s day=%d" % [str(target.get("cls", "")), str(target.get("spawn", [])), Game.day])
+	# Убитый враг запоминается в состоянии локации: не воскресает при повторном
+	# входе, пока не истечёт срок респавна (respawn_days) с дня убийства.
+	var ls_k = Game.loc_state_get(loc_id)
+	if not ls_k.has("killed"):
+		ls_k["killed"] = {}
+	var sp = target.get("spawn", [])
+	if sp.size() == 2:
+		ls_k["killed"][str(int(sp[0])) + "," + str(int(sp[1])) + ":" + str(target.get("cls", ""))] = Game.day
 	
 	var loot_table = LOCS.get(loc_id, {}).get("loot", [])
 	for l in loot_table:
@@ -2013,6 +2437,7 @@ func _process_realtime_combat(d: float):
 	if is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
 		return
 	if int(party_n[0].m.get("hp", 0)) <= 0:
+		_handle_hero_death()
 		return
 	var lead = party_n[0].root
 	var lead_pos = lead.position
@@ -2037,9 +2462,26 @@ func _process_realtime_combat(d: float):
 		var er = en.root
 		var hp = int(en.get("hp", 3))
 		if hp <= 0:
-			enemies.remove_at(i)
+			if bool(en.get("dead", false)):
+				enemies.remove_at(i)
+			else:
+				_on_enemy_killed(en)
 			continue
 		alive_enemies += 1
+		if bool(en.get("knocked", false)):
+			var kt = float(en.get("knocked_t", 0.8)) - d
+			en["knocked_t"] = kt
+			if kt <= 0.0:
+				en["knocked"] = false
+			_update_enemy_status_display(en)
+			continue
+		var eh = terrain.sample_h(er.position.x, er.position.z) if terrain != null else 0.0
+		if loc_id == "bandit_road" or loc_id == "road_bandits":
+			eh = CliffBridge.get_surface_y(er.position.x, er.position.z, er.position.y, terrain)
+		er.position.y = _fall_step(en, er.position.y, eh, 8.0, d)
+		_check_landed(en, er, "enemy")
+		if int(en.get("hp", 3)) <= 0 or not is_instance_valid(er):
+			continue
 
 		var to_player = lead_pos - er.position
 		to_player.y = 0
@@ -2073,7 +2515,7 @@ func _process_realtime_combat(d: float):
 				en["block_cd"] = randf_range(2.0, 3.5)
 			else:
 				if dist > 1.4:
-					_try_move(er, to_player.normalized(), 0.8 * d)
+					_enemy_chase(er, to_player.normalized(), 0.8 * d)
 				_update_enemy_status_display(en)
 				continue
 
@@ -2093,7 +2535,7 @@ func _process_realtime_combat(d: float):
 
 		# Reaction to player charging attack (raising shield / dodge / poke)
 		if is_player_charging and dist <= 3.2:
-			if cls == "swordsman" and en.get("block_cd", 0.0) <= 0.0 and randf() < 0.7:
+			if (cls == "swordsman" or cls == "assassin" or cls == "halberd") and en.get("block_cd", 0.0) <= 0.0 and randf() < 0.7:
 				en["is_blocking"] = true
 				en["block_timer"] = randf_range(1.6, 2.4)
 				_float_text(er.position, "🛡️ БЛОК!", Color(0.4, 0.85, 1.0))
@@ -2102,7 +2544,7 @@ func _process_realtime_combat(d: float):
 			elif cls == "assassin" and randf() < 0.5:
 				var back_dir = -to_player.normalized()
 				_try_move(er, back_dir, 2.2 * d * 8.0)
-			elif cls == "halberd" and en.get("atk_cd", 0.0) <= 0.0 and active_windups == 0 and randf() < 0.45:
+			elif cls == "halberd" and _rt_can_melee(en, lead) and en.get("atk_cd", 0.0) <= 0.0 and active_windups == 0 and randf() < 0.45:
 				en["windup"] = 0.5
 				en["windup_total"] = 0.5
 				en["is_unblockable"] = false
@@ -2117,12 +2559,18 @@ func _process_realtime_combat(d: float):
 		if atk_cd > 0.0:
 			en["atk_cd"] = maxf(0.0, atk_cd - d)
 
+		# Can't reach across a ledge: climb instead of windup from below.
+		if cls != "archer" and cls != "mage" and not _rt_can_melee(en, lead) and absf(er.position.y - lead_pos.y) > 0.9:
+			_enemy_chase(er, to_player.normalized(), 2.4 * d)
+			_update_enemy_status_display(en)
+			continue
+
 		# Class-specific Movement & Actions
 		if cls == "archer":
 			if dist < 5.0:
 				_try_move(er, -to_player.normalized(), 3.0 * d)
 			elif dist > 9.5:
-				_try_move(er, to_player.normalized(), 2.0 * d)
+				_enemy_chase(er, to_player.normalized(), 2.0 * d)
 			
 			var state = str(en.get("state", "reload"))
 			var state_timer = float(en.get("state_timer", 2.0)) - d
@@ -2149,7 +2597,7 @@ func _process_realtime_combat(d: float):
 			if dist < 4.5:
 				_try_move(er, -to_player.normalized(), 2.5 * d)
 			elif dist > 9.0:
-				_try_move(er, to_player.normalized(), 1.8 * d)
+				_enemy_chase(er, to_player.normalized(), 1.8 * d)
 			
 			var state = str(en.get("state", "cast"))
 			var state_timer = float(en.get("state_timer", 2.5)) - d
@@ -2175,7 +2623,7 @@ func _process_realtime_combat(d: float):
 			
 			if dist > 1.5:
 				var move_dir = (fwd * 0.7 + side * 0.75).normalized()
-				_try_move(er, move_dir, 3.6 * d)
+				_enemy_chase(er, move_dir, 3.6 * d)
 			elif dist <= 1.5 and atk_cd <= 0.0:
 				if active_windups == 0:
 					en["windup"] = 0.45
@@ -2191,7 +2639,7 @@ func _process_realtime_combat(d: float):
 
 		elif cls == "halberd":
 			if dist > 2.8:
-				_try_move(er, to_player.normalized(), 2.0 * d)
+				_enemy_chase(er, to_player.normalized(), 2.0 * d)
 			elif dist < 2.0:
 				_try_move(er, -to_player.normalized(), 1.6 * d)
 			
@@ -2211,7 +2659,7 @@ func _process_realtime_combat(d: float):
 		else:
 			# Swordsman
 			if dist > 1.6:
-				_try_move(er, to_player.normalized(), 2.3 * d)
+				_enemy_chase(er, to_player.normalized(), 2.3 * d)
 			elif dist <= 1.6 and atk_cd <= 0.0:
 				if active_windups == 0:
 					en["windup"] = 0.75
@@ -2223,9 +2671,6 @@ func _process_realtime_combat(d: float):
 				else:
 					en["atk_cd"] = randf_range(0.5, 1.1)
 			_update_enemy_status_display(en)
-
-		var eh = terrain.sample_h(er.position.x, er.position.z) if terrain != null else 0.0
-		er.position.y = eh
 
 	# Update Parry Timing Bar HUD
 	if parry_hud != null and is_instance_valid(parry_hud):
@@ -2258,6 +2703,7 @@ func _enemy_realtime_strike(en: Dictionary):
 	if is_defeated or party_n.size() == 0 or not is_instance_valid(party_n[0].get("root")):
 		return
 	if int(party_n[0].m.get("hp", 0)) <= 0:
+		_handle_hero_death()
 		return
 	if not is_instance_valid(en.get("root")):
 		return
@@ -2322,8 +2768,11 @@ func _enemy_realtime_strike(en: Dictionary):
 		parry_prompt_lbl.text = "💥 ПОЛУЧЕН УРОН!"
 		parry_prompt_lbl.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
 	en["atk_cd"] = 1.4
+
+	if int(hero.get("hp", 0)) <= 0:
+		_handle_hero_death()
+		return
 	
-	# Assassin combo follow-up chance
 	if en.get("cls") == "assassin" and int(en.get("combo_step", 0)) == 0 and randf() < 0.55:
 		en["combo_step"] = 1
 		en["windup"] = 0.35
@@ -2331,32 +2780,24 @@ func _enemy_realtime_strike(en: Dictionary):
 		en["is_unblockable"] = false
 		_float_text(en.root.position, "⚡ СЕРИЯ УДАРОВ!", Color(1.0, 0.8, 0.3))
 		return
-	else:
-		en["combo_step"] = 0
-
-	if int(hero.get("hp", 0)) <= 0:
-		if Game.is_combat_test:
-			hero["hp"] = int(hero.get("maxhp", 3))
-			stamina = max_stamina
-			is_defeated = false
-			combat_lock = false
-			_update_party_hp_bars()
-			_float_text(lead.position, "✨ МГНОВЕННОЕ ВОЗРОЖДЕНИЕ (ТЕСТ-РЕЖИМ)!", Color(1.0, 0.9, 0.2))
-			for nearby_en in enemies:
-				nearby_en["windup"] = 0.0
-				nearby_en["atk_cd"] = 1.2
-				_update_enemy_status_display(nearby_en)
-			return
-		_handle_hero_death()
+	en["combo_step"] = 0
 
 func _handle_hero_death():
+	if is_defeated:
+		return
 	if Game.is_combat_test:
 		if party_n.size() > 0:
 			party_n[0].m["hp"] = int(party_n[0].m.get("maxhp", 3))
+			if is_instance_valid(party_n[0].get("root")):
+				_float_text(party_n[0].root.position, "✨ МГНОВЕННОЕ ВОЗРОЖДЕНИЕ (ТЕСТ-РЕЖИМ)!", Color(1.0, 0.9, 0.2))
 		stamina = max_stamina
 		is_defeated = false
 		combat_lock = false
 		_update_party_hp_bars()
+		for nearby_en in enemies:
+			nearby_en["windup"] = 0.0
+			nearby_en["atk_cd"] = 1.2
+			_update_enemy_status_display(nearby_en)
 		return
 	if party_n.size() == 0:
 		_end_realtime_combat(false)
@@ -2411,6 +2852,7 @@ func _end_realtime_combat(victory: bool):
 	for en in enemies:
 		_hide_enemy_telegraph(en)
 	if victory:
+		_free_rt_enemy_nodes()
 		combat_lock = false
 		Game.flags["clear_" + loc_id] = true
 		Game.clear_hook(loc_id)
@@ -2518,7 +2960,14 @@ func _start_combat():
 		players.append({"cell": cells[i], "cls": str(m.get("cls", "swordsman")), "char": str(m.get("char", "")), "hp": int(m.get("hp", 2)), "maxhp": int(m.get("maxhp", 2))})
 	var en = []
 	for i in valid_enemies.size():
-		en.append(cells[party_n.size() + i])
+		var erow = valid_enemies[i]
+		# Состав, клетки и HP переносятся как есть; убитые в список не входят,
+		# поэтому в world3d их никто не пересоздаёт (см. _build).
+		var row = {"cell": cells[party_n.size() + i], "cls": str(erow.get("cls", "swordsman")), "char": str(erow.get("char", "")), "spawn": erow.get("spawn", [])}
+		if erow.has("hp"):
+			row["hp"] = int(erow["hp"])
+		en.append(row)
+	_dbg_log("CONVERT_ROWS alive=%d rows=%s" % [valid_enemies.size(), str(en)])
 	var p0 = [0, 0]
 	if party_n.size() > 0:
 		p0 = [int(party_n[0].root.position.x), int(party_n[0].root.position.z)]
@@ -2617,7 +3066,9 @@ func _play_dlg(dn):
 	var d = load("res://scripts/dialog.gd").new()
 	d.chars = CHARS
 	add_child(d)
+	dlg_open = true
 	await d.play(data)
+	dlg_open = false
 	if fp_mode:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -2681,6 +3132,7 @@ func _kill_all_enemies():
 			_float_text(en.root.position, "💀 УСТРАНЁН", Color(1.0, 0.2, 0.2))
 			en.root.queue_free()
 	enemies.clear()
+	_free_rt_enemy_nodes()
 	_clean_up_projectiles()
 	if party_n.size() > 0 and is_instance_valid(party_n[0].get("root")):
 		_float_text(party_n[0].root.position, "💀 УНИЧТОЖЕНО ВРАГОВ: %d" % count, Color(1.0, 0.7, 0.2))
@@ -2713,6 +3165,9 @@ func _unhandled_input(ev):
 			return
 		if ev.keycode == KEY_F and fp_mode:
 			_try_fp_kick()
+			return
+		if ev.keycode == KEY_T and not ev.is_echo():
+			_toggle_kick_arc()
 			return
 		if ev.keycode == KEY_ALT and not ev.is_echo():
 			_try_dash()
